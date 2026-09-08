@@ -20,6 +20,17 @@
 
 Access lines show the HTTP method and endpoint, the status and duration, the file or folder touched (`file=`), who did it (`user=` for an Unraid user, `user=key:<name>` for API-key-only sessions) and the client IP. Health-check probes are hidden unless `LOG_HEALTHCHECKS=true`. `LOG_FORMAT=json` restores one JSON object per line for log collectors; `LOG_LEVEL=debug` adds detail.
 
+### Log growth
+
+The gateway writes to stdout only; nothing is stored inside the container. Docker keeps the output in a `json-file` log on the Docker vDisk and Unraid caps it by default (*Settings → Docker → Docker log rotation*, `max-size 50m`, `max-file 1`), so the log is truncated at 50 MB and cannot fill the container or the array. Check the effective limit and current size with:
+
+```sh
+docker inspect unraid-gateway --format '{{.HostConfig.LogConfig.Type}} {{.HostConfig.LogConfig.Config}}'
+du -h "$(docker inspect unraid-gateway --format '{{.LogPath}}')"
+```
+
+Versions before 0.4.0 logged every 30-second health probe as a JSON line (about 3 MB per month); 0.4.0 hides probes by default, so a normal week of use stays well under 1 MB. Recreating or updating the container starts a fresh log.
+
 ## Console walkthrough
 
 The **Console** button of the container in the Docker tab (or `docker exec -it unraid-gateway sh`) opens a shell that immediately prints a guided status check. The `gw` helper is available:
