@@ -6,13 +6,35 @@
 
 ## Logs
 
-One JSON line per request on stdout (`LOG_REQUESTS=true`):
+*Docker → unraid-gateway → Logs*. The log opens with a banner of the effective configuration (listen address, Unraid API URL, mounted shares, user authentication mode, lockout settings), then one readable line per event:
 
-```json
-{"time":"…","level":"INFO","msg":"request","method":"PUT","path":"/api/v1/fs/content","status":201,"ms":42,"ip":"203.0.113.7"}
+```
+2026-09-08 20:43:57 INFO  login ok (user)                  user=sdimambro key="unraid gateway" ip=203.0.113.7 shares="documents=rw media=ro"
+2026-09-08 20:43:57 INFO  login ok (api key only)          key="unraid gateway" ip=203.0.113.7
+2026-09-08 20:43:57 WARN  login failed: Unraid rejected the API key  ip=203.0.113.7
+2026-09-08 20:43:57 WARN  login failed: Unraid rejected the username/password  user=bob ip=203.0.113.7 guest=false
+2026-09-08 20:43:57 WARN  login refused: too many failed attempts from this IP  ip=203.0.113.7
+2026-09-08 20:43:57 INFO  PUT    /api/v1/fs/content           → 201 in 42ms  file=/documents/report.pdf  user=sdimambro  ip=203.0.113.7
+2026-09-08 20:43:57 INFO  GET    /api/v1/fs/list              → 404 in 0ms   file=/private  user=bob  ip=203.0.113.7
 ```
 
-Other lines: `unraid-gateway listening` (startup, with config summary), `login`, `login failed`, `login locked`, `unraid validation error`, `fs error`, `upload aborted`. Docker tab → icon → **Logs**.
+Access lines show the HTTP method and endpoint, the status and duration, the file or folder touched (`file=`), who did it (`user=` for an Unraid user, `user=key:<name>` for API-key-only sessions) and the client IP. Health-check probes are hidden unless `LOG_HEALTHCHECKS=true`. `LOG_FORMAT=json` restores one JSON object per line for log collectors; `LOG_LEVEL=debug` adds detail.
+
+## Console walkthrough
+
+The **Console** button of the container in the Docker tab (or `docker exec -it unraid-gateway sh`) opens a shell that immediately prints a guided status check. The `gw` helper is available:
+
+| Command | What it shows |
+|---|---|
+| `gw status` | API health and version, Unraid API reachability, every mounted share with rw/ro, whether the share config is readable and Unraid's SMB is reachable (needed for user logins) |
+| `gw shares` | each mounted share with its Unraid security (Public / Secure / Private) and read/write user lists |
+| `gw users` | the Unraid users that appear in the share lists |
+| `gw login <user>` | interactive test: asks the API key and the user's password, shows the login response with the resulting per-share permissions (token masked) |
+| `gw key` | interactive test with the API key only |
+| `gw env` | the effective configuration variables |
+| `gw help` | this walkthrough |
+
+Nothing is configured from the console: settings live in the container's variables and path mappings in Unraid.
 
 ## Updating
 

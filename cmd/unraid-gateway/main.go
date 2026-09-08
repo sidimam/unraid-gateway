@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,16 +15,26 @@ import (
 	"time"
 
 	"github.com/sidimam/unraid-gateway/internal/config"
+	"github.com/sidimam/unraid-gateway/internal/logfmt"
 	"github.com/sidimam/unraid-gateway/internal/server"
 )
 
 func main() {
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	cfg, err := config.Load()
 	if err != nil {
-		log.Error("configuration error", "err", err)
+		slog.New(logfmt.New("text", slog.LevelInfo)).Error("configuration error", "err", err)
 		os.Exit(2)
 	}
+	level := slog.LevelInfo
+	switch cfg.LogLevel {
+	case "debug":
+		level = slog.LevelDebug
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	}
+	log := slog.New(logfmt.New(cfg.LogFormat, level))
 	srv, err := server.New(cfg, log)
 	if err != nil {
 		log.Error("startup error", "err", err)
@@ -35,6 +46,17 @@ func main() {
 		ReadHeaderTimeout: 15 * time.Second,
 		IdleTimeout:       120 * time.Second,
 		// No WriteTimeout/ReadTimeout: uploads and downloads may be long.
+	}
+	if cfg.LogFormat != "json" {
+		logfmt.Banner(os.Stdout, server.Version, map[string]string{
+			"Listening on":        cfg.ListenAddr + map[bool]string{true: " (TLS)", false: " (HTTP, put TLS in front)"}[cfg.TLSCert != ""],
+			"Unraid API":          cfg.UnraidURL,
+			"Shares (data root)":  cfg.DataRoot + "  →  " + srv.SharesSummary(),
+			"User authentication": cfg.UserAuth + "  (SMB " + cfg.SMBAddr + ", share config " + cfg.SharesConfig + ")",
+			"Read-only":           map[bool]string{true: "yes", false: "no"}[cfg.ReadOnly],
+			"Trust proxy headers": map[bool]string{true: "yes", false: "no"}[cfg.TrustProxy],
+			"Sessions / lockout":  cfg.SessionTTL.String() + " / " + fmt.Sprintf("%d attempts, %s", cfg.MaxLoginAttempts, cfg.LoginLockout),
+		}, []string{"Listening on", "Unraid API", "Shares (data root)", "User authentication", "Read-only", "Trust proxy headers", "Sessions / lockout"})
 	}
 	go func() {
 		log.Info("unraid-gateway listening",

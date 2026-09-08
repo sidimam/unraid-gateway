@@ -1,0 +1,78 @@
+#!/bin/sh
+# unraid-gateway console helper. Type `gw` for the walkthrough.
+API="http://127.0.0.1:${LISTEN_ADDR#:}"; [ "$API" = "http://127.0.0.1:" ] && API="http://127.0.0.1:8484"
+ROOT="${DATA_ROOT:-/data}"; CONF="${SHARES_CONFIG:-/unraid-shares/smb-shares.conf}"
+bold() { printf '\033[1m%s\033[0m\n' "$*"; }
+ok()   { printf '  \033[32m✔\033[0m %s\n' "$*"; }
+bad()  { printf '  \033[31m✘\033[0m %s\n' "$*"; }
+note() { printf '  · %s\n' "$*"; }
+shares() { awk -v r="$ROOT" '$5 != r && index($5, r"/") == 1 { sub(r"/", "", $5); if ($5 !~ /\//) print $5 }' /proc/self/mountinfo 2>/dev/null | sort -u; }
+
+case "${1:-help}" in
+  status)
+    bold "Gateway"
+    H=$(curl -s -m 3 "$API/healthz") && ok "API answering on $API: $H" || bad "API not answering on $API"
+    bold "Unraid API (${UNRAID_URL:-unset})"
+    C=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "${UNRAID_URL}/graphql" -H 'Content-Type: application/json' -d '{"query":"{ __typename }"}')
+    case "$C" in 200|400|401|403) ok "reachable (HTTP $C)";; 000) bad "unreachable: check UNRAID_URL (use the LAN IP, not localhost)";; *) note "HTTP $C from ${UNRAID_URL}/graphql";; esac
+    bold "Shares mounted under $ROOT"
+    S=$(shares); [ -n "$S" ] && for s in $S; do
+        if touch "$ROOT/$s/.gw-write-test" 2>/dev/null; then rm -f "$ROOT/$s/.gw-write-test"; ok "$s (read/write)"; else ok "$s (read-only)"; fi; done || bad "no share mounted: add Paths /data/<name> in the container settings"
+    bold "User authentication: ${USER_AUTH:-optional}"
+    if [ "${USER_AUTH:-optional}" != off ]; then
+      if [ -r "$CONF" ]; then ok "share config readable ($CONF): $(grep -c '^\[' "$CONF") share definitions"; else bad "share config not readable at $CONF: map /etc/samba/smb-shares.conf (read-only)"; fi
+      SMB="${UNRAID_SMB_ADDR:-$(echo "$UNRAID_URL" | sed -E 's#^https?://##; s#[:/].*##'):445}"
+      nc -z -w 3 ${SMB%:*} ${SMB#*:} 2>/dev/null && ok "Unraid SMB reachable at $SMB" || bad "Unraid SMB not reachable at $SMB (needed to verify user passwords)"
+    fi
+    ;;
+  shares)
+    bold "Mounted shares and who may use them (from $CONF)"
+    for s in $(shares); do
+      sec=$(awk -v n="$s" 'tolower($0)=="["tolower(n)"]"{f=1;next} /^\[/{f=0} f && /^[[:space:]]*#/{gsub(/^[[:space:]]*#[[:space:]]*/,"");print;exit}' "$CONF" 2>/dev/null)
+      wl=$(awk -v n="$s" 'tolower($0)=="["tolower(n)"]"{f=1;next} /^\[/{f=0} f && /write list/{sub(/.*=[[:space:]]*/,"");print;exit}' "$CONF" 2>/dev/null)
+      rl=$(awk -v n="$s" 'tolower($0)=="["tolower(n)"]"{f=1;next} /^\[/{f=0} f && /read list/{sub(/.*=[[:space:]]*/,"");print;exit}' "$CONF" 2>/dev/null)
+      printf '  %-14s %-8s write: %-40s read: %s\n' "$s" "${sec:-?}" "${wl:-—}" "${rl:-—}"
+    done
+    note "Public = everyone rw · Secure = everyone ro, write list rw · Private = lists only. Not exported = hidden."
+    ;;
+  users)
+    bold "Unraid users mentioned in share lists"
+    grep -hE 'write list|read list|valid users' "$CONF" 2>/dev/null | sed -E 's/.*=//; s/,/ /g' | tr ' ' '\n' | sed '/^$/d' | sort -u | sed 's/^/  · /'
+    note "Passwords are verified by Unraid's Samba; test one with: gw login <username>"
+    ;;
+  login)
+    U="$2"; [ -z "$U" ] && { echo "usage: gw login <unraid-username>   (you will be asked for the API key and the password)"; exit 1; }
+    printf 'Unraid API key: '; stty -echo 2>/dev/null; read K; stty echo 2>/dev/null; echo
+    printf 'Password for %s: ' "$U"; stty -echo 2>/dev/null; read P; stty echo 2>/dev/null; echo
+    curl -s -m 20 -X POST "$API/api/v1/auth/login" -H 'Content-Type: application/json' -d "{\"apiKey\":\"$K\",\"username\":\"$U\",\"password\":\"$P\"}" | sed 's/"token":"[^"]*"/"token":"…"/'; echo
+    ;;
+  key)
+    printf 'Unraid API key: '; stty -echo 2>/dev/null; read K; stty echo 2>/dev/null; echo
+    curl -s -m 20 -X POST "$API/api/v1/auth/login" -H 'Content-Type: application/json' -d "{\"apiKey\":\"$K\"}" | sed 's/"token":"[^"]*"/"token":"…"/'; echo
+    ;;
+  env)
+    env | grep -E '^(UNRAID_URL|USER_AUTH|UNRAID_SMB_ADDR|SHARES_CONFIG|DATA_ROOT|READ_ONLY|TRUST_PROXY|SESSION_TTL|MAX_LOGIN_ATTEMPTS|LOGIN_LOCKOUT|LOG_FORMAT|LOG_LEVEL|TZ)=' | sort | sed 's/^/  /'
+    ;;
+  help|*)
+    bold "unraid-gateway console — walkthrough"
+    cat <<'TXT'
+  This container serves your Unraid shares to the Unraid Drive app (and its web UI at port 8484).
+  Nothing is configured here: settings are the container's variables and path mappings in Unraid.
+
+  1. gw status    health of the API, Unraid API reachability, mounted shares (rw/ro), user-auth prerequisites
+  2. gw shares    each mounted share with its Unraid security (Public/Secure/Private) and user lists
+  3. gw users     Unraid users that appear in the share lists
+  4. gw login U   try a login as Unraid user U (asks API key + password) and show the resulting permissions
+  5. gw key       try a login with the API key only
+  6. gw env       the effective configuration variables
+
+  Logs: Unraid → Docker → unraid-gateway → Logs. One line per request:
+     TIME INFO  METHOD PATH → STATUS in Nms  file=/share/path user=… ip=…
+  Common lines: "login ok (user)", "login failed: Unraid rejected the API key",
+  "login failed: Unraid rejected the username/password", "login refused: too many failed attempts".
+  Health checks are hidden (LOG_HEALTHCHECKS=true to see them); LOG_FORMAT=json for machine-readable logs.
+
+  Docs: https://github.com/sidimam/unraid-gateway/wiki
+TXT
+    ;;
+esac

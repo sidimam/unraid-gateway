@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.0 — 2026-09-08
+- Readable logs by default: startup banner with the effective configuration, one aligned line per event with method, endpoint, status, duration, file touched, user and IP; explicit login messages; health checks hidden. `LOG_FORMAT`, `LOG_LEVEL`, `LOG_HEALTHCHECKS`.
+- Console walkthrough: the container's Console opens with a guided status check; `gw status|shares|users|login|key|env|help`.
+
 ## v0.3.2 — 2026-09-08
 - Shares are the real mount points under the data root (from `/proc/self/mountinfo`): directories left behind in the root volume after a mapping was removed no longer show up as shares, and paths into them return 404.
 

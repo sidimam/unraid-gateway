@@ -69,6 +69,15 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	return s, nil
 }
 
+// SharesSummary lists the mounted shares for the startup banner.
+func (s *Server) SharesSummary() string {
+	shares := s.files.MountedShares()
+	if len(shares) == 0 {
+		return "none mounted!"
+	}
+	return strings.Join(shares, ", ")
+}
+
 // ServeHTTP implements http.Handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) { s.handler.ServeHTTP(w, r) }
 
@@ -136,7 +145,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			s.sessions.Logout(sess.Token)
 			if errors.Is(err, smbauth.ErrInvalidCredentials) || errors.Is(err, smbauth.ErrGuest) {
 				s.sessions.Fail(ip)
-				s.log.Warn("user login failed", "ip", ip, "user", req.Username, "guest", errors.Is(err, smbauth.ErrGuest))
+				s.log.Warn("login failed: Unraid rejected the username/password", "user", req.Username, "ip", ip, "guest", errors.Is(err, smbauth.ErrGuest))
 				writeErr(w, http.StatusUnauthorized, "invalid unraid username or password")
 				return
 			}
@@ -153,14 +162,29 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		if visible == 0 {
 			s.sessions.Logout(sess.Token)
 			s.sessions.Fail(ip)
-			s.log.Warn("user has no share access", "ip", ip, "user", req.Username)
+			s.log.Warn("login refused: user has no access to any mounted share", "user", req.Username, "ip", ip)
 			writeErr(w, http.StatusUnauthorized, "this Unraid user has no access to any share mounted in the gateway")
 			return
 		}
 		sess.User, sess.Policy = req.Username, policy
 	}
-	s.log.Info("login", "ip", ip, "key", sess.Identity.Name, "user", sess.User)
+	if sess.User != "" {
+		s.log.Info("login ok (user)", "user", sess.User, "key", sess.Identity.Name, "ip", ip, "shares", sharesLine(sess, s.files.MountedShares()))
+	} else {
+		s.log.Info("login ok (api key only)", "key", sess.Identity.Name, "ip", ip)
+	}
 	writeJSON(w, http.StatusOK, s.sessionResponse(sess))
+}
+
+// sharesLine renders "documents=rw media=ro" for the log.
+func sharesLine(sess *auth.Session, mounted []string) string {
+	parts := []string{}
+	for _, m := range mounted {
+		if l := sess.Policy.Level(m); l != access.None {
+			parts = append(parts, m+"="+l.String())
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 // sessionResponse describes a session to the client, including the effective share access.
@@ -189,10 +213,10 @@ func (s *Server) sessionResponse(sess *auth.Session) map[string]any {
 func (s *Server) authError(w http.ResponseWriter, ip string, err error) {
 	switch {
 	case errors.Is(err, auth.ErrInvalidKey):
-		s.log.Warn("login failed", "ip", ip)
+		s.log.Warn("login failed: Unraid rejected the API key", "ip", ip)
 		writeErr(w, http.StatusUnauthorized, "invalid api key")
 	case errors.Is(err, auth.ErrLocked):
-		s.log.Warn("login locked", "ip", ip)
+		s.log.Warn("login refused: too many failed attempts from this IP", "ip", ip)
 		w.Header().Set("Retry-After", "900")
 		writeErr(w, http.StatusTooManyRequests, "too many failed attempts")
 	default:
@@ -267,6 +291,9 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 			writeErr(w, http.StatusUnauthorized, "authentication required")
 			return
 		}
+		if rec, ok := w.(principalRecorder); ok {
+			rec.setPrincipal(p)
+		}
 		ctx := context.WithValue(r.Context(), ctxKey{}, p)
 		if p.Policy != nil {
 			ctx = access.WithPolicy(ctx, p.Policy)
@@ -303,8 +330,14 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 
 type statusWriter struct {
 	http.ResponseWriter
-	status int
+	status    int
+	principal *auth.Principal
 }
+
+// principalRecorder lets the authenticate middleware report who made the request to the access log.
+type principalRecorder interface{ setPrincipal(auth.Principal) }
+
+func (w *statusWriter) setPrincipal(p auth.Principal) { w.principal = &p }
 
 func (w *statusWriter) WriteHeader(code int) {
 	w.status = code
@@ -319,13 +352,28 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 		start := time.Now()
 		sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(sw, r)
-		s.log.Info("request",
+		if r.URL.Path == "/healthz" && !s.cfg.LogHealthchecks {
+			return
+		}
+		attrs := []any{
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", sw.status,
 			"ms", time.Since(start).Milliseconds(),
 			"ip", auth.ClientIP(r, s.cfg.TrustProxy),
-		)
+		}
+		// Which file/folder a file-API call touched, and as which user.
+		if p := r.URL.Query().Get("path"); p != "" {
+			attrs = append(attrs, "file", p)
+		}
+		if pr := sw.principal; pr != nil {
+			if pr.User != "" {
+				attrs = append(attrs, "user", pr.User)
+			} else if pr.Identity.Name != "" {
+				attrs = append(attrs, "user", "key:"+pr.Identity.Name)
+			}
+		}
+		s.log.Info("request", attrs...)
 	})
 }
 

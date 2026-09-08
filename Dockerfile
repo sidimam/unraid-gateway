@@ -13,6 +13,10 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata curl
 COPY --from=build /out/unraid-gateway /usr/local/bin/unraid-gateway
+# Console walkthrough: `docker exec -it … sh` (Unraid's Console button) sources $ENV and gets the `gw` helper.
+COPY console/gw /usr/local/bin/gw
+COPY console/profile.sh /etc/unraid-gateway-profile.sh
+ENV ENV=/etc/unraid-gateway-profile.sh
 # Unraid's default "nobody:users" so files created through the gateway get
 # the same ownership as files created via SMB.
 USER 99:100

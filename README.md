@@ -100,7 +100,10 @@ curl -s https://gw.example.com/healthz
 | `CHANGES_WALK_LIMIT` | `250000` | Max entries scanned per `/fs/changes` page. |
 | `CHANGES_DEADLINE` | `20s` | Max wall time per `/fs/changes` page. |
 | `TLS_CERT` / `TLS_KEY` | | Serve HTTPS directly instead of behind a proxy. |
-| `LOG_REQUESTS` | `true` | Access log (JSON) on stdout. |
+| `LOG_REQUESTS` | `true` | One access line per request on stdout. |
+| `LOG_FORMAT` | `text` | `text`: readable, aligned lines (what the Unraid Docker log viewer shows best); `json`: one JSON object per line for log collectors. |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error`. |
+| `LOG_HEALTHCHECKS` | `false` | Also log `/healthz` probes (Docker hits it every 30 s). |
 
 The container runs as `99:100` (`nobody:users`), so files created through the gateway get the same ownership as files created over SMB.
 
@@ -196,6 +199,20 @@ Forwarded to `UNRAID_URL/graphql` with the session's `x-api-key`. Response is re
 - The container runs unprivileged as `nobody:users`; mount only the shares you need and use `:ro` where writes are not required.
 - What the gateway exposes is decided by **volume mounts**, and, when a user logs in, by **Unraid's share security** for that user. The API key's role never affects file access. Passwords are verified by Samba on Unraid over a normal SMB2 session; the gateway does not store them (sessions keep only the resulting permission map).
 - No CORS headers are sent, and the embedded UI runs under a strict Content-Security-Policy on the same origin.
+
+## Logs and console
+
+Logs (*Docker → unraid-gateway → Logs*) start with a banner summarising the effective configuration, then one line per event:
+
+```
+2026-09-08 20:43:57 INFO  login ok (user)                  user=sdimambro key="unraid gateway" ip=203.0.113.7 shares="documents=rw media=ro"
+2026-09-08 20:43:57 WARN  login failed: Unraid rejected the username/password  user=guest ip=203.0.113.7 guest=true
+2026-09-08 20:43:57 INFO  PUT    /api/v1/fs/content           → 201 in 42ms  file=/documents/report.pdf  user=sdimambro  ip=203.0.113.7
+```
+
+Health-check probes are hidden unless `LOG_HEALTHCHECKS=true`; `LOG_FORMAT=json` switches to machine-readable output.
+
+**Console walkthrough**: the *Console* button of the container (or `docker exec -it unraid-gateway sh`) opens a shell that greets you with a guided status check. The `gw` helper offers: `gw status` (API, Unraid API, mounted shares rw/ro, user-auth prerequisites), `gw shares` (each share's Unraid security and user lists), `gw users`, `gw login <user>` (interactive test login showing the resulting permissions), `gw key`, `gw env`.
 
 ## Development
 

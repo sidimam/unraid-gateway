@@ -45,6 +45,12 @@ type Config struct {
 	ChangesDeadline time.Duration
 	// LogRequests enables per-request access logging.
 	LogRequests bool
+	// LogFormat is "text" (readable, default) or "json".
+	LogFormat string
+	// LogHealthchecks also logs /healthz requests (noisy: Docker probes every 30s).
+	LogHealthchecks bool
+	// LogLevel is debug, info, warn or error.
+	LogLevel string
 	// UserAuth controls Unraid user authentication: "off", "optional" (default) or "required".
 	UserAuth string
 	// SMBAddr is the Unraid SMB endpoint used to validate user passwords (host:445).
@@ -71,6 +77,8 @@ func Load() (Config, error) {
 		ChangesWalkLimit: num("CHANGES_WALK_LIMIT", 250000),
 		MaxJSONBody:      int64(num("MAX_JSON_BODY", 1<<20)),
 		UserAuth:         strings.ToLower(env("USER_AUTH", "optional")),
+		LogFormat:        strings.ToLower(env("LOG_FORMAT", "text")),
+		LogLevel:         strings.ToLower(env("LOG_LEVEL", "info")),
 		SMBAddr:          env("UNRAID_SMB_ADDR", ""),
 		SharesConfig:     env("SHARES_CONFIG", env("SHARES_CONFIG_DIR", "/unraid-shares/smb-shares.conf")),
 	}
@@ -85,6 +93,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if c.LogRequests, err = boolean("LOG_REQUESTS", true); err != nil {
+		return c, err
+	}
+	if c.LogHealthchecks, err = boolean("LOG_HEALTHCHECKS", false); err != nil {
 		return c, err
 	}
 	if c.UnraidURL == "" {

@@ -14,7 +14,7 @@ It is the server side of **[Unraid Drive](https://github.com/sidimam/unraid-driv
 - [Reverse proxies and Cloudflare](Reverse-Proxies) — TLS, `TRUST_PROXY`, body limits, Cloudflare Access
 - [Security model](Security-Model)
 - [Web UI](Web-UI)
-- [Operations](Operations) — logs, updates, health checks, troubleshooting
+- [Operations](Operations) — readable logs, console walkthrough (`gw`), updates, health checks, troubleshooting
 - [Development](Development) — building, testing, releasing
 - [Changelog](Changelog)
 
