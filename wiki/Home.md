@@ -23,8 +23,9 @@ It is the server side of **[Unraid Drive](https://github.com/sidimam/unraid-driv
 | | |
 |---|---|
 | Image | `ghcr.io/sidimam/unraid-gateway:latest` (linux/amd64, linux/arm64), about 10 MB |
-| Language | Go 1.23, standard library only |
+| Language | Go 1.23, standard library plus a pure Go SMB2 client |
 | Runs as | `nobody:users` (99:100) |
+| Users | optional Unraid user + password on login, verified over SMB; per-share permissions from Unraid's Samba config |
 | Port | 8484 (HTTP; put TLS in front) |
 | Requires | Unraid 7.2+ with the built-in Unraid API enabled |
 | License | MIT |

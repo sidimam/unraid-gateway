@@ -28,6 +28,9 @@ Nothing to back up: the gateway holds no state besides in-memory sessions and in
 |---|---|
 | Container exits immediately | `UNRAID_URL` missing or without scheme; a mapped host path does not exist. Read the first log lines. |
 | `invalid api key` for a good key | `UNRAID_URL` wrong (must be the LAN IP, `http://` unless the WebGUI forces HTTPS), Unraid API stopped (`unraid-api status`), or key deleted. Log shows `unraid validation error`. |
+| `401 invalid unraid username or password` | Samba rejected the user (wrong password, or unknown user mapped to guest and failing the share probe). Reset the password in the Unraid WebGUI → Users. |
+| `401 this Unraid user has no access to any share mounted in the gateway` | Unraid's share security grants the user nothing on the mapped shares: add the user to the share's read/write list, or map another share. |
+| `502 the Unraid share configuration is not readable by the gateway` | Mount `/etc/samba/smb-shares.conf` → `/unraid-shares/smb-shares.conf:ro` (template default) or set `USER_AUTH=off`. |
 | `429 too many failed attempts` | lockout; wait `LOGIN_LOCKOUT` or restart. Behind a proxy without `TRUST_PROXY` everyone shares one IP. |
 | `413` on uploads from the web UI | proxy body limit (Cloudflare 100 MB, nginx default 1 MB). Raise it or use the app. |
 | Writes fail with `share is mounted read-only` | the mount has `:ro`. |
