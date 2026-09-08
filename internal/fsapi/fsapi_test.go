@@ -16,6 +16,11 @@ import (
 func newTestAPI(t *testing.T) (*API, *http.ServeMux, string) {
 	t.Helper()
 	dir := t.TempDir()
+	for _, share := range []string{"share", "media"} {
+		if err := os.Mkdir(filepath.Join(dir, share), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
 	api, err := New(dir, Options{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatal(err)
@@ -75,32 +80,32 @@ func TestResolveRejectsSymlinkEscape(t *testing.T) {
 
 func TestPutListDownloadDelete(t *testing.T) {
 	_, mux, _ := newTestAPI(t)
-	rr := do(mux, "PUT", "/fs/content?path=/docs/hello.txt", strings.NewReader("hello world"), nil)
+	rr := do(mux, "PUT", "/fs/content?path=/share/docs/hello.txt", strings.NewReader("hello world"), nil)
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("put: %d %s", rr.Code, rr.Body)
 	}
-	rr = do(mux, "GET", "/fs/list?path=/docs", nil, nil)
+	rr = do(mux, "GET", "/fs/list?path=/share/docs", nil, nil)
 	var lr listResponse
 	if err := json.Unmarshal(rr.Body.Bytes(), &lr); err != nil || len(lr.Entries) != 1 || lr.Entries[0].Name != "hello.txt" {
 		t.Fatalf("list: %d %s", rr.Code, rr.Body)
 	}
-	rr = do(mux, "GET", "/fs/content?path=/docs/hello.txt", nil, map[string]string{"Range": "bytes=6-10"})
+	rr = do(mux, "GET", "/fs/content?path=/share/docs/hello.txt", nil, map[string]string{"Range": "bytes=6-10"})
 	if rr.Code != http.StatusPartialContent || rr.Body.String() != "world" {
 		t.Fatalf("range: %d %q", rr.Code, rr.Body.String())
 	}
-	rr = do(mux, "PUT", "/fs/content?path=/docs/hello.txt", strings.NewReader("x"), map[string]string{"If-Match": "\"bogus\""})
+	rr = do(mux, "PUT", "/fs/content?path=/share/docs/hello.txt", strings.NewReader("x"), map[string]string{"If-Match": "\"bogus\""})
 	if rr.Code != http.StatusPreconditionFailed {
 		t.Fatalf("if-match: %d", rr.Code)
 	}
-	rr = do(mux, "POST", "/fs/delete", strings.NewReader(`{"path":"/docs"}`), nil)
+	rr = do(mux, "POST", "/fs/delete", strings.NewReader(`{"path":"/share/docs"}`), nil)
 	if rr.Code != http.StatusConflict {
 		t.Fatalf("delete non-empty dir should conflict: %d %s", rr.Code, rr.Body)
 	}
-	rr = do(mux, "POST", "/fs/delete", strings.NewReader(`{"path":"/docs","recursive":true}`), nil)
+	rr = do(mux, "POST", "/fs/delete", strings.NewReader(`{"path":"/share/docs","recursive":true}`), nil)
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("delete recursive: %d %s", rr.Code, rr.Body)
 	}
-	rr = do(mux, "GET", "/fs/stat?path=/docs", nil, nil)
+	rr = do(mux, "GET", "/fs/stat?path=/share/docs", nil, nil)
 	if rr.Code != http.StatusNotFound {
 		t.Fatalf("stat after delete: %d", rr.Code)
 	}
@@ -108,7 +113,7 @@ func TestPutListDownloadDelete(t *testing.T) {
 
 func TestResumableUpload(t *testing.T) {
 	_, mux, root := newTestAPI(t)
-	rr := do(mux, "POST", "/fs/uploads", strings.NewReader(`{"path":"/big.bin","size":10}`), nil)
+	rr := do(mux, "POST", "/fs/uploads", strings.NewReader(`{"path":"/share/big.bin","size":10}`), nil)
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("create: %d %s", rr.Code, rr.Body)
 	}
@@ -134,11 +139,11 @@ func TestResumableUpload(t *testing.T) {
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("commit: %d %s", rr.Code, rr.Body)
 	}
-	data, err := os.ReadFile(filepath.Join(root, "big.bin"))
+	data, err := os.ReadFile(filepath.Join(root, "share", "big.bin"))
 	if err != nil || string(data) != "0123456789" {
 		t.Fatalf("content: %q %v", data, err)
 	}
-	ents, _ := os.ReadDir(root)
+	ents, _ := os.ReadDir(filepath.Join(root, "share"))
 	for _, e := range ents {
 		if strings.Contains(e.Name(), partSuffix) {
 			t.Fatalf("temp file left behind: %s", e.Name())
@@ -148,16 +153,16 @@ func TestResumableUpload(t *testing.T) {
 
 func TestMoveCopyAndChanges(t *testing.T) {
 	_, mux, _ := newTestAPI(t)
-	do(mux, "PUT", "/fs/content?path=/a/one.txt", strings.NewReader("1"), nil)
-	rr := do(mux, "POST", "/fs/copy", strings.NewReader(`{"from":"/a","to":"/b"}`), nil)
+	do(mux, "PUT", "/fs/content?path=/share/a/one.txt", strings.NewReader("1"), nil)
+	rr := do(mux, "POST", "/fs/copy", strings.NewReader(`{"from":"/share/a","to":"/share/b"}`), nil)
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("copy: %d %s", rr.Code, rr.Body)
 	}
-	rr = do(mux, "POST", "/fs/move", strings.NewReader(`{"from":"/b/one.txt","to":"/b/two.txt"}`), nil)
+	rr = do(mux, "POST", "/fs/move", strings.NewReader(`{"from":"/share/b/one.txt","to":"/share/b/two.txt"}`), nil)
 	if rr.Code != http.StatusOK {
 		t.Fatalf("move: %d %s", rr.Code, rr.Body)
 	}
-	rr = do(mux, "POST", "/fs/move", strings.NewReader(`{"from":"/a","to":"/a/sub"}`), nil)
+	rr = do(mux, "POST", "/fs/move", strings.NewReader(`{"from":"/share/a","to":"/share/a/sub"}`), nil)
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("move into itself: %d", rr.Code)
 	}
@@ -166,7 +171,7 @@ func TestMoveCopyAndChanges(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &cr); err != nil {
 		t.Fatal(err)
 	}
-	if len(cr.Files) != 2 || len(cr.Dirs) < 3 {
+	if len(cr.Files) != 2 || len(cr.Dirs) < 4 {
 		t.Fatalf("changes: %s", rr.Body)
 	}
 	rr = do(mux, "GET", "/fs/changes?path=/&since="+itoa(cr.Cursor+int64(3e9)), nil, nil)
@@ -179,13 +184,13 @@ func TestMoveCopyAndChanges(t *testing.T) {
 func TestChangesResume(t *testing.T) {
 	_, mux, _ := newTestAPI(t)
 	// "a-b" sorts before "a/1.txt" lexically but after the whole "a" subtree in walk order.
-	for _, f := range []string{"/a/1.txt", "/a/2.txt", "/a-b/x.txt", "/b/3.txt", "/b/c/4.txt", "/d.txt"} {
+	for _, f := range []string{"/share/a/1.txt", "/share/a/2.txt", "/share/a-b/x.txt", "/share/b/3.txt", "/share/b/c/4.txt", "/share/d.txt"} {
 		do(mux, "PUT", "/fs/content?path="+f, strings.NewReader("x"), nil)
 	}
 	seen := map[string]bool{}
 	after, cursor, pages := "", "", 0
 	for {
-		url := "/fs/changes?path=/&since=0&limit=3"
+		url := "/fs/changes?path=/share&since=0&limit=3"
 		if after != "" {
 			url += "&after=" + after + "&cursor=" + cursor
 		}
@@ -218,7 +223,7 @@ func TestChangesResume(t *testing.T) {
 			t.Fatal("pagination did not terminate")
 		}
 	}
-	for _, want := range []string{"/", "/a", "/a/1.txt", "/a/2.txt", "/a-b", "/a-b/x.txt", "/b", "/b/3.txt", "/b/c", "/b/c/4.txt", "/d.txt"} {
+	for _, want := range []string{"/share", "/share/a", "/share/a/1.txt", "/share/a/2.txt", "/share/a-b", "/share/a-b/x.txt", "/share/b", "/share/b/3.txt", "/share/b/c", "/share/b/c/4.txt", "/share/d.txt"} {
 		if !seen[want] {
 			t.Errorf("%s never reported (pages=%d, seen=%v)", want, pages, seen)
 		}
@@ -266,6 +271,16 @@ func TestShareRootsAreImmutable(t *testing.T) {
 	if rr := do(mux, "GET", "/fs/stat?path=/media/a.txt", nil, nil); rr.Code != http.StatusOK {
 		t.Fatalf("file should still exist: %d", rr.Code)
 	}
+	// Writes into a share that does not exist must not create it.
+	if rr := do(mux, "PUT", "/fs/content?path=/typo/file.txt", strings.NewReader("x"), nil); rr.Code != http.StatusNotFound {
+		t.Fatalf("put into missing share: %d %s", rr.Code, rr.Body)
+	}
+	if rr := do(mux, "POST", "/fs/uploads", strings.NewReader(`{"path":"/typo/big.bin"}`), nil); rr.Code != http.StatusNotFound {
+		t.Fatalf("upload into missing share: %d %s", rr.Code, rr.Body)
+	}
+	if rr := do(mux, "POST", "/fs/mkdir", strings.NewReader(`{"path":"/typo/sub","parents":true}`), nil); rr.Code != http.StatusNotFound {
+		t.Fatalf("mkdir into missing share: %d %s", rr.Code, rr.Body)
+	}
 	// Inside a share everything still works.
 	if rr := do(mux, "POST", "/fs/mkdir", strings.NewReader(`{"path":"/media/sub"}`), nil); rr.Code != http.StatusCreated {
 		t.Fatalf("mkdir inside share: %d %s", rr.Code, rr.Body)
@@ -277,7 +292,7 @@ func TestReadOnly(t *testing.T) {
 	api, _ := New(dir, Options{ReadOnly: true}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	mux := http.NewServeMux()
 	api.Register(mux, "/fs")
-	rr := do(mux, "PUT", "/fs/content?path=/x", bytes.NewReader([]byte("x")), nil)
+	rr := do(mux, "PUT", "/fs/content?path=/share/x", bytes.NewReader([]byte("x")), nil)
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("read-only put: %d", rr.Code)
 	}

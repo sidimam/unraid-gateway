@@ -123,6 +123,25 @@ func (a *API) mutating(h http.HandlerFunc) http.HandlerFunc {
 
 // ---- helpers ---------------------------------------------------------------
 
+// errNoShare is returned for paths whose first component is not a mounted share.
+var errNoShare = errors.New("share not found")
+
+// checkShare verifies that the share (first path component) of abs exists as
+// a directory, so writes can never create new top-level entries in the data
+// root by accident (e.g. a PUT to /typo/file.txt).
+func (a *API) checkShare(abs string) error {
+	rel, err := filepath.Rel(a.root.Path(), abs)
+	if err != nil || rel == "." {
+		return errNoShare
+	}
+	first := strings.SplitN(rel, string(filepath.Separator), 2)[0]
+	st, err := os.Stat(filepath.Join(a.root.Path(), first))
+	if err != nil || !st.IsDir() {
+		return errNoShare
+	}
+	return nil
+}
+
 // isShareRoot reports whether abs is a direct child of the data root, i.e. a
 // mounted share. Shares are mount points: they can be listed and written
 // into, but never renamed, moved, replaced or deleted through the API.
@@ -144,6 +163,8 @@ func (a *API) fsErr(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, ErrOutsideRoot):
 		writeErr(w, http.StatusBadRequest, "invalid path")
+	case errors.Is(err, errNoShare):
+		writeErr(w, http.StatusNotFound, "share not found")
 	case errors.Is(err, os.ErrNotExist):
 		writeErr(w, http.StatusNotFound, "not found")
 	case errors.Is(err, os.ErrExist):
@@ -329,6 +350,10 @@ func (a *API) handlePut(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "cannot write to root")
 		return
 	}
+	if err := a.checkShare(abs); err != nil {
+		a.fsErr(w, err)
+		return
+	}
 	existing, statErr := os.Stat(abs)
 	if statErr == nil {
 		if existing.IsDir() {
@@ -420,6 +445,10 @@ func (a *API) handleMkdir(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusForbidden, "the root only contains mounted shares; create folders inside a share")
 		return
 	}
+	if err := a.checkShare(abs); err != nil {
+		a.fsErr(w, err)
+		return
+	}
 	if req.Parents {
 		err = os.MkdirAll(abs, 0o775)
 	} else {
@@ -460,6 +489,10 @@ func (a *API) resolvePair(w http.ResponseWriter, req moveRequest) (string, strin
 	}
 	if a.isShareRoot(from) || a.isShareRoot(to) {
 		writeErr(w, http.StatusForbidden, "shares are mount points and cannot be moved, renamed or replaced")
+		return "", "", false
+	}
+	if err := a.checkShare(to); err != nil {
+		a.fsErr(w, err)
 		return "", "", false
 	}
 	if to == from || strings.HasPrefix(to, from+string(filepath.Separator)) {

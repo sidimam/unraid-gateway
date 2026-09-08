@@ -65,6 +65,10 @@ func (s *uploadStore) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "cannot write to root")
 		return
 	}
+	if err := s.api.checkShare(dst); err != nil {
+		s.api.fsErr(w, err)
+		return
+	}
 	if st, err := os.Stat(dst); err == nil {
 		if st.IsDir() {
 			writeErr(w, http.StatusConflict, "target is a directory")
