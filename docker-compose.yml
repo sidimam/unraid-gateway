@@ -16,6 +16,9 @@ services:
       TZ: "Europe/Rome"
     volumes:
       # Expose only the shares you want reachable from your phone.
-      - /mnt/user/Documents:/data/Documents
-      - /mnt/user/Photos:/data/Photos
-      - /mnt/user/Media:/data/Media:ro
+      # Each mount becomes a top-level folder in the Files app; append :ro for read-only.
+      - /mnt/user/documents:/data/documents
+      - /mnt/user/media:/data/media
+      - /mnt/user/downloads:/data/downloads
+      # - /mnt/user/programs:/data/programs
+      # Never map Time Machine shares: sparsebundles are useless on iOS and easy to corrupt.

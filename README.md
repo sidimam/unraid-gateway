@@ -35,7 +35,7 @@ It is the server half of a companion iOS app whose File Provider extension mount
 2. **Install the container.** Until it is listed in Community Apps, add the template URL in *Docker → Add Container → Template repositories*:
    `https://raw.githubusercontent.com/sidimam/unraid-gateway/main/templates/unraid-gateway.xml`
    or run it with the [docker-compose.yml](docker-compose.yml) in this repo.
-3. **Map only the shares you want on your phone.** Each path mapped under `/data/<Name>` appears as a top-level folder. Mark media shares read-only (`:ro`) if you like.
+3. **Map only the shares you want on your phone.** `documents`, `media` and `downloads` are preconfigured in the template; add any other share with *Add another Path* using container path `/data/<name>`. Each one appears as a top-level folder in the Files app. Set *Read Only* for shares you only want to browse. Do not map Time Machine shares: sparsebundles cannot be used on iOS and a stray write corrupts the backup.
 4. **Set `UNRAID_URL`** to the LAN address of your WebGUI, e.g. `http://192.168.1.10`. Use the IP, not `localhost` (the container has its own network namespace).
 5. **Put TLS in front before exposing it.** iOS refuses self-signed certificates inside extensions. Use Nginx Proxy Manager or SWAG with Let's Encrypt, or Cloudflare Tunnel (no port forward needed, works behind CGNAT). Set `TRUST_PROXY=true` so rate limiting sees real client IPs.
 
