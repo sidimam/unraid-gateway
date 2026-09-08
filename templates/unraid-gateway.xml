@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>unraid-gateway</Name>
+  <Repository>ghcr.io/sidimam/unraid-gateway:latest</Repository>
+  <Registry>https://github.com/sidimam/unraid-gateway/pkgs/container/unraid-gateway</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/sidimam/unraid-gateway/issues</Support>
+  <Project>https://github.com/sidimam/unraid-gateway</Project>
+  <Overview>Single authenticated HTTPS port for mobile clients: a streaming file API over your shares (list, download with Range, resumable upload, move/copy/delete, change feed for iOS File Provider) plus a proxy to the Unraid GraphQL API. Authentication uses your Unraid API key (Settings &gt; Management Access &gt; API Keys); no Unraid password ever leaves the LAN. Run behind a reverse proxy with a valid certificate (Nginx Proxy Manager, SWAG) or Cloudflare Tunnel. Mount only the shares you want reachable from your phone.</Overview>
+  <Category>Cloud: Network:FTP Tools:Utilities</Category>
+  <WebUI>http://[IP]:[PORT:8484]/healthz</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/sidimam/unraid-gateway/main/templates/unraid-gateway.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/sidimam/unraid-gateway/main/assets/icon.png</Icon>
+  <ExtraParams>--health-cmd "curl -fsS http://127.0.0.1:8484/healthz || exit 1" --health-interval 30s</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>An Unraid API key (Settings &gt; Management Access &gt; API Keys). For remote access, a reverse proxy with a valid TLS certificate or Cloudflare Tunnel in front of the gateway port.</Requires>
+  <Config Name="Gateway port" Target="8484" Default="8484" Mode="tcp" Description="Port exposed by the gateway. Put a reverse proxy with TLS in front of it before exposing it to the Internet." Type="Port" Display="always" Required="true" Mask="false">8484</Config>
+  <Config Name="Unraid WebGUI URL" Target="UNRAID_URL" Default="http://192.168.1.10" Mode="" Description="LAN URL of your Unraid WebGUI, used to validate API keys and proxy GraphQL. Use the server IP, not localhost." Type="Variable" Display="always" Required="true" Mask="false">http://192.168.1.10</Config>
+  <Config Name="Documents share" Target="/data/Documents" Default="/mnt/user/Documents" Mode="rw" Description="Each mapped share appears as a top-level folder in the app. Add or remove paths as you like." Type="Path" Display="always" Required="false" Mask="false">/mnt/user/Documents</Config>
+  <Config Name="Photos share" Target="/data/Photos" Default="/mnt/user/Photos" Mode="rw" Description="" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/Photos</Config>
+  <Config Name="Media share (read-only)" Target="/data/Media" Default="/mnt/user/Media" Mode="ro" Description="Example of a read-only mapping." Type="Path" Display="always" Required="false" Mask="false">/mnt/user/Media</Config>
+  <Config Name="Read-only mode" Target="READ_ONLY" Default="false" Mode="" Description="true disables every write operation on all mapped shares." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Session lifetime" Target="SESSION_TTL" Default="12h" Mode="" Description="How long a login token stays valid (Go duration: 30m, 12h, 168h)." Type="Variable" Display="advanced" Required="false" Mask="false">12h</Config>
+  <Config Name="Max login attempts" Target="MAX_LOGIN_ATTEMPTS" Default="5" Mode="" Description="Failed logins per IP before a temporary lockout." Type="Variable" Display="advanced" Required="false" Mask="false">5</Config>
+  <Config Name="Login lockout" Target="LOGIN_LOCKOUT" Default="15m" Mode="" Description="Lockout duration after too many failed logins." Type="Variable" Display="advanced" Required="false" Mask="false">15m</Config>
+  <Config Name="Trust proxy headers" Target="TRUST_PROXY" Default="false" Mode="" Description="true when behind Nginx Proxy Manager, SWAG or Cloudflare Tunnel, so rate limiting sees the real client IP." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Unraid self-signed TLS" Target="UNRAID_INSECURE_TLS" Default="false" Mode="" Description="true only if UNRAID_URL is https with a self-signed certificate." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Validation query" Target="UNRAID_VALIDATE_QUERY" Default="query { me { id name roles } }" Mode="" Description="GraphQL query used to validate API keys. Change only if your Unraid version lacks the 'me' field." Type="Variable" Display="advanced" Required="false" Mask="false">query { me { id name roles } }</Config>
+  <Config Name="Timezone" Target="TZ" Default="Europe/Rome" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">Europe/Rome</Config>
+</Container>

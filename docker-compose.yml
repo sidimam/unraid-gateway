@@ -1,0 +1,21 @@
+services:
+  unraid-gateway:
+    image: ghcr.io/sidimam/unraid-gateway:latest
+    container_name: unraid-gateway
+    restart: unless-stopped
+    ports:
+      - "8484:8484"
+    environment:
+      UNRAID_URL: "http://192.168.1.10"   # LAN address of the Unraid WebGUI
+      # UNRAID_INSECURE_TLS: "true"       # only if UNRAID_URL is https with a self-signed cert
+      READ_ONLY: "false"
+      SESSION_TTL: "12h"
+      MAX_LOGIN_ATTEMPTS: "5"
+      LOGIN_LOCKOUT: "15m"
+      TRUST_PROXY: "false"                 # set true when behind NPM/SWAG/Cloudflare Tunnel
+      TZ: "Europe/Rome"
+    volumes:
+      # Expose only the shares you want reachable from your phone.
+      - /mnt/user/Documents:/data/Documents
+      - /mnt/user/Photos:/data/Photos
+      - /mnt/user/Media:/data/Media:ro

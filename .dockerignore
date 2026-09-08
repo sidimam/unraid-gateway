@@ -1,0 +1,7 @@
+.git
+.github
+assets
+templates
+docs
+*.md
+docker-compose.yml
