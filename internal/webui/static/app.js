@@ -74,6 +74,9 @@
     try {
       const r = await api('/fs/list?path=' + encPath(path));
       cwd = r.path; crumbs(cwd);
+      // The root only lists mounted shares: writing happens inside a share.
+      const atRoot = cwd === '/';
+      $('mkdir').hidden = atRoot; $('upload-label').hidden = atRoot; $('root-hint').hidden = !atRoot;
       const tb = $('files').querySelector('tbody'); tb.innerHTML = '';
       $('empty').hidden = r.entries.length > 0;
       for (const e of r.entries) {

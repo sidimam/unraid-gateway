@@ -39,8 +39,9 @@
         <div class="spacer"></div>
         <button id="refresh" class="ghost" title="Refresh">↻</button>
         <button id="mkdir" class="ghost">New folder</button>
-        <label class="button">Upload<input id="upload" type="file" multiple hidden></label>
+        <label id="upload-label" class="button">Upload<input id="upload" type="file" multiple hidden></label>
       </div>
+      <p id="root-hint" class="muted" hidden>These are the shares mounted into the container. Open one to upload files or create folders. Your key's role (VIEWER, ADMIN…) only affects the GraphQL dashboard: file access is decided by the container's volume mounts (read/write or read-only).</p>
       <div id="progress" class="progress" hidden><div></div><span></span></div>
       <table id="files">
         <thead><tr><th>Name</th><th class="num">Size</th><th>Modified</th><th></th></tr></thead>
