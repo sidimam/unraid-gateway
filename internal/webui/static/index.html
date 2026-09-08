@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>unraid-gateway</title>
+<link rel="icon" href="/ui/icon.svg">
+<link rel="stylesheet" href="/ui/app.css">
+</head>
+<body>
+<header>
+  <img src="/ui/icon.svg" alt="" width="40" height="40">
+  <div>
+    <h1>unraid-gateway</h1>
+    <div class="sub" id="status">connecting…</div>
+  </div>
+  <div class="spacer"></div>
+  <div id="who" class="who" hidden>
+    <span id="who-name"></span>
+    <button id="logout" class="ghost">Disconnect</button>
+  </div>
+</header>
+
+<main>
+  <section id="login" class="card">
+    <h2>Connect with your Unraid API key</h2>
+    <p class="muted">Create a key in <b>Settings → Management Access → API Keys</b> (role <code>VIEWER</code> is enough for the file API; use <code>ADMIN</code> if you want the GraphQL proxy to manage the server). The key is validated by Unraid and exchanged for a short-lived session token; it is never stored by the gateway.</p>
+    <form id="login-form">
+      <input id="apikey" type="password" autocomplete="off" placeholder="paste your Unraid API key" required>
+      <button type="submit">Connect</button>
+    </form>
+    <p id="login-error" class="error" hidden></p>
+  </section>
+
+  <section id="app" hidden>
+    <div class="card">
+      <div class="toolbar">
+        <nav id="crumbs" class="crumbs"></nav>
+        <div class="spacer"></div>
+        <button id="refresh" class="ghost" title="Refresh">↻</button>
+        <button id="mkdir" class="ghost">New folder</button>
+        <label class="button">Upload<input id="upload" type="file" multiple hidden></label>
+      </div>
+      <div id="progress" class="progress" hidden><div></div><span></span></div>
+      <table id="files">
+        <thead><tr><th>Name</th><th class="num">Size</th><th>Modified</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="empty" class="muted" hidden>Empty folder.</p>
+    </div>
+
+    <div class="card">
+      <h2>For the iOS app</h2>
+      <p>Server URL to enter in the app: <code id="origin"></code></p>
+      <p class="muted" id="tls-note"></p>
+    </div>
+
+    <details class="card">
+      <summary>GraphQL proxy</summary>
+      <textarea id="gql" rows="4" spellcheck="false">{ array { state } info { os { hostname } } }</textarea>
+      <div class="row"><button id="gql-run">Run</button></div>
+      <pre id="gql-out" class="out"></pre>
+    </details>
+  </section>
+</main>
+
+<footer class="muted">unraid-gateway <span id="version"></span> · <a href="https://github.com/sidimam/unraid-gateway">github.com/sidimam/unraid-gateway</a></footer>
+<script src="/ui/app.js"></script>
+</body>
+</html>

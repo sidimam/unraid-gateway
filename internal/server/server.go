@@ -15,6 +15,7 @@ import (
 	"github.com/sidimam/unraid-gateway/internal/config"
 	"github.com/sidimam/unraid-gateway/internal/fsapi"
 	"github.com/sidimam/unraid-gateway/internal/proxy"
+	"github.com/sidimam/unraid-gateway/internal/webui"
 )
 
 // Version is set at build time via -ldflags.
@@ -74,9 +75,7 @@ func (s *Server) routes() http.Handler {
 	s.files.Register(private, "/api/v1/fs")
 
 	public.Handle("/api/v1/", s.authenticate(private))
-	public.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
-		writeErr(w, http.StatusNotFound, "not found")
-	})
+	webui.Register(public)
 	return s.recoverer(s.securityHeaders(s.accessLog(public)))
 }
 

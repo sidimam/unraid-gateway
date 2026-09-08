@@ -9,7 +9,8 @@
 `unraid-gateway` is a small Go service that runs as a Docker container on Unraid and exposes:
 
 - a **file API** over the shares you choose: listing, streaming download with `Range`, atomic and *resumable* uploads, move/copy/delete, and a **change feed** designed for the iOS/iPadOS File Provider framework (the thing that makes a provider show up in the Files app next to iCloud Drive);
-- a **proxy to the Unraid GraphQL API**, so a companion app can also read array status, shares, Docker containers and notifications without exposing the Unraid WebGUI itself.
+- a **proxy to the Unraid GraphQL API**, so a companion app can also read array status, shares, Docker containers and notifications without exposing the Unraid WebGUI itself;
+- a **small web UI** at `/` to log in with a key, browse and transfer files and try GraphQL queries from any browser.
 
 Everything is authenticated with a regular **Unraid API key** (*Settings → Management Access → API Keys*). The gateway validates the key against Unraid on the LAN, hands the client a short-lived session token, and never stores your Unraid password.
 
@@ -42,6 +43,35 @@ It is the server half of a companion iOS app whose File Provider extension mount
 curl -s https://gw.example.com/healthz
 # {"status":"ok","version":"v0.1.0"}
 ```
+
+## Walkthrough
+
+**Where does the API key go?** Nowhere in the container. The gateway only *validates* keys against Unraid; every client (the iOS app, the web UI, curl) sends its own key at login and gets a session token back. So there is nothing to configure server-side besides `UNRAID_URL` and the share mounts.
+
+1. **Create a key.** WebGUI: *Settings → Management Access → API Keys → Add*. Or from the Unraid shell (the name may only contain letters, digits and spaces):
+
+   ```bash
+   unraid-api apikey --create --name "unraid gateway" --roles VIEWER --json
+   ```
+
+   `VIEWER` is enough for the file API. Pick `ADMIN` if you want the GraphQL proxy to be able to manage the server (start/stop containers, etc.).
+
+2. **Open the web UI** at `http://<unraid-ip>:8484/` (the *WebUI* button of the container in the Docker tab), paste the key, connect. You can browse the mounted shares, upload with a progress bar, download, rename, delete, and run GraphQL queries through the proxy. The key is exchanged for a session token kept in the browser tab only.
+
+3. **Or use curl:**
+
+   ```bash
+   GW=http://192.168.0.100:8484
+   TOKEN=$(curl -s -X POST $GW/api/v1/auth/login -H 'Content-Type: application/json' \
+             -d '{"apiKey":"'"$UNRAID_API_KEY"'"}' | jq -r .token)
+
+   curl -s $GW/api/v1/fs/list?path=/ -H "Authorization: Bearer $TOKEN" | jq .
+   curl -s -T ./photo.jpg "$GW/api/v1/fs/content?path=/documents/photo.jpg" -H "Authorization: Bearer $TOKEN"
+   curl -s -X POST $GW/api/v1/graphql -H "Authorization: Bearer $TOKEN" \
+        -d '{"query":"{ array { state } }"}'
+   ```
+
+4. **Expose it.** Add a public hostname in your Cloudflare Tunnel (or a proxy host in Nginx Proxy Manager / SWAG) pointing at `http://<unraid-ip>:8484`, set `TRUST_PROXY=true`, and use that HTTPS URL in the app.
 
 ## Configuration
 
@@ -155,7 +185,7 @@ Forwarded to `UNRAID_URL/graphql` with the session's `x-api-key`. Response is re
 - Every path is confined to `DATA_ROOT`. `..` is clamped, symlinks pointing outside the root are refused.
 - The container runs unprivileged as `nobody:users`; mount only the shares you need and use `:ro` where writes are not required.
 - What the gateway exposes is decided by **volume mounts**, not by the API key's role. A `guest` key that Unraid accepts gets the same file access as an `admin` key. Create a dedicated key and treat it like a password.
-- No CORS headers are sent: this is an API for native clients, not for browsers.
+- No CORS headers are sent, and the embedded UI runs under a strict Content-Security-Policy on the same origin.
 
 ## Development
 
