@@ -14,7 +14,9 @@
 
 Everything is authenticated with a regular **Unraid API key** (*Settings → Management Access → API Keys*). The gateway validates the key against Unraid on the LAN, hands the client a short-lived session token, and never stores your Unraid password.
 
-It is the server half of a companion iOS app whose File Provider extension mounts your shares in the Files app. The gateway is protocol-agnostic and can be used by any HTTP client.
+It is the server half of **[Unraid Drive](https://github.com/sidimam/unraid-drive)**, the iPhone/iPad/Vision Pro app whose File Provider extension mounts your shares in the Files app. The gateway is protocol-agnostic and can be used by any HTTP client.
+
+📖 **New here? The complete step-by-step setup guide (container, API key, Cloudflare Tunnel, Cloudflare Access, app) is in the [Unraid Drive wiki](https://github.com/sidimam/unraid-drive/wiki).**
 
 > No Unraid logo is used: the icon is an original design in the Unraid colour palette.
 
@@ -202,7 +204,7 @@ Images for `linux/amd64` and `linux/arm64` are published to `ghcr.io/sidimam/unr
 
 ## Roadmap
 
-- [ ] Companion iOS/iPadOS app with File Provider extension
+- [x] Companion iOS/iPadOS/visionOS app with File Provider extension: [Unraid Drive](https://github.com/sidimam/unraid-drive)
 - [ ] Optional per-share permissions bound to Unraid roles
 - [ ] Thumbnails endpoint for images/videos
 - [ ] Community Apps listing
