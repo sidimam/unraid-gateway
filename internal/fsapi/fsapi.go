@@ -137,8 +137,7 @@ func (a *API) checkShare(abs string) error {
 		return errNoShare
 	}
 	first := strings.SplitN(rel, string(filepath.Separator), 2)[0]
-	st, err := os.Stat(filepath.Join(a.root.Path(), first))
-	if err != nil || !st.IsDir() {
+	if !a.isShare(first) {
 		return errNoShare
 	}
 	return nil
@@ -180,17 +179,60 @@ func (a *API) allowed(w http.ResponseWriter, r *http.Request, abs string, need a
 	return true
 }
 
-// MountedShares lists the top-level directories of the data root.
+// MountedShares lists the shares: the top-level directories of the data root
+// that are real mount points. Directories left behind in the root volume after
+// a mapping was removed are ignored, so a share disappears from the API as
+// soon as its mount is gone. When mount information is unavailable (tests,
+// non-Linux), every top-level directory counts.
 func (a *API) MountedShares() []string {
 	ents, err := os.ReadDir(a.root.Path())
 	if err != nil {
 		return nil
 	}
+	mounts := a.mountPoints()
 	var out []string
 	for _, e := range ents {
-		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
-			out = append(out, e.Name())
+		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+			continue
 		}
+		if mounts != nil && !mounts[filepath.Join(a.root.Path(), e.Name())] {
+			continue
+		}
+		out = append(out, e.Name())
+	}
+	return out
+}
+
+// isShare reports whether name is a share according to MountedShares.
+func (a *API) isShare(name string) bool {
+	for _, s := range a.MountedShares() {
+		if s == name {
+			return true
+		}
+	}
+	return false
+}
+
+// mountPoints returns the mount points directly under the data root from
+// /proc/self/mountinfo, or nil when there are none / it cannot be read.
+func (a *API) mountPoints() map[string]bool {
+	data, err := os.ReadFile("/proc/self/mountinfo")
+	if err != nil {
+		return nil
+	}
+	out := map[string]bool{}
+	for _, line := range strings.Split(string(data), "\n") {
+		f := strings.Fields(line)
+		if len(f) < 5 {
+			continue
+		}
+		mp := strings.ReplaceAll(f[4], "\\040", " ")
+		if filepath.Dir(mp) == a.root.Path() {
+			out[mp] = true
+		}
+	}
+	if len(out) == 0 {
+		return nil
 	}
 	return out
 }
@@ -312,9 +354,14 @@ func (a *API) handleList(w http.ResponseWriter, r *http.Request) {
 		if !fi.IsDir() && !fi.Mode().IsRegular() {
 			continue
 		}
-		// At the root, hide shares the user may not read.
-		if abs == a.root.Path() && pol.Restricted() && pol.Level(name) == access.None {
-			continue
+		// At the root only real shares are listed, and only those the user may read.
+		if abs == a.root.Path() {
+			if !a.isShare(name) {
+				continue
+			}
+			if pol.Restricted() && pol.Level(name) == access.None {
+				continue
+			}
 		}
 		out = append(out, a.entry(filepath.Join(abs, name), fi))
 	}

@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.2 — 2026-09-08
+- Shares are the real mount points under the data root (from `/proc/self/mountinfo`): directories left behind in the root volume after a mapping was removed no longer show up as shares, and paths into them return 404.
+
 ## v0.3.0 — 2026-09-08
 - Per-user access: optional (or required) Unraid username + password on login, verified against Unraid's SMB service; per-share permissions derived from Unraid's generated Samba configuration (public/secure/private, read/write lists) and enforced on every endpoint; guest-mapped logins rejected via a share probe. Login/session responses report `user` and `shares`.
 - New settings `USER_AUTH`, `UNRAID_SMB_ADDR`, `SHARES_CONFIG`; template mounts `/etc/samba/smb-shares.conf` read-only.
