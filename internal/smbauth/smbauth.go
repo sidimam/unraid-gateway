@@ -22,8 +22,14 @@ type Authenticator struct {
 	Timeout time.Duration
 }
 
-// Check opens and closes an SMB session with the given credentials.
-func (a *Authenticator) Check(ctx context.Context, user, password string) error {
+// ErrGuest is returned when the credentials were accepted only as a guest
+// (Samba "map to guest = bad user"), i.e. the user does not really exist.
+var ErrGuest = errors.New("credentials accepted as guest only")
+
+// Check opens an SMB session with the given credentials. When probeShare is
+// not empty it additionally connects to that share: a share the real user may
+// open but a guest may not, so a guest-mapped session is detected.
+func (a *Authenticator) Check(ctx context.Context, user, password, probeShare string) error {
 	if strings.TrimSpace(user) == "" || password == "" {
 		return ErrInvalidCredentials
 	}
@@ -47,6 +53,17 @@ func (a *Authenticator) Check(ctx context.Context, user, password string) error 
 		}
 		return err
 	}
-	_ = sess.Logoff()
+	defer func() { _ = sess.Logoff() }()
+	if probeShare != "" {
+		fs, err := sess.Mount(probeShare)
+		if err != nil {
+			up := strings.ToUpper(err.Error())
+			if strings.Contains(up, "ACCESS_DENIED") || strings.Contains(up, "ACCESS DENIED") {
+				return ErrGuest
+			}
+			return err
+		}
+		_ = fs.Umount()
+	}
 	return nil
 }

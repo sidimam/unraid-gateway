@@ -1,8 +1,8 @@
 # Changelog
 
 ## v0.3.0 — 2026-09-08
-- Per-user access: optional (or required) Unraid username + password on login, verified against Unraid's SMB service; per-share permissions derived from `/boot/config/shares` (public/secure/private, read/write lists) and enforced on every endpoint. Login/session responses report `user` and `shares`.
-- New settings `USER_AUTH`, `UNRAID_SMB_ADDR`, `SHARES_CONFIG_DIR`; template mounts `/boot/config/shares` read-only.
+- Per-user access: optional (or required) Unraid username + password on login, verified against Unraid's SMB service; per-share permissions derived from Unraid's generated Samba configuration (public/secure/private, read/write lists) and enforced on every endpoint; guest-mapped logins rejected via a share probe. Login/session responses report `user` and `shares`.
+- New settings `USER_AUTH`, `UNRAID_SMB_ADDR`, `SHARES_CONFIG`; template mounts `/etc/samba/smb-shares.conf` read-only.
 - Web UI: optional user/password fields, read-only badge on shares.
 - First external dependency: `github.com/hirochachacha/go-smb2` (pure Go SMB2 client).
 

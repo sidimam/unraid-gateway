@@ -23,5 +23,5 @@ services:
       - /mnt/user/downloads:/data/downloads
       # - /mnt/user/programs:/data/programs
       # Never map Time Machine shares: sparsebundles are useless on iOS and easy to corrupt.
-      # Unraid share security settings, so user logins get the same permissions as over SMB:
-      - /boot/config/shares:/unraid-shares:ro
+      # Unraid share security (generated Samba config), so user logins get the same permissions as over SMB:
+      - /etc/samba/smb-shares.conf:/unraid-shares/smb-shares.conf:ro

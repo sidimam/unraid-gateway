@@ -14,7 +14,7 @@
 
 Everything is authenticated with a regular **Unraid API key** (*Settings → Management Access → API Keys*). The gateway validates the key against Unraid on the LAN, hands the client a short-lived session token, and never stores your Unraid password.
 
-**Per-user access (v0.3):** a client can add an **Unraid username and password** to the API key. The gateway verifies them against Unraid's own SMB service and then applies exactly the share permissions configured in Unraid (*public / secure / private*, read and write user lists, read from `/boot/config/shares`). Users only see the shares they may read and only write where they may write, like over SMB. `USER_AUTH=required` makes the user mandatory; `off` disables it.
+**Per-user access (v0.3):** a client can add an **Unraid username and password** to the API key. The gateway verifies them against Unraid's own SMB service (including a guest check: Samba maps unknown users to guest, so the gateway also opens a share only the real user may open) and then applies exactly the share permissions configured in Unraid (*public / secure / private*, read and write user lists), read from the Samba configuration Unraid generates (`/etc/samba/smb-shares.conf`). Users only see the shares they may read and only write where they may write, like over SMB. `USER_AUTH=required` makes the user mandatory; `off` disables it.
 
 It is the server half of **[Unraid Drive](https://github.com/sidimam/unraid-drive)**, the iPhone/iPad/Vision Pro app whose File Provider extension mounts your shares in the Files app. The gateway is protocol-agnostic and can be used by any HTTP client.
 
@@ -95,7 +95,7 @@ curl -s https://gw.example.com/healthz
 | `TRUST_PROXY` | `false` | Honour `X-Forwarded-For` / `X-Real-IP`. |
 | `USER_AUTH` | `optional` | `optional`: clients may add an Unraid username+password and get that user's share permissions; `required`: they must; `off`: API key only. |
 | `UNRAID_SMB_ADDR` | host of `UNRAID_URL`:445 | Unraid SMB endpoint used to verify user passwords. |
-| `SHARES_CONFIG_DIR` | `/unraid-shares` | Mount `/boot/config/shares` (read-only) here so user permissions can be derived. |
+| `SHARES_CONFIG` | `/unraid-shares/smb-shares.conf` | Unraid share security source: mount `/etc/samba/smb-shares.conf` (read-only) here. A directory of `/boot/config/shares/*.cfg` is accepted too. |
 | `UPLOAD_TTL` | `24h` | How long an unfinished resumable upload is kept. |
 | `CHANGES_WALK_LIMIT` | `250000` | Max entries scanned per `/fs/changes` page. |
 | `CHANGES_DEADLINE` | `20s` | Max wall time per `/fs/changes` page. |

@@ -58,11 +58,11 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		files:    files,
 		gql:      proxy.New(cfg.UnraidURL, cfg.UnraidInsecureTLS),
 		smb:      &smbauth.Authenticator{Addr: cfg.SMBAddr, Timeout: 10 * time.Second},
-		shares:   &unraidshares.Loader{Dir: cfg.SharesConfigDir},
+		shares:   &unraidshares.Loader{Path: cfg.SharesConfig},
 	}
 	if cfg.UserAuth != "off" {
 		if _, err := s.shares.Shares(); err != nil {
-			log.Warn("USER_AUTH is enabled but the Unraid shares config is not readable: users will see no shares until /boot/config/shares is mounted", "dir", cfg.SharesConfigDir, "err", err)
+			log.Warn("USER_AUTH is enabled but the Unraid share configuration is not readable: user logins will fail until /etc/samba/smb-shares.conf is mounted", "path", cfg.SharesConfig, "err", err)
 		}
 	}
 	s.handler = s.routes()
@@ -122,11 +122,21 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	// 2. Optional Unraid user, validated by Samba; the session then carries the
 	//    user's share permissions read from Unraid's share configuration.
 	if req.Username != "" {
-		if err := s.smb.Check(r.Context(), req.Username, req.Password); err != nil {
+		mounted := s.files.MountedShares()
+		policy, err := s.shares.PolicyFor(req.Username, mounted)
+		if err != nil {
 			s.sessions.Logout(sess.Token)
-			if errors.Is(err, smbauth.ErrInvalidCredentials) {
+			s.log.Error("shares config unreadable", "err", err, "path", s.cfg.SharesConfig)
+			writeErr(w, http.StatusBadGateway, "the Unraid share configuration is not readable by the gateway (SHARES_CONFIG)")
+			return
+		}
+		// Samba maps unknown users to guest, so also open a share only the real user may open.
+		probe := s.shares.ProbeShare(req.Username, mounted)
+		if err := s.smb.Check(r.Context(), req.Username, req.Password, probe); err != nil {
+			s.sessions.Logout(sess.Token)
+			if errors.Is(err, smbauth.ErrInvalidCredentials) || errors.Is(err, smbauth.ErrGuest) {
 				s.sessions.Fail(ip)
-				s.log.Warn("user login failed", "ip", ip, "user", req.Username)
+				s.log.Warn("user login failed", "ip", ip, "user", req.Username, "guest", errors.Is(err, smbauth.ErrGuest))
 				writeErr(w, http.StatusUnauthorized, "invalid unraid username or password")
 				return
 			}
@@ -134,11 +144,17 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusBadGateway, "cannot reach the Unraid SMB service to verify the user")
 			return
 		}
-		policy, err := s.shares.PolicyFor(req.Username, s.files.MountedShares())
-		if err != nil {
+		visible := 0
+		for _, m := range mounted {
+			if policy.Level(m) != access.None {
+				visible++
+			}
+		}
+		if visible == 0 {
 			s.sessions.Logout(sess.Token)
-			s.log.Error("shares config unreadable", "err", err)
-			writeErr(w, http.StatusBadGateway, "the Unraid shares configuration is not mounted in the gateway (SHARES_CONFIG_DIR)")
+			s.sessions.Fail(ip)
+			s.log.Warn("user has no share access", "ip", ip, "user", req.Username)
+			writeErr(w, http.StatusUnauthorized, "this Unraid user has no access to any share mounted in the gateway")
 			return
 		}
 		sess.User, sess.Policy = req.Username, policy

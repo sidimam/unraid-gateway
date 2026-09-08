@@ -49,8 +49,9 @@ type Config struct {
 	UserAuth string
 	// SMBAddr is the Unraid SMB endpoint used to validate user passwords (host:445).
 	SMBAddr string
-	// SharesConfigDir holds Unraid's /boot/config/shares/*.cfg (mounted read-only).
-	SharesConfigDir string
+	// SharesConfig is Unraid's share configuration: the generated
+	// /etc/samba/smb-shares.conf (file, recommended) or /boot/config/shares (directory).
+	SharesConfig string
 }
 
 // Load reads the configuration from the environment.
@@ -71,7 +72,7 @@ func Load() (Config, error) {
 		MaxJSONBody:      int64(num("MAX_JSON_BODY", 1<<20)),
 		UserAuth:         strings.ToLower(env("USER_AUTH", "optional")),
 		SMBAddr:          env("UNRAID_SMB_ADDR", ""),
-		SharesConfigDir:  env("SHARES_CONFIG_DIR", "/unraid-shares"),
+		SharesConfig:     env("SHARES_CONFIG", env("SHARES_CONFIG_DIR", "/unraid-shares/smb-shares.conf")),
 	}
 	var err error
 	if c.UnraidInsecureTLS, err = boolean("UNRAID_INSECURE_TLS", false); err != nil {
