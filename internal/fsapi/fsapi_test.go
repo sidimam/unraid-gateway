@@ -244,6 +244,34 @@ func TestWalkCompare(t *testing.T) {
 	}
 }
 
+func TestShareRootsAreImmutable(t *testing.T) {
+	_, mux, _ := newTestAPI(t)
+	do(mux, "PUT", "/fs/content?path=/media/a.txt", strings.NewReader("x"), nil)
+	rr := do(mux, "POST", "/fs/delete", strings.NewReader(`{"path":"/media","recursive":true}`), nil)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("delete share root: %d %s", rr.Code, rr.Body)
+	}
+	rr = do(mux, "POST", "/fs/move", strings.NewReader(`{"from":"/media","to":"/media2"}`), nil)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("rename share root: %d %s", rr.Code, rr.Body)
+	}
+	rr = do(mux, "POST", "/fs/move", strings.NewReader(`{"from":"/media/a.txt","to":"/newshare","overwrite":true}`), nil)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("move onto root level: %d %s", rr.Code, rr.Body)
+	}
+	rr = do(mux, "POST", "/fs/mkdir", strings.NewReader(`{"path":"/newshare"}`), nil)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("mkdir at root: %d %s", rr.Code, rr.Body)
+	}
+	if rr := do(mux, "GET", "/fs/stat?path=/media/a.txt", nil, nil); rr.Code != http.StatusOK {
+		t.Fatalf("file should still exist: %d", rr.Code)
+	}
+	// Inside a share everything still works.
+	if rr := do(mux, "POST", "/fs/mkdir", strings.NewReader(`{"path":"/media/sub"}`), nil); rr.Code != http.StatusCreated {
+		t.Fatalf("mkdir inside share: %d %s", rr.Code, rr.Body)
+	}
+}
+
 func TestReadOnly(t *testing.T) {
 	dir := t.TempDir()
 	api, _ := New(dir, Options{ReadOnly: true}, slog.New(slog.NewTextHandler(io.Discard, nil)))

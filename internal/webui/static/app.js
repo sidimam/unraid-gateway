@@ -86,8 +86,10 @@
         const mt = document.createElement('td'); mt.textContent = fmtDate(e.mtime);
         const act = document.createElement('td'); act.className = 'actions';
         const btn = (label, fn) => { const b = document.createElement('button'); b.className = 'ghost'; b.textContent = label; b.onclick = fn; act.appendChild(b); };
-        btn('Rename', () => rename(e));
-        btn('Delete', () => remove(e));
+        if (cwd !== '/') { // share roots are mount points: no rename/delete
+          btn('Rename', () => rename(e));
+          btn('Delete', () => remove(e));
+        }
         tr.append(name, size, mt, act); tb.appendChild(tr);
       }
     } catch (err) { alert(err.message); }
@@ -116,6 +118,7 @@
     catch (err) { alert(err.message); }
   }
   $('mkdir').addEventListener('click', async () => {
+    if (cwd === '/') { alert('The root only lists mounted shares. Open a share first.'); return; }
     const name = prompt('Folder name'); if (!name) return;
     try { await api('/fs/mkdir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: (cwd === '/' ? '' : cwd) + '/' + name }) }); list(cwd); }
     catch (err) { alert(err.message); }

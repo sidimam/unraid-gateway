@@ -123,6 +123,13 @@ func (a *API) mutating(h http.HandlerFunc) http.HandlerFunc {
 
 // ---- helpers ---------------------------------------------------------------
 
+// isShareRoot reports whether abs is a direct child of the data root, i.e. a
+// mounted share. Shares are mount points: they can be listed and written
+// into, but never renamed, moved, replaced or deleted through the API.
+func (a *API) isShareRoot(abs string) bool {
+	return filepath.Dir(abs) == a.root.Path() && abs != a.root.Path()
+}
+
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -409,6 +416,10 @@ func (a *API) handleMkdir(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusConflict, "already exists")
 		return
 	}
+	if a.isShareRoot(abs) {
+		writeErr(w, http.StatusForbidden, "the root only contains mounted shares; create folders inside a share")
+		return
+	}
 	if req.Parents {
 		err = os.MkdirAll(abs, 0o775)
 	} else {
@@ -445,6 +456,10 @@ func (a *API) resolvePair(w http.ResponseWriter, req moveRequest) (string, strin
 	}
 	if from == a.root.Path() || to == a.root.Path() {
 		writeErr(w, http.StatusBadRequest, "root cannot be moved or replaced")
+		return "", "", false
+	}
+	if a.isShareRoot(from) || a.isShareRoot(to) {
+		writeErr(w, http.StatusForbidden, "shares are mount points and cannot be moved, renamed or replaced")
 		return "", "", false
 	}
 	if to == from || strings.HasPrefix(to, from+string(filepath.Separator)) {
@@ -593,6 +608,10 @@ func (a *API) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	if abs == a.root.Path() {
 		writeErr(w, http.StatusBadRequest, "cannot delete root")
+		return
+	}
+	if a.isShareRoot(abs) {
+		writeErr(w, http.StatusForbidden, "shares are mount points and cannot be deleted")
 		return
 	}
 	st, err := os.Lstat(abs)

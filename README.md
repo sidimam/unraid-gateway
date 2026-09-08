@@ -46,6 +46,8 @@ curl -s https://gw.example.com/healthz
 
 ## Walkthrough
 
+**Does the key's role limit file access?** No. `VIEWER`, `ADMIN` and the other Unraid roles only affect what the GraphQL proxy may do. Read/write access to files is decided solely by the volume mounts (`rw` / `ro`) and `READ_ONLY`.
+
 **Where does the API key go?** Nowhere in the container. The gateway only *validates* keys against Unraid; every client (the iOS app, the web UI, curl) sends its own key at login and gets a session token back. So there is nothing to configure server-side besides `UNRAID_URL` and the share mounts.
 
 1. **Create a key.** WebGUI: *Settings → Management Access → API Keys → Add*. Or from the Unraid shell (the name may only contain letters, digits and spaces):
@@ -183,6 +185,7 @@ Forwarded to `UNRAID_URL/graphql` with the session's `x-api-key`. Response is re
 - The Unraid API key is sent **once** at login over TLS; afterwards only an opaque random session token travels. Sessions live in memory and die with the container.
 - Login is rate-limited per client IP with a temporary lockout. Enable `TRUST_PROXY` behind a reverse proxy or the proxy's IP will be what gets locked.
 - Every path is confined to `DATA_ROOT`. `..` is clamped, symlinks pointing outside the root are refused.
+- Share roots (`/data/<name>`) are mount points: they can be listed and written into, but the API refuses to rename, move, replace or delete them, and nothing can be created directly at the root.
 - The container runs unprivileged as `nobody:users`; mount only the shares you need and use `:ro` where writes are not required.
 - What the gateway exposes is decided by **volume mounts**, not by the API key's role. A `guest` key that Unraid accepts gets the same file access as an `admin` key. Create a dedicated key and treat it like a password.
 - No CORS headers are sent, and the embedded UI runs under a strict Content-Security-Policy on the same origin.
