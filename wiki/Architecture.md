@@ -27,7 +27,7 @@ client ──HTTPS──▶ Cloudflare / reverse proxy ──HTTP──▶ unrai
 - **No database.** Sessions and upload sessions live in memory. A restart logs everyone out; clients re-authenticate silently.
 - **No inotify.** Unraid's user shares are a FUSE filesystem (`shfs`); inotify does not see changes made over SMB. The change feed walks the tree comparing mtimes instead, in bounded pages. See [Change feed and sync](Change-Feed).
 - **Atomic writes.** Uploads go to a temporary sibling (`.name.gwpart*`) and are renamed into place, so readers never observe a partial file and a crashed upload leaves no half file under the real name.
-- **Standard library only.** No third-party Go modules: small image, small attack surface, trivial audits.
+- **Almost standard library only.** The single third-party module is a pure Go SMB2 client, used exclusively to verify user passwords against Unraid; everything else is `net/http` and friends.
 
 ## What it deliberately does not do
 

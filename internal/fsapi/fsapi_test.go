@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/sidimam/unraid-gateway/internal/access"
 )
 
 func newTestAPI(t *testing.T) (*API, *http.ServeMux, string) {
@@ -316,4 +318,88 @@ func appendInt(b []byte, n int64) []byte {
 		n /= 10
 	}
 	return append(b, tmp[i:]...)
+}
+
+// withPolicy wraps the mux so every request carries a restricted share policy.
+func withPolicy(mux *http.ServeMux, p access.Static) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux.ServeHTTP(w, r.WithContext(access.WithPolicy(r.Context(), p)))
+	})
+}
+
+func doH(h http.Handler, method, target string, body io.Reader) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, target, body)
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+	return rr
+}
+
+func TestPerUserSharePolicy(t *testing.T) {
+	_, mux, root := newTestAPI(t)
+	if err := os.Mkdir(filepath.Join(root, "private"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	do(mux, "PUT", "/fs/content?path=/share/a.txt", strings.NewReader("a"), nil)
+	do(mux, "PUT", "/fs/content?path=/media/m.txt", strings.NewReader("m"), nil)
+	do(mux, "PUT", "/fs/content?path=/private/p.txt", strings.NewReader("p"), nil)
+	h := withPolicy(mux, access.Static{"share": access.Write, "media": access.Read, "private": access.None})
+
+	// Root listing hides shares without access.
+	rr := doH(h, "GET", "/fs/list?path=/", nil)
+	var lr listResponse
+	_ = json.Unmarshal(rr.Body.Bytes(), &lr)
+	names := []string{}
+	for _, e := range lr.Entries {
+		names = append(names, e.Name)
+	}
+	if strings.Join(names, ",") != "media,share" {
+		t.Fatalf("root listing: %v", names)
+	}
+	// No access → 404, like SMB.
+	if rr := doH(h, "GET", "/fs/list?path=/private", nil); rr.Code != http.StatusNotFound {
+		t.Fatalf("private list: %d", rr.Code)
+	}
+	if rr := doH(h, "GET", "/fs/content?path=/private/p.txt", nil); rr.Code != http.StatusNotFound {
+		t.Fatalf("private read: %d", rr.Code)
+	}
+	// Read-only share: reads ok, writes 403.
+	if rr := doH(h, "GET", "/fs/content?path=/media/m.txt", nil); rr.Code != http.StatusOK {
+		t.Fatalf("media read: %d", rr.Code)
+	}
+	if rr := doH(h, "PUT", "/fs/content?path=/media/new.txt", strings.NewReader("x")); rr.Code != http.StatusForbidden {
+		t.Fatalf("media write: %d %s", rr.Code, rr.Body)
+	}
+	if rr := doH(h, "POST", "/fs/mkdir", strings.NewReader(`{"path":"/media/d"}`)); rr.Code != http.StatusForbidden {
+		t.Fatalf("media mkdir: %d", rr.Code)
+	}
+	if rr := doH(h, "POST", "/fs/delete", strings.NewReader(`{"path":"/media/m.txt"}`)); rr.Code != http.StatusForbidden {
+		t.Fatalf("media delete: %d", rr.Code)
+	}
+	if rr := doH(h, "POST", "/fs/uploads", strings.NewReader(`{"path":"/media/big.bin"}`)); rr.Code != http.StatusForbidden {
+		t.Fatalf("media upload: %d", rr.Code)
+	}
+	// Copy from read-only into writable share is fine; move out of read-only is not.
+	if rr := doH(h, "POST", "/fs/copy", strings.NewReader(`{"from":"/media/m.txt","to":"/share/m.txt"}`)); rr.Code != http.StatusCreated {
+		t.Fatalf("copy ro→rw: %d %s", rr.Code, rr.Body)
+	}
+	if rr := doH(h, "POST", "/fs/move", strings.NewReader(`{"from":"/media/m.txt","to":"/share/m2.txt"}`)); rr.Code != http.StatusForbidden {
+		t.Fatalf("move from ro: %d", rr.Code)
+	}
+	// Writable share works.
+	if rr := doH(h, "PUT", "/fs/content?path=/share/b.txt", strings.NewReader("b")); rr.Code != http.StatusCreated {
+		t.Fatalf("share write: %d", rr.Code)
+	}
+	// Change feed from root skips inaccessible shares.
+	rr = doH(h, "GET", "/fs/changes?path=/&since=0", nil)
+	var cr changesResponse
+	_ = json.Unmarshal(rr.Body.Bytes(), &cr)
+	for _, f := range cr.Files {
+		if strings.HasPrefix(f.Path, "/private/") {
+			t.Fatalf("changes leaked private share: %v", f.Path)
+		}
+	}
+	// Unrestricted requests are unchanged.
+	if rr := do(mux, "GET", "/fs/list?path=/private", nil, nil); rr.Code != http.StatusOK {
+		t.Fatalf("unrestricted: %d", rr.Code)
+	}
 }

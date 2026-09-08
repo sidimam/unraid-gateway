@@ -14,6 +14,9 @@ All configuration is by environment variable. Booleans accept `true`/`false`; du
 | `SESSION_TTL` | `12h` | Lifetime of a session token issued at login. Clients re-login transparently on 401. |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Failed logins (or invalid `x-api-key` uses) per client IP before lockout. |
 | `LOGIN_LOCKOUT` | `15m` | Lockout duration. A successful login resets the counter. |
+| `USER_AUTH` | `optional` | `optional`: a login may carry an Unraid username and password on top of the API key; the session then has that user's share permissions. `required`: every login must. `off`: API key only. |
+| `UNRAID_SMB_ADDR` | host of `UNRAID_URL` + `:445` | Unraid SMB endpoint used to verify user passwords (a real SMB2 session is opened and closed). |
+| `SHARES_CONFIG_DIR` | `/unraid-shares` | Where Unraid's `/boot/config/shares/*.cfg` is mounted read-only; needed to derive per-share permissions. |
 | `TRUST_PROXY` | `false` | Take the client IP from `X-Forwarded-For` / `X-Real-IP`. Set `true` behind Cloudflare, Nginx Proxy Manager, SWAG… so rate limiting sees the real client. Leave `false` when clients connect directly, or anyone could spoof the header. |
 | `UPLOAD_TTL` | `24h` | How long an unfinished resumable upload (and its temp file) is kept. |
 | `CHANGES_WALK_LIMIT` | `250000` | Maximum entries scanned by one `/fs/changes` page. |
@@ -24,7 +27,7 @@ All configuration is by environment variable. Booleans accept `true`/`false`; du
 
 ## Volumes
 
-Mount each share at `/data/<name>`. `<name>` is what clients see; it may differ from the share name. Use `:ro` for read-only. Nothing outside `/data` is ever touched; the container needs no other mounts.
+Mount each share at `/data/<name>`. For per-user permissions also mount `/boot/config/shares` → `/unraid-shares` read-only (the Unraid template does this by default). `<name>` is what clients see; it may differ from the share name. Use `:ro` for read-only. Nothing outside `/data` is ever touched; the container needs no other mounts.
 
 ## User and permissions
 

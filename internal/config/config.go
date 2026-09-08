@@ -45,6 +45,12 @@ type Config struct {
 	ChangesDeadline time.Duration
 	// LogRequests enables per-request access logging.
 	LogRequests bool
+	// UserAuth controls Unraid user authentication: "off", "optional" (default) or "required".
+	UserAuth string
+	// SMBAddr is the Unraid SMB endpoint used to validate user passwords (host:445).
+	SMBAddr string
+	// SharesConfigDir holds Unraid's /boot/config/shares/*.cfg (mounted read-only).
+	SharesConfigDir string
 }
 
 // Load reads the configuration from the environment.
@@ -63,6 +69,9 @@ func Load() (Config, error) {
 		MaxLoginAttempts: num("MAX_LOGIN_ATTEMPTS", 5),
 		ChangesWalkLimit: num("CHANGES_WALK_LIMIT", 250000),
 		MaxJSONBody:      int64(num("MAX_JSON_BODY", 1<<20)),
+		UserAuth:         strings.ToLower(env("USER_AUTH", "optional")),
+		SMBAddr:          env("UNRAID_SMB_ADDR", ""),
+		SharesConfigDir:  env("SHARES_CONFIG_DIR", "/unraid-shares"),
 	}
 	var err error
 	if c.UnraidInsecureTLS, err = boolean("UNRAID_INSECURE_TLS", false); err != nil {
@@ -85,6 +94,18 @@ func Load() (Config, error) {
 	}
 	if (c.TLSCert == "") != (c.TLSKey == "") {
 		return c, fmt.Errorf("TLS_CERT and TLS_KEY must be set together")
+	}
+	switch c.UserAuth {
+	case "off", "optional", "required":
+	default:
+		return c, fmt.Errorf("USER_AUTH must be off, optional or required")
+	}
+	if c.SMBAddr == "" {
+		host := strings.TrimPrefix(strings.TrimPrefix(c.UnraidURL, "https://"), "http://")
+		if i := strings.IndexAny(host, ":/"); i >= 0 {
+			host = host[:i]
+		}
+		c.SMBAddr = host + ":445"
 	}
 	return c, nil
 }

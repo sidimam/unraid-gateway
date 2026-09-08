@@ -1,6 +1,8 @@
 package fsapi
 
 import (
+	"github.com/sidimam/unraid-gateway/internal/access"
+
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -67,6 +69,9 @@ func (s *uploadStore) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.api.checkShare(dst); err != nil {
 		s.api.fsErr(w, err)
+		return
+	}
+	if !s.api.allowed(w, r, dst, access.Write) {
 		return
 	}
 	if st, err := os.Stat(dst); err == nil {

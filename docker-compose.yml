@@ -13,6 +13,7 @@ services:
       MAX_LOGIN_ATTEMPTS: "5"
       LOGIN_LOCKOUT: "15m"
       TRUST_PROXY: "false"                 # set true when behind NPM/SWAG/Cloudflare Tunnel
+      USER_AUTH: "optional"                # optional | required | off (Unraid user + password on top of the API key)
       TZ: "Europe/Rome"
     volumes:
       # Expose only the shares you want reachable from your phone.
@@ -22,3 +23,5 @@ services:
       - /mnt/user/downloads:/data/downloads
       # - /mnt/user/programs:/data/programs
       # Never map Time Machine shares: sparsebundles are useless on iOS and easy to corrupt.
+      # Unraid share security settings, so user logins get the same permissions as over SMB:
+      - /boot/config/shares:/unraid-shares:ro

@@ -17,6 +17,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/sidimam/unraid-gateway/internal/access"
 )
 
 // Options tunes the file API.
@@ -142,6 +144,57 @@ func (a *API) checkShare(abs string) error {
 	return nil
 }
 
+// shareOf returns the share name (first component under the data root) of abs, or "" for the root.
+func (a *API) shareOf(abs string) string {
+	rel, err := filepath.Rel(a.root.Path(), abs)
+	if err != nil || rel == "." || strings.HasPrefix(rel, "..") {
+		return ""
+	}
+	return strings.SplitN(rel, string(filepath.Separator), 2)[0]
+}
+
+// allowed checks the request's share policy for abs and writes 403/404 when it fails.
+// Shares the principal may not even read are reported as not found, like SMB does.
+func (a *API) allowed(w http.ResponseWriter, r *http.Request, abs string, need access.Level) bool {
+	pol := access.FromContext(r.Context())
+	if !pol.Restricted() {
+		return true
+	}
+	share := a.shareOf(abs)
+	if share == "" {
+		if need > access.Read {
+			writeErr(w, http.StatusForbidden, "cannot write at root level")
+			return false
+		}
+		return true
+	}
+	have := pol.Level(share)
+	switch {
+	case have == access.None:
+		writeErr(w, http.StatusNotFound, "not found")
+		return false
+	case have < need:
+		writeErr(w, http.StatusForbidden, "this share is read-only for your user")
+		return false
+	}
+	return true
+}
+
+// MountedShares lists the top-level directories of the data root.
+func (a *API) MountedShares() []string {
+	ents, err := os.ReadDir(a.root.Path())
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, e := range ents {
+		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+			out = append(out, e.Name())
+		}
+	}
+	return out
+}
+
 // isShareRoot reports whether abs is a direct child of the data root, i.e. a
 // mounted share. Shares are mount points: they can be listed and written
 // into, but never renamed, moved, replaced or deleted through the API.
@@ -215,6 +268,10 @@ func (a *API) handleList(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
+	if !a.allowed(w, r, abs, access.Read) {
+		return
+	}
+	pol := access.FromContext(r.Context())
 	info, err := os.Stat(abs)
 	if err != nil {
 		a.fsErr(w, err)
@@ -255,6 +312,10 @@ func (a *API) handleList(w http.ResponseWriter, r *http.Request) {
 		if !fi.IsDir() && !fi.Mode().IsRegular() {
 			continue
 		}
+		// At the root, hide shares the user may not read.
+		if abs == a.root.Path() && pol.Restricted() && pol.Level(name) == access.None {
+			continue
+		}
 		out = append(out, a.entry(filepath.Join(abs, name), fi))
 	}
 	sort.Slice(out, func(i, j int) bool {
@@ -285,6 +346,9 @@ func (a *API) handleStat(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
+	if !a.allowed(w, r, abs, access.Read) {
+		return
+	}
 	info, err := os.Stat(abs)
 	if err != nil {
 		a.fsErr(w, err)
@@ -298,6 +362,9 @@ func (a *API) handleDownload(w http.ResponseWriter, r *http.Request) {
 	abs, err := a.root.Resolve(queryPath(r))
 	if err != nil {
 		a.fsErr(w, err)
+		return
+	}
+	if !a.allowed(w, r, abs, access.Read) {
 		return
 	}
 	f, err := os.Open(abs)
@@ -352,6 +419,9 @@ func (a *API) handlePut(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := a.checkShare(abs); err != nil {
 		a.fsErr(w, err)
+		return
+	}
+	if !a.allowed(w, r, abs, access.Write) {
 		return
 	}
 	existing, statErr := os.Stat(abs)
@@ -449,6 +519,9 @@ func (a *API) handleMkdir(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
+	if !a.allowed(w, r, abs, access.Write) {
+		return
+	}
 	if req.Parents {
 		err = os.MkdirAll(abs, 0o775)
 	} else {
@@ -472,7 +545,7 @@ type moveRequest struct {
 	Overwrite bool   `json:"overwrite,omitempty"`
 }
 
-func (a *API) resolvePair(w http.ResponseWriter, req moveRequest) (string, string, bool) {
+func (a *API) resolvePair(w http.ResponseWriter, r *http.Request, req moveRequest, sourceNeeds access.Level) (string, string, bool) {
 	from, err := a.root.Resolve(req.From)
 	if err != nil {
 		a.fsErr(w, err)
@@ -499,6 +572,9 @@ func (a *API) resolvePair(w http.ResponseWriter, req moveRequest) (string, strin
 		writeErr(w, http.StatusBadRequest, "destination is inside source")
 		return "", "", false
 	}
+	if !a.allowed(w, r, from, sourceNeeds) || !a.allowed(w, r, to, access.Write) {
+		return "", "", false
+	}
 	if _, err := os.Lstat(from); err != nil {
 		a.fsErr(w, err)
 		return "", "", false
@@ -520,7 +596,7 @@ func (a *API) handleMove(w http.ResponseWriter, r *http.Request) {
 	if !a.decode(w, r, &req) {
 		return
 	}
-	from, to, ok := a.resolvePair(w, req)
+	from, to, ok := a.resolvePair(w, r, req, access.Write)
 	if !ok {
 		return
 	}
@@ -560,7 +636,7 @@ func (a *API) handleCopy(w http.ResponseWriter, r *http.Request) {
 	if !a.decode(w, r, &req) {
 		return
 	}
-	from, to, ok := a.resolvePair(w, req)
+	from, to, ok := a.resolvePair(w, r, req, access.Read)
 	if !ok {
 		return
 	}
@@ -647,6 +723,9 @@ func (a *API) handleDelete(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusForbidden, "shares are mount points and cannot be deleted")
 		return
 	}
+	if !a.allowed(w, r, abs, access.Write) {
+		return
+	}
 	st, err := os.Lstat(abs)
 	if err != nil {
 		a.fsErr(w, err)
@@ -700,6 +779,10 @@ func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
+	if !a.allowed(w, r, abs, access.Read) {
+		return
+	}
+	pol := access.FromContext(r.Context())
 	var since int64
 	if s := r.URL.Query().Get("since"); s != "" {
 		since, err = strconv.ParseInt(s, 10, 64)
@@ -741,6 +824,10 @@ func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 				return fs.SkipDir
 			}
 			return nil
+		}
+		// Skip whole shares the user may not read.
+		if pol.Restricted() && d.IsDir() && a.isShareRoot(p) && pol.Level(name) == access.None {
+			return fs.SkipDir
 		}
 		// Resume support: skip everything at or before `after` in walk order.
 		if after != "" && walkCompare(rel, after) <= 0 {

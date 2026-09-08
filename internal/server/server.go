@@ -11,10 +11,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sidimam/unraid-gateway/internal/access"
 	"github.com/sidimam/unraid-gateway/internal/auth"
 	"github.com/sidimam/unraid-gateway/internal/config"
 	"github.com/sidimam/unraid-gateway/internal/fsapi"
 	"github.com/sidimam/unraid-gateway/internal/proxy"
+	"github.com/sidimam/unraid-gateway/internal/smbauth"
+	"github.com/sidimam/unraid-gateway/internal/unraidshares"
 	"github.com/sidimam/unraid-gateway/internal/webui"
 )
 
@@ -30,6 +33,8 @@ type Server struct {
 	sessions *auth.Store
 	files    *fsapi.API
 	gql      *proxy.GraphQL
+	smb      *smbauth.Authenticator
+	shares   *unraidshares.Loader
 	handler  http.Handler
 }
 
@@ -52,6 +57,13 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		sessions: auth.NewStore(validator, cfg.SessionTTL, cfg.MaxLoginAttempts, cfg.LoginLockout),
 		files:    files,
 		gql:      proxy.New(cfg.UnraidURL, cfg.UnraidInsecureTLS),
+		smb:      &smbauth.Authenticator{Addr: cfg.SMBAddr, Timeout: 10 * time.Second},
+		shares:   &unraidshares.Loader{Dir: cfg.SharesConfigDir},
+	}
+	if cfg.UserAuth != "off" {
+		if _, err := s.shares.Shares(); err != nil {
+			log.Warn("USER_AUTH is enabled but the Unraid shares config is not readable: users will see no shares until /boot/config/shares is mounted", "dir", cfg.SharesConfigDir, "err", err)
+		}
 	}
 	s.handler = s.routes()
 	return s, nil
@@ -83,27 +95,79 @@ func (s *Server) routes() http.Handler {
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		APIKey string `json:"apiKey"`
+		APIKey   string `json:"apiKey"`
+		Username string `json:"username"`
+		Password string `json:"password"`
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeErr(w, http.StatusBadRequest, "expected JSON {\"apiKey\": \"...\"}")
+		writeErr(w, http.StatusBadRequest, "expected JSON {\"apiKey\": \"...\", \"username\": \"...\", \"password\": \"...\"}")
 		return
 	}
 	ip := auth.ClientIP(r, s.cfg.TrustProxy)
+	req.Username = strings.TrimSpace(req.Username)
+	if s.cfg.UserAuth == "required" && req.Username == "" {
+		writeErr(w, http.StatusUnauthorized, "this gateway requires an Unraid username and password in addition to the API key")
+		return
+	}
+	if s.cfg.UserAuth == "off" {
+		req.Username, req.Password = "", ""
+	}
+	// 1. The API key, validated by Unraid (also enforces the per-IP lockout).
 	sess, err := s.sessions.Login(r.Context(), ip, req.APIKey)
 	if err != nil {
 		s.authError(w, ip, err)
 		return
 	}
-	s.log.Info("login", "ip", ip, "user", sess.Identity.Name)
-	writeJSON(w, http.StatusOK, map[string]any{
+	// 2. Optional Unraid user, validated by Samba; the session then carries the
+	//    user's share permissions read from Unraid's share configuration.
+	if req.Username != "" {
+		if err := s.smb.Check(r.Context(), req.Username, req.Password); err != nil {
+			s.sessions.Logout(sess.Token)
+			if errors.Is(err, smbauth.ErrInvalidCredentials) {
+				s.sessions.Fail(ip)
+				s.log.Warn("user login failed", "ip", ip, "user", req.Username)
+				writeErr(w, http.StatusUnauthorized, "invalid unraid username or password")
+				return
+			}
+			s.log.Error("smb auth error", "err", err, "addr", s.cfg.SMBAddr)
+			writeErr(w, http.StatusBadGateway, "cannot reach the Unraid SMB service to verify the user")
+			return
+		}
+		policy, err := s.shares.PolicyFor(req.Username, s.files.MountedShares())
+		if err != nil {
+			s.sessions.Logout(sess.Token)
+			s.log.Error("shares config unreadable", "err", err)
+			writeErr(w, http.StatusBadGateway, "the Unraid shares configuration is not mounted in the gateway (SHARES_CONFIG_DIR)")
+			return
+		}
+		sess.User, sess.Policy = req.Username, policy
+	}
+	s.log.Info("login", "ip", ip, "key", sess.Identity.Name, "user", sess.User)
+	writeJSON(w, http.StatusOK, s.sessionResponse(sess))
+}
+
+// sessionResponse describes a session to the client, including the effective share access.
+func (s *Server) sessionResponse(sess *auth.Session) map[string]any {
+	out := map[string]any{
 		"token":     sess.Token,
 		"expiresAt": sess.ExpiresAt.UTC(),
 		"identity":  sess.Identity,
 		"readOnly":  s.cfg.ReadOnly,
 		"version":   Version,
-	})
+		"userAuth":  s.cfg.UserAuth,
+	}
+	if sess.User != "" {
+		out["user"] = sess.User
+		shares := map[string]string{}
+		for _, name := range s.files.MountedShares() {
+			if l := sess.Policy.Level(name); l != access.None {
+				shares[name] = l.String()
+			}
+		}
+		out["shares"] = shares
+	}
+	return out
 }
 
 func (s *Server) authError(w http.ResponseWriter, ip string, err error) {
@@ -130,15 +194,28 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	p := principal(r)
-	writeJSON(w, http.StatusOK, map[string]any{"identity": p.Identity, "readOnly": s.cfg.ReadOnly})
+	out := map[string]any{"identity": p.Identity, "readOnly": s.cfg.ReadOnly, "userAuth": s.cfg.UserAuth}
+	if p.User != "" {
+		out["user"] = p.User
+		shares := map[string]string{}
+		for _, name := range s.files.MountedShares() {
+			if l := p.Policy.Level(name); l != access.None {
+				shares[name] = l.String()
+			}
+		}
+		out["shares"] = shares
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *Server) handleInfo(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"version":  Version,
 		"readOnly": s.cfg.ReadOnly,
+		"userAuth": s.cfg.UserAuth,
 		"identity": principal(r).Identity,
-		"features": []string{"fs.list", "fs.content", "fs.range", "fs.uploads", "fs.changes", "graphql"},
+		"user":     principal(r).User,
+		"features": []string{"fs.list", "fs.content", "fs.range", "fs.uploads", "fs.changes", "graphql", "users"},
 	})
 }
 
@@ -157,8 +234,12 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 				writeErr(w, http.StatusUnauthorized, "invalid or expired session")
 				return
 			}
-			p = auth.Principal{APIKey: sess.APIKey, Identity: sess.Identity}
+			p = auth.Principal{APIKey: sess.APIKey, Identity: sess.Identity, User: sess.User, Policy: sess.Policy}
 		} else if key := strings.TrimSpace(r.Header.Get("x-api-key")); key != "" {
+			if s.cfg.UserAuth == "required" {
+				writeErr(w, http.StatusUnauthorized, "this gateway requires a login with Unraid username and password")
+				return
+			}
 			id, err := s.sessions.AuthenticateKey(r.Context(), ip, key)
 			if err != nil {
 				s.authError(w, ip, err)
@@ -170,7 +251,11 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 			writeErr(w, http.StatusUnauthorized, "authentication required")
 			return
 		}
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, p)))
+		ctx := context.WithValue(r.Context(), ctxKey{}, p)
+		if p.Policy != nil {
+			ctx = access.WithPolicy(ctx, p.Policy)
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

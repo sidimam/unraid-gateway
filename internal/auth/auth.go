@@ -3,6 +3,8 @@
 package auth
 
 import (
+	"github.com/sidimam/unraid-gateway/internal/access"
+
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -37,6 +39,10 @@ type Identity struct {
 type Principal struct {
 	APIKey   string
 	Identity Identity
+	// User is the Unraid user name when the session was opened with user credentials.
+	User string
+	// Policy is the per-share access of the session (nil = unrestricted).
+	Policy access.Policy
 }
 
 // Validator checks API keys.
@@ -131,6 +137,8 @@ type Session struct {
 	Token     string
 	APIKey    string
 	Identity  Identity
+	User      string
+	Policy    access.Policy
 	ExpiresAt time.Time
 }
 
@@ -191,6 +199,12 @@ func (s *Store) Login(ctx context.Context, ip, apiKey string) (*Session, error) 
 	s.mu.Unlock()
 	return sess, nil
 }
+
+// Fail records a failed attempt for ip (used for user/password failures).
+func (s *Store) Fail(ip string) { s.limiter.fail(ip) }
+
+// Locked reports whether ip is currently locked out.
+func (s *Store) Locked(ip string) bool { return s.limiter.locked(ip) }
 
 // Logout removes a session.
 func (s *Store) Logout(token string) {

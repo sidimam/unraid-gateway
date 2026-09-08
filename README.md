@@ -14,6 +14,8 @@
 
 Everything is authenticated with a regular **Unraid API key** (*Settings → Management Access → API Keys*). The gateway validates the key against Unraid on the LAN, hands the client a short-lived session token, and never stores your Unraid password.
 
+**Per-user access (v0.3):** a client can add an **Unraid username and password** to the API key. The gateway verifies them against Unraid's own SMB service and then applies exactly the share permissions configured in Unraid (*public / secure / private*, read and write user lists, read from `/boot/config/shares`). Users only see the shares they may read and only write where they may write, like over SMB. `USER_AUTH=required` makes the user mandatory; `off` disables it.
+
 It is the server half of **[Unraid Drive](https://github.com/sidimam/unraid-drive)**, the iPhone/iPad/Vision Pro app whose File Provider extension mounts your shares in the Files app. The gateway is protocol-agnostic and can be used by any HTTP client.
 
 📖 **New here? The complete step-by-step setup guide (container, API key, Cloudflare Tunnel, Cloudflare Access, app) is in the [Unraid Drive wiki](https://github.com/sidimam/unraid-drive/wiki).**
@@ -91,6 +93,9 @@ curl -s https://gw.example.com/healthz
 | `MAX_LOGIN_ATTEMPTS` | `5` | Failed logins per IP before lockout. |
 | `LOGIN_LOCKOUT` | `15m` | Lockout duration. |
 | `TRUST_PROXY` | `false` | Honour `X-Forwarded-For` / `X-Real-IP`. |
+| `USER_AUTH` | `optional` | `optional`: clients may add an Unraid username+password and get that user's share permissions; `required`: they must; `off`: API key only. |
+| `UNRAID_SMB_ADDR` | host of `UNRAID_URL`:445 | Unraid SMB endpoint used to verify user passwords. |
+| `SHARES_CONFIG_DIR` | `/unraid-shares` | Mount `/boot/config/shares` (read-only) here so user permissions can be derived. |
 | `UPLOAD_TTL` | `24h` | How long an unfinished resumable upload is kept. |
 | `CHANGES_WALK_LIMIT` | `250000` | Max entries scanned per `/fs/changes` page. |
 | `CHANGES_DEADLINE` | `20s` | Max wall time per `/fs/changes` page. |
@@ -189,7 +194,7 @@ Forwarded to `UNRAID_URL/graphql` with the session's `x-api-key`. Response is re
 - Every path is confined to `DATA_ROOT`. `..` is clamped, symlinks pointing outside the root are refused.
 - Share roots (`/data/<name>`) are mount points: they can be listed and written into, but the API refuses to rename, move, replace or delete them, and nothing can be created directly at the root.
 - The container runs unprivileged as `nobody:users`; mount only the shares you need and use `:ro` where writes are not required.
-- What the gateway exposes is decided by **volume mounts**, not by the API key's role. A `guest` key that Unraid accepts gets the same file access as an `admin` key. Create a dedicated key and treat it like a password.
+- What the gateway exposes is decided by **volume mounts**, and, when a user logs in, by **Unraid's share security** for that user. The API key's role never affects file access. Passwords are verified by Samba on Unraid over a normal SMB2 session; the gateway does not store them (sessions keep only the resulting permission map).
 - No CORS headers are sent, and the embedded UI runs under a strict Content-Security-Policy on the same origin.
 
 ## Development

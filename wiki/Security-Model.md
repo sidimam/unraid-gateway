@@ -18,6 +18,10 @@ Only the gateway port is exposed (through Cloudflare or a proxy). The Unraid Web
 | Web UI | Same-origin, strict Content-Security-Policy, session token in `sessionStorage` only; no cookies, no CORS headers. |
 | Dependencies | None outside the Go standard library. Image based on Alpine with `ca-certificates`, `tzdata`, `curl` (for the health check). |
 
+## Per-user access
+
+When a login carries an Unraid username and password (`USER_AUTH` optional or required), the gateway opens an SMB2 session to Unraid with those credentials: Samba is the only authority on passwords and the gateway stores nothing but the outcome. It then reads `/boot/config/shares/<share>.cfg` and applies the SMB security model per share: **public** everyone rw; **secure** everyone ro, write list rw; **private** write list rw, read list ro, others hidden; shares with `shareExport` not containing `e` hidden. The rules are enforced on every request (list, stat, download, upload, mkdir, move, copy, delete, change feed, resumable uploads). Requests into hidden shares answer 404, exactly like SMB.
+
 ## What the key's role does and does not do
 
 Roles (`VIEWER`, `ADMIN`, …) are enforced by Unraid on the **GraphQL proxy** only. A `VIEWER` key can read the dashboard but cannot start containers; an `ADMIN` key can. **File access is identical for every valid key**: whatever the mounts allow. Use `VIEWER` unless you need the proxy to change things, and mount only what you need.

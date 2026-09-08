@@ -7,11 +7,15 @@ Base path: `/api/v1`. All responses are JSON unless noted; errors are `{"error":
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
-{"apiKey":"<unraid api key>"}
+{"apiKey":"<unraid api key>","username":"sdimambro","password":"…"}
 ```
+`username`/`password` are optional unless the gateway runs with `USER_AUTH=required`; with `USER_AUTH=off` they are ignored.
 ```json
-{"token":"…","expiresAt":"2026-09-09T02:00:00Z","identity":{"name":"unraid gateway","roles":["VIEWER"]},"readOnly":false,"version":"v0.2.1"}
+{"token":"…","expiresAt":"2026-09-09T02:00:00Z","identity":{"name":"unraid gateway","roles":["VIEWER"]},
+ "readOnly":false,"version":"v0.3.0","userAuth":"optional",
+ "user":"sdimambro","shares":{"documents":"rw","media":"ro"}}
 ```
+`user` and `shares` are present only when a username was given. `shares` maps every share the user may see to `rw` or `ro`, derived from Unraid's share security. Shares the user may not read are hidden: listing them returns `404`; writing into `ro` shares returns `403 this share is read-only for your user`. Failed user logins count towards the per-IP lockout.
 
 Then send `Authorization: Bearer <token>`. Alternatively send `x-api-key: <unraid api key>` on each request; validations are cached for five minutes. `401` means the token expired (log in again), `429` means the client IP is locked out.
 

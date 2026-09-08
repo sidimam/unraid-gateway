@@ -27,8 +27,11 @@
     <p class="muted">Create a key in <b>Settings → Management Access → API Keys</b> (role <code>VIEWER</code> is enough for the file API; use <code>ADMIN</code> if you want the GraphQL proxy to manage the server). The key is validated by Unraid and exchanged for a short-lived session token; it is never stored by the gateway.</p>
     <form id="login-form">
       <input id="apikey" type="password" autocomplete="off" placeholder="paste your Unraid API key" required>
+      <input id="username" type="text" autocomplete="username" placeholder="Unraid user (optional)">
+      <input id="password" type="password" autocomplete="current-password" placeholder="Unraid password">
       <button type="submit">Connect</button>
     </form>
+    <p class="muted">With an Unraid user and password the gateway applies that user's share permissions (public / secure / private, read or write lists), exactly as over SMB. Without them, access is whatever the container mounts allow.</p>
     <p id="login-error" class="error" hidden></p>
   </section>
 

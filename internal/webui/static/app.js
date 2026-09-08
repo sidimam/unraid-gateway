@@ -38,9 +38,11 @@
   }
 
   // ---- auth -----------------------------------------------------------------
-  function showApp(identity) {
+  function showApp(identity, user, shares) {
     $('login').hidden = true; $('app').hidden = false; $('who').hidden = false;
-    $('who-name').textContent = identity ? `${identity.name || 'api key'} · ${(identity.roles || []).join(', ')}` : '';
+    const key = identity ? `${identity.name || 'api key'} · ${(identity.roles || []).join(', ')}` : '';
+    $('who-name').textContent = user ? `${user} · ${key}` : key;
+    window.ugwShares = shares || null; // share → 'rw' | 'ro' when a user is logged in
     list(cwd);
   }
   function logout() {
@@ -52,10 +54,12 @@
     e.preventDefault();
     $('login-error').hidden = true;
     try {
-      const r = await api('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apiKey: $('apikey').value.trim() }) });
+      const body = { apiKey: $('apikey').value.trim() };
+      if ($('username').value.trim()) { body.username = $('username').value.trim(); body.password = $('password').value; }
+      const r = await api('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       token = r.token; sessionStorage.setItem('ugw.token', token);
-      $('apikey').value = '';
-      showApp(r.identity);
+      $('apikey').value = ''; $('password').value = '';
+      showApp(r.identity, r.user, r.shares);
     } catch (err) { $('login-error').textContent = err.message; $('login-error').hidden = false; }
   });
   $('logout').addEventListener('click', logout);
@@ -85,7 +89,9 @@
         const a = document.createElement('a'); a.href = '#'; a.textContent = (e.type === 'dir' ? '📁 ' : '📄 ') + e.name;
         a.onclick = (ev) => { ev.preventDefault(); e.type === 'dir' ? list(e.path) : download(e); };
         name.appendChild(a);
-        const size = document.createElement('td'); size.className = 'num'; size.textContent = e.type === 'dir' ? '' : fmtSize(e.size);
+        const size = document.createElement('td'); size.className = 'num';
+        const ro = cwd === '/' && window.ugwShares && window.ugwShares[e.name] === 'ro';
+        size.textContent = e.type === 'dir' ? (ro ? 'read-only' : '') : fmtSize(e.size);
         const mt = document.createElement('td'); mt.textContent = fmtDate(e.mtime);
         const act = document.createElement('td'); act.className = 'actions';
         const btn = (label, fn) => { const b = document.createElement('button'); b.className = 'ghost'; b.textContent = label; b.onclick = fn; act.appendChild(b); };
@@ -161,5 +167,5 @@
 
   // ---- boot -----------------------------------------------------------------
   loadStatus();
-  if (token) api('/auth/session').then((s) => showApp(s.identity)).catch(() => logout());
+  if (token) api('/auth/session').then((s) => showApp(s.identity, s.user, s.shares)).catch(() => logout());
 })();
