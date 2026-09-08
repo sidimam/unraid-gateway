@@ -39,6 +39,7 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		ReadOnly:         cfg.ReadOnly,
 		MaxJSONBody:      cfg.MaxJSONBody,
 		ChangesWalkLimit: cfg.ChangesWalkLimit,
+		ChangesDeadline:  cfg.ChangesDeadline,
 		UploadTTL:        cfg.UploadTTL,
 	}, log)
 	if err != nil {

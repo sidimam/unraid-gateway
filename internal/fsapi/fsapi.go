@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -23,6 +24,7 @@ type Options struct {
 	ReadOnly         bool
 	MaxJSONBody      int64
 	ChangesWalkLimit int
+	ChangesDeadline  time.Duration
 	UploadTTL        time.Duration
 }
 
@@ -48,6 +50,9 @@ func New(dir string, opts Options, log *slog.Logger) (*API, error) {
 	}
 	if opts.UploadTTL <= 0 {
 		opts.UploadTTL = 24 * time.Hour
+	}
+	if opts.ChangesDeadline <= 0 {
+		opts.ChangesDeadline = 20 * time.Second
 	}
 	a := &API{root: root, opts: opts, log: log}
 	a.uploads = newUploadStore(a, opts.UploadTTL)
@@ -138,6 +143,10 @@ func (a *API) fsErr(w http.ResponseWriter, err error) {
 		writeErr(w, http.StatusConflict, "already exists")
 	case errors.Is(err, os.ErrPermission):
 		writeErr(w, http.StatusForbidden, "permission denied")
+	case errors.Is(err, syscall.EROFS):
+		writeErr(w, http.StatusForbidden, "share is mounted read-only")
+	case errors.Is(err, syscall.ENOSPC):
+		writeErr(w, http.StatusInsufficientStorage, "no space left on share")
 	default:
 		a.log.Error("fs error", "err", err)
 		writeErr(w, http.StatusInternalServerError, "internal error")
@@ -619,6 +628,7 @@ type changesResponse struct {
 	Dirs      []string `json:"dirs"`
 	Files     []Entry  `json:"files"`
 	Truncated bool     `json:"truncated"`
+	Next      string   `json:"next,omitempty"`
 	Scanned   int      `json:"scanned"`
 }
 
@@ -626,6 +636,12 @@ type changesResponse struct {
 // (entries added/removed/renamed inside them) and files modified after the
 // cursor. A client re-enumerates the listed directories and refreshes the
 // listed files. since=0 returns everything.
+//
+// Large trees on shfs are slow to walk, so a scan is bounded by
+// ChangesWalkLimit entries and ChangesDeadline. When it stops early the
+// response has truncated=true and next=<last path scanned>; the client repeats
+// the call with after=<next> (and the same since) to continue exactly where
+// the walk stopped, then stores cursor only after a non-truncated page.
 func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 	abs, err := a.root.Resolve(queryPath(r))
 	if err != nil {
@@ -646,20 +662,27 @@ func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 			limit = n
 		}
 	}
+	after := ""
+	if q := r.URL.Query().Get("after"); q != "" {
+		after = Clean(q)
+	}
 	// Cursor is taken before the walk so anything modified during the walk is
 	// reported again next time rather than lost.
 	cursor := time.Now().UnixNano() - int64(2*time.Second)
+	if c := r.URL.Query().Get("cursor"); c != "" {
+		// Continuation pages keep the cursor of the first page.
+		if n, err := strconv.ParseInt(c, 10, 64); err == nil && n > 0 && n < cursor {
+			cursor = n
+		}
+	}
 	resp := changesResponse{Path: a.root.Rel(abs), Since: since, Cursor: cursor, Dirs: []string{}, Files: []Entry{}}
-	deadline := time.Now().Add(20 * time.Second)
+	deadline := time.Now().Add(a.opts.ChangesDeadline)
+	last := ""
 	walkErr := filepath.WalkDir(abs, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil // unreadable entries are skipped
 		}
-		resp.Scanned++
-		if resp.Scanned > limit || time.Now().After(deadline) {
-			resp.Truncated = true
-			return fs.SkipAll
-		}
+		rel := a.root.Rel(p)
 		name := d.Name()
 		if p != abs && (strings.HasPrefix(name, ".") || isInternal(name)) {
 			if d.IsDir() {
@@ -667,6 +690,25 @@ func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 			}
 			return nil
 		}
+		// Resume support: skip everything at or before `after` in walk order.
+		if after != "" && walkCompare(rel, after) <= 0 {
+			if d.IsDir() && (rel == after || isAncestor(rel, after)) {
+				// The resume point itself or one of its ancestors: already
+				// reported, but its children still have to be walked.
+				return nil
+			}
+			if d.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		resp.Scanned++
+		if resp.Scanned > limit || time.Now().After(deadline) {
+			resp.Truncated = true
+			resp.Next = last
+			return fs.SkipAll
+		}
+		last = rel
 		info, err := d.Info()
 		if err != nil {
 			return nil
@@ -675,7 +717,7 @@ func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 		if d.IsDir() {
-			resp.Dirs = append(resp.Dirs, a.root.Rel(p))
+			resp.Dirs = append(resp.Dirs, rel)
 		} else if info.Mode().IsRegular() {
 			resp.Files = append(resp.Files, a.entry(p, info))
 		}
@@ -686,4 +728,40 @@ func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// walkCompare orders two client paths the way filepath.WalkDir visits them:
+// component by component, with a directory before its own children.
+func walkCompare(a, b string) int {
+	as := strings.Split(strings.Trim(a, "/"), "/")
+	bs := strings.Split(strings.Trim(b, "/"), "/")
+	if a == "/" {
+		as = nil
+	}
+	if b == "/" {
+		bs = nil
+	}
+	for i := 0; i < len(as) && i < len(bs); i++ {
+		if as[i] != bs[i] {
+			if as[i] < bs[i] {
+				return -1
+			}
+			return 1
+		}
+	}
+	switch {
+	case len(as) < len(bs):
+		return -1
+	case len(as) > len(bs):
+		return 1
+	}
+	return 0
+}
+
+// isAncestor reports whether dir is "/" or a strict path prefix of p.
+func isAncestor(dir, p string) bool {
+	if dir == "/" {
+		return p != "/"
+	}
+	return strings.HasPrefix(p, dir+"/")
 }

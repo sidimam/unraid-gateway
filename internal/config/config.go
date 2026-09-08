@@ -41,6 +41,8 @@ type Config struct {
 	MaxJSONBody int64
 	// ChangesWalkLimit bounds the number of entries scanned by /fs/changes.
 	ChangesWalkLimit int
+	// ChangesDeadline bounds the wall time of one /fs/changes scan.
+	ChangesDeadline time.Duration
 	// LogRequests enables per-request access logging.
 	LogRequests bool
 }
@@ -57,6 +59,7 @@ func Load() (Config, error) {
 		SessionTTL:       dur("SESSION_TTL", 12*time.Hour),
 		LoginLockout:     dur("LOGIN_LOCKOUT", 15*time.Minute),
 		UploadTTL:        dur("UPLOAD_TTL", 24*time.Hour),
+		ChangesDeadline:  dur("CHANGES_DEADLINE", 20*time.Second),
 		MaxLoginAttempts: num("MAX_LOGIN_ATTEMPTS", 5),
 		ChangesWalkLimit: num("CHANGES_WALK_LIMIT", 250000),
 		MaxJSONBody:      int64(num("MAX_JSON_BODY", 1<<20)),

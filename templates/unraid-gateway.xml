@@ -32,5 +32,6 @@
   <Config Name="Trust proxy headers" Target="TRUST_PROXY" Default="false" Mode="" Description="true when behind Nginx Proxy Manager, SWAG or Cloudflare Tunnel, so rate limiting sees the real client IP." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   <Config Name="Unraid self-signed TLS" Target="UNRAID_INSECURE_TLS" Default="false" Mode="" Description="true only if UNRAID_URL is https with a self-signed certificate." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   <Config Name="Validation query" Target="UNRAID_VALIDATE_QUERY" Default="query { me { id name roles } }" Mode="" Description="GraphQL query used to validate API keys. Change only if your Unraid version lacks the 'me' field." Type="Variable" Display="advanced" Required="false" Mask="false">query { me { id name roles } }</Config>
+  <Config Name="Change feed page deadline" Target="CHANGES_DEADLINE" Default="20s" Mode="" Description="Max time per /fs/changes page. Large shares on shfs scan at roughly 3000 entries per second; clients page with after=next." Type="Variable" Display="advanced" Required="false" Mask="false">20s</Config>
   <Config Name="Timezone" Target="TZ" Default="Europe/Rome" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">Europe/Rome</Config>
 </Container>

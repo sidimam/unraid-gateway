@@ -176,6 +176,74 @@ func TestMoveCopyAndChanges(t *testing.T) {
 	}
 }
 
+func TestChangesResume(t *testing.T) {
+	_, mux, _ := newTestAPI(t)
+	// "a-b" sorts before "a/1.txt" lexically but after the whole "a" subtree in walk order.
+	for _, f := range []string{"/a/1.txt", "/a/2.txt", "/a-b/x.txt", "/b/3.txt", "/b/c/4.txt", "/d.txt"} {
+		do(mux, "PUT", "/fs/content?path="+f, strings.NewReader("x"), nil)
+	}
+	seen := map[string]bool{}
+	after, cursor, pages := "", "", 0
+	for {
+		url := "/fs/changes?path=/&since=0&limit=3"
+		if after != "" {
+			url += "&after=" + after + "&cursor=" + cursor
+		}
+		rr := do(mux, "GET", url, nil, nil)
+		var cr changesResponse
+		if err := json.Unmarshal(rr.Body.Bytes(), &cr); err != nil {
+			t.Fatalf("page %d: %s", pages, rr.Body)
+		}
+		pages++
+		for _, d := range cr.Dirs {
+			if seen[d] {
+				t.Fatalf("dir %s reported twice", d)
+			}
+			seen[d] = true
+		}
+		for _, f := range cr.Files {
+			if seen[f.Path] {
+				t.Fatalf("file %s reported twice", f.Path)
+			}
+			seen[f.Path] = true
+		}
+		if !cr.Truncated {
+			break
+		}
+		if cr.Next == "" {
+			t.Fatal("truncated page without next")
+		}
+		after, cursor = cr.Next, itoa(cr.Cursor)
+		if pages > 20 {
+			t.Fatal("pagination did not terminate")
+		}
+	}
+	for _, want := range []string{"/", "/a", "/a/1.txt", "/a/2.txt", "/a-b", "/a-b/x.txt", "/b", "/b/3.txt", "/b/c", "/b/c/4.txt", "/d.txt"} {
+		if !seen[want] {
+			t.Errorf("%s never reported (pages=%d, seen=%v)", want, pages, seen)
+		}
+	}
+	if pages < 2 {
+		t.Fatalf("expected multiple pages, got %d", pages)
+	}
+}
+
+func TestWalkCompare(t *testing.T) {
+	order := []string{"/", "/a", "/a/1.txt", "/a/z", "/a/z/deep", "/a-b", "/a-b/x", "/b"}
+	for i := range order {
+		for j := range order {
+			got := walkCompare(order[i], order[j])
+			switch {
+			case i < j && got >= 0, i > j && got <= 0, i == j && got != 0:
+				t.Errorf("walkCompare(%q,%q)=%d", order[i], order[j], got)
+			}
+		}
+	}
+	if !isAncestor("/", "/a") || !isAncestor("/a", "/a/b/c") || isAncestor("/a", "/a-b") || isAncestor("/a", "/a") {
+		t.Fatal("isAncestor")
+	}
+}
+
 func TestReadOnly(t *testing.T) {
 	dir := t.TempDir()
 	api, _ := New(dir, Options{ReadOnly: true}, slog.New(slog.NewTextHandler(io.Discard, nil)))

@@ -58,7 +58,8 @@ curl -s https://gw.example.com/healthz
 | `LOGIN_LOCKOUT` | `15m` | Lockout duration. |
 | `TRUST_PROXY` | `false` | Honour `X-Forwarded-For` / `X-Real-IP`. |
 | `UPLOAD_TTL` | `24h` | How long an unfinished resumable upload is kept. |
-| `CHANGES_WALK_LIMIT` | `250000` | Max entries scanned per `/fs/changes` call. |
+| `CHANGES_WALK_LIMIT` | `250000` | Max entries scanned per `/fs/changes` page. |
+| `CHANGES_DEADLINE` | `20s` | Max wall time per `/fs/changes` page. |
 | `TLS_CERT` / `TLS_KEY` | | Serve HTTPS directly instead of behind a proxy. |
 | `LOG_REQUESTS` | `true` | Access log (JSON) on stdout. |
 
@@ -93,7 +94,7 @@ Then send `Authorization: Bearer <token>` on every call. For scripts you may ins
 | `POST` | `/fs/move` `{"from":"/a","to":"/b","overwrite":false}` | Falls back to copy+delete across devices. |
 | `POST` | `/fs/copy` `{"from":"/a","to":"/b"}` | Recursive. |
 | `POST` | `/fs/delete` `{"path":"/a","recursive":false}` | Non-empty directory without `recursive` → `409`. |
-| `GET` | `/fs/changes?path=/&since=<unix ns>` | Change feed, see below. |
+| `GET` | `/fs/changes?path=/&since=<unix ns>&after=&cursor=` | Change feed, paginated, see below. |
 
 Entry shape:
 
@@ -125,13 +126,15 @@ A `PATCH` whose `Upload-Offset` does not match the server returns `409` with the
 {"cursor":1757340191000000000,
  "dirs":["/Photos/2026","/Documents"],
  "files":[{...},{...}],
- "truncated":false,"scanned":18234}
+ "truncated":true,"next":"/Photos/2026/IMG_0412.HEIC","scanned":62518}
 ```
 
 - `dirs` are directories whose mtime moved past `since`: something was **added, removed or renamed** inside them. Re-enumerate those.
 - `files` are regular files modified after `since`. Refresh their metadata/content.
-- Store `cursor` and pass it as `since` next time. `since=0` is a full scan. The cursor is deliberately two seconds in the past so writes racing the scan are reported again rather than lost.
+- **Pagination.** Walking a big share on Unraid's shfs is slow (roughly 3,000 entries per second). A page stops after `CHANGES_WALK_LIMIT` entries or `CHANGES_DEADLINE` and returns `truncated:true` with `next`. Call again with `after=<next>&cursor=<cursor>` and the same `since` to resume exactly where it stopped; entries are never reported twice. Save `cursor` as your new `since` only after a page with `truncated:false`.
+- `since=0` is a full scan. The cursor is deliberately two seconds in the past so writes racing the scan are reported again rather than lost.
 - Files created by the gateway itself (`*.gwpart`) and dot-files are excluded.
+- Writes to a share mounted `:ro` return `403 share is mounted read-only`.
 
 This maps directly onto `NSFileProviderReplicatedExtension`'s enumerator + sync-anchor model without needing inotify on the shfs FUSE mount.
 
