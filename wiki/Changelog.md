@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.0 (2026-09-09)
+- Persistent item index (SQLite, `INDEX_DB`, mount `/config`): stable ids on every entry (`id`, `parentId`), change journal served by `GET /fs/changes?seq=`, `GET /fs/item?id=`, background scanner (`INDEX_DIR_SCAN` 5m, `INDEX_FULL_SCAN` 6h), write-through from every API write, on-demand reconcile on listings. The legacy mtime feed stays for older clients.
+- Template: new `/config` path and index settings; `<Changes>`/`<Date>` for Community Applications.
+
 ## 2026-09-09
 - Homebrew formula `sidimam/tap/unraid-gateway` (builds v0.4.0 from source, `brew services` unit).
 - Community Applications listing prepared: template `<Changes>`/`<Date>`, submission notes in `docs/community-applications.md`.

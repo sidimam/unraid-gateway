@@ -104,7 +104,10 @@ curl -s https://gw.example.com/healthz
 | `UNRAID_SMB_ADDR` | host of `UNRAID_URL`:445 | Unraid SMB endpoint used to verify user passwords. |
 | `SHARES_CONFIG` | `/unraid-shares/smb-shares.conf` | Unraid share security source: mount `/etc/samba/smb-shares.conf` (read-only) here. A directory of `/boot/config/shares/*.cfg` is accepted too. |
 | `UPLOAD_TTL` | `24h` | How long an unfinished resumable upload is kept. |
-| `CHANGES_WALK_LIMIT` | `250000` | Max entries scanned per `/fs/changes` page. |
+| `INDEX_DB` | `/config/index.db` | SQLite item index (stable ids, change journal). Mount `/config` to keep it across restarts; `off` disables it. |
+| `INDEX_DIR_SCAN` | `5m` | How often directories are checked for changes made outside the gateway (directories only are stat'ed). |
+| `INDEX_FULL_SCAN` | `6h` | How often every entry is re-stat'ed. |
+| `CHANGES_WALK_LIMIT` | `250000` | Max entries scanned per legacy `/fs/changes` page. |
 | `CHANGES_DEADLINE` | `20s` | Max wall time per `/fs/changes` page. |
 | `TLS_CERT` / `TLS_KEY` | | Serve HTTPS directly instead of behind a proxy. |
 | `LOG_REQUESTS` | `true` | One access line per request on stdout. |
@@ -143,7 +146,9 @@ Then send `Authorization: Bearer <token>` on every call. For scripts you may ins
 | `POST` | `/fs/move` `{"from":"/a","to":"/b","overwrite":false}` | Falls back to copy+delete across devices. |
 | `POST` | `/fs/copy` `{"from":"/a","to":"/b"}` | Recursive. |
 | `POST` | `/fs/delete` `{"path":"/a","recursive":false}` | Non-empty directory without `recursive` → `409`. |
-| `GET` | `/fs/changes?path=/&since=<unix ns>&after=&cursor=` | Change feed, paginated, see below. |
+| `GET` | `/fs/changes?seq=<n>` | **Change journal** (0.5+): every item created, modified, moved or deleted after sequence `n`, with stable ids; instant. |
+| `GET` | `/fs/item?id=<id>` | Entry for a stable id (0.5+). |
+| `GET` | `/fs/changes?path=/&since=<unix ns>&after=&cursor=` | Legacy change feed (mtime walk), paginated, see below. |
 
 Entry shape:
 
@@ -169,7 +174,18 @@ A `PATCH` whose `Upload-Offset` does not match the server returns `409` with the
 
 ### Change feed
 
-`GET /fs/changes?path=/&since=<cursor>` walks the subtree and returns:
+**Item index and journal (0.5+).** The gateway keeps a small SQLite catalogue of every file and directory under `/data` (`INDEX_DB`, mount `/config` for it): a stable `id` per item (listings and `stat` carry `id` and `parentId`), and a journal of changes with a growing `seq`. Writes through the API update it immediately; a directory is reconciled whenever a client lists it; a background scanner catches changes made over SMB or by other containers (directory mtimes every `INDEX_DIR_SCAN`, every entry every `INDEX_FULL_SCAN`). Clients then sync like OneDrive or Google Drive: `GET /fs/changes?seq=<last>` returns
+
+```json
+{"seq": 4711, "reset": false, "truncated": false,
+ "changes": [{"seq": 4709, "kind": "upsert", "id": "…", "path": "/documents/report.pdf", "entry": {…}},
+             {"seq": 4710, "kind": "move", "id": "…", "path": "/media/2026", "oldPath": "/media/new", "entry": {…}},
+             {"seq": 4711, "kind": "delete", "id": "…", "path": "/downloads/old.iso"}]}
+```
+
+`seq=0` (first sync) and a `seq` older than the retained journal (30 days) answer `reset:true`: enumerate again and continue from the returned `seq`. Ids survive renames (in place or through the API), moves, gateway restarts and app reinstalls.
+
+**Legacy feed.** `GET /fs/changes?path=/&since=<cursor>` walks the subtree and returns:
 
 ```json
 {"cursor":1757340191000000000,

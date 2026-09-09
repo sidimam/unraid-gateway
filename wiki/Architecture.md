@@ -20,6 +20,10 @@ client ──HTTPS──▶ Cloudflare / reverse proxy ──HTTP──▶ unrai
                                                    (bind mounts)   (key validation + proxy)
 ```
 
+## Item index
+
+0.5 adds a SQLite catalogue of the tree (ids, sizes, mtimes, inodes) and a change journal, kept by write-through from the API, on-demand reconcile when a directory is listed, and a background scanner. It turns "what changed?" from a walk of the whole tree into a query, and gives clients identifiers that survive renames and reinstalls. See Change Feed.
+
 ## Design decisions
 
 - **Mount-based authorization.** *What* is accessible is decided by Docker volume mounts (`rw` / `ro`), not by the key's role. This keeps the model trivially auditable: `docker inspect` tells you exactly what any key can reach.

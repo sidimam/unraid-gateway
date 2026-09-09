@@ -55,6 +55,12 @@ type Config struct {
 	UserAuth string
 	// SMBAddr is the Unraid SMB endpoint used to validate user passwords (host:445).
 	SMBAddr string
+	// IndexDB is the SQLite file of the item index ("" disables the index, ":memory:" keeps it in RAM).
+	IndexDB string
+	// IndexDirScan is how often directories are checked for changes made behind the gateway's back.
+	IndexDirScan time.Duration
+	// IndexFullScan is how often every entry is re-stat'ed.
+	IndexFullScan time.Duration
 	// SharesConfig is Unraid's share configuration: the generated
 	// /etc/samba/smb-shares.conf (file, recommended) or /boot/config/shares (directory).
 	SharesConfig string
@@ -81,6 +87,9 @@ func Load() (Config, error) {
 		LogLevel:         strings.ToLower(env("LOG_LEVEL", "info")),
 		SMBAddr:          env("UNRAID_SMB_ADDR", ""),
 		SharesConfig:     env("SHARES_CONFIG", env("SHARES_CONFIG_DIR", "/unraid-shares/smb-shares.conf")),
+		IndexDB:          env("INDEX_DB", "/config/index.db"),
+		IndexDirScan:     dur("INDEX_DIR_SCAN", 5*time.Minute),
+		IndexFullScan:    dur("INDEX_FULL_SCAN", 6*time.Hour),
 	}
 	var err error
 	if c.UnraidInsecureTLS, err = boolean("UNRAID_INSECURE_TLS", false); err != nil {

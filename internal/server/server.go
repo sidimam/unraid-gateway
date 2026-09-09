@@ -6,8 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/sidimam/unraid-gateway/internal/index"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -36,6 +39,34 @@ type Server struct {
 	smb      *smbauth.Authenticator
 	shares   *unraidshares.Loader
 	handler  http.Handler
+	index    *index.Index
+	scanner  *index.Scanner
+}
+
+// StartIndexer runs the background scanner until ctx is cancelled (no-op without index).
+func (s *Server) StartIndexer(ctx context.Context) {
+	if s.scanner == nil {
+		return
+	}
+	go s.scanner.Run(ctx)
+}
+
+// Close releases the index database.
+func (s *Server) Close() error {
+	if s.index != nil {
+		return s.index.Close()
+	}
+	return nil
+}
+
+func writable(dir string) bool {
+	f, err := os.CreateTemp(dir, ".gw-write-test-*")
+	if err != nil {
+		return false
+	}
+	f.Close()
+	os.Remove(f.Name())
+	return true
 }
 
 // New builds the server.
@@ -51,8 +82,34 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	var ix *index.Index
+	var scanner *index.Scanner
+	if cfg.IndexDB != "" && strings.ToLower(cfg.IndexDB) != "off" {
+		dbPath := cfg.IndexDB
+		if dbPath != ":memory:" {
+			if err := os.MkdirAll(filepath.Dir(dbPath), 0o775); err != nil || !writable(filepath.Dir(dbPath)) {
+				fallback := filepath.Join(os.TempDir(), "unraid-gateway-index.db")
+				log.Warn("index: INDEX_DB location not writable, using a temporary database (mount /config to keep it across restarts)", "wanted", dbPath, "using", fallback)
+				dbPath = fallback
+			}
+		}
+		ix, err = index.Open(dbPath)
+		if err != nil {
+			log.Warn("index: disabled, cannot open database", "path", dbPath, "err", err)
+			ix = nil
+		} else {
+			sc := &index.Scanner{Index: ix, Root: cfg.DataRoot, Shares: files.MountedShares,
+				Skip:        func(name string) bool { return strings.HasPrefix(name, ".") || strings.Contains(name, ".gwpart") },
+				DirInterval: cfg.IndexDirScan, FullInterval: cfg.IndexFullScan, Log: log}
+			files.UseIndex(ix, sc)
+			scanner = sc
+			log.Info("index: enabled", "db", dbPath, "dirScan", cfg.IndexDirScan, "fullScan", cfg.IndexFullScan)
+		}
+	}
 	s := &Server{
 		cfg:      cfg,
+		index:    ix,
+		scanner:  scanner,
 		log:      log,
 		sessions: auth.NewStore(validator, cfg.SessionTTL, cfg.MaxLoginAttempts, cfg.LoginLockout),
 		files:    files,

@@ -40,6 +40,8 @@ func main() {
 		log.Error("startup error", "err", err)
 		os.Exit(1)
 	}
+	indexCtx, stopIndexer := context.WithCancel(context.Background())
+	srv.StartIndexer(indexCtx)
 	httpSrv := &http.Server{
 		Addr:              cfg.ListenAddr,
 		Handler:           srv,
@@ -56,7 +58,8 @@ func main() {
 			"Read-only":           map[bool]string{true: "yes", false: "no"}[cfg.ReadOnly],
 			"Trust proxy headers": map[bool]string{true: "yes", false: "no"}[cfg.TrustProxy],
 			"Sessions / lockout":  cfg.SessionTTL.String() + " / " + fmt.Sprintf("%d attempts, %s", cfg.MaxLoginAttempts, cfg.LoginLockout),
-		}, []string{"Listening on", "Unraid API", "Shares (data root)", "User authentication", "Read-only", "Trust proxy headers", "Sessions / lockout"})
+			"Item index":          map[bool]string{true: cfg.IndexDB + "  (dir scan " + cfg.IndexDirScan.String() + ", full scan " + cfg.IndexFullScan.String() + ")", false: "off"}[cfg.IndexDB != "" && cfg.IndexDB != "off"],
+		}, []string{"Listening on", "Unraid API", "Shares (data root)", "User authentication", "Read-only", "Trust proxy headers", "Sessions / lockout", "Item index"})
 	}
 	go func() {
 		log.Info("unraid-gateway listening",
@@ -77,6 +80,8 @@ func main() {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
 	log.Info("shutting down")
+	stopIndexer()
+	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	_ = httpSrv.Shutdown(ctx)

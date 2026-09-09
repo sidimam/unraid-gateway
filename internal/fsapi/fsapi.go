@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/sidimam/unraid-gateway/internal/access"
+	"github.com/sidimam/unraid-gateway/internal/index"
 )
 
 // Options tunes the file API.
@@ -36,7 +37,19 @@ type API struct {
 	opts    Options
 	log     *slog.Logger
 	uploads *uploadStore
+	idx     *index.Index
+	scanner *index.Scanner
 }
+
+// UseIndex attaches the persistent item index: listings then carry stable ids,
+// writes are journaled and /fs/changes can answer from the journal.
+func (a *API) UseIndex(ix *index.Index, sc *index.Scanner) {
+	a.idx = ix
+	a.scanner = sc
+}
+
+// Index returns the attached index (nil when disabled).
+func (a *API) Index() *index.Index { return a.idx }
 
 // New creates the file API rooted at dir.
 func New(dir string, opts Options, log *slog.Logger) (*API, error) {
@@ -63,13 +76,15 @@ func New(dir string, opts Options, log *slog.Logger) (*API, error) {
 
 // Entry is the JSON representation of a file or directory.
 type Entry struct {
-	Name  string    `json:"name"`
-	Path  string    `json:"path"`
-	Type  string    `json:"type"` // "file" | "dir"
-	Size  int64     `json:"size"`
-	MTime time.Time `json:"mtime"`
-	ETag  string    `json:"etag"`
-	Mode  string    `json:"mode,omitempty"`
+	ID       string    `json:"id,omitempty"`
+	ParentID string    `json:"parentId,omitempty"`
+	Name     string    `json:"name"`
+	Path     string    `json:"path"`
+	Type     string    `json:"type"` // "file" | "dir"
+	Size     int64     `json:"size"`
+	MTime    time.Time `json:"mtime"`
+	ETag     string    `json:"etag"`
+	Mode     string    `json:"mode,omitempty"`
 }
 
 func (a *API) entry(abs string, info fs.FileInfo) Entry {
@@ -85,6 +100,33 @@ func (a *API) entry(abs string, info fs.FileInfo) Entry {
 		MTime: info.ModTime().UTC(),
 		ETag:  etag(info),
 		Mode:  info.Mode().Perm().String(),
+	}
+}
+
+// withID fills ID/ParentID from the index, indexing the entry on the fly when needed.
+func (a *API) withID(e Entry, info fs.FileInfo) Entry {
+	if a.idx == nil {
+		return e
+	}
+	it, err := a.idx.ByPath(e.Path)
+	if err == nil && it == nil {
+		if _, err := a.idx.Upsert(e.Path, index.FromFileInfo(info)); err == nil {
+			it, _ = a.idx.ByPath(e.Path)
+		}
+	}
+	if it != nil {
+		e.ID, e.ParentID = it.ID, it.ParentID
+	}
+	return e
+}
+
+// indexed records a path just written through the API.
+func (a *API) indexed(abs string, info fs.FileInfo) {
+	if a.idx == nil {
+		return
+	}
+	if _, err := a.idx.Upsert(a.root.Rel(abs), index.FromFileInfo(info)); err != nil {
+		a.log.Warn("index update failed", "path", a.root.Rel(abs), "err", err)
 	}
 }
 
@@ -105,6 +147,7 @@ func (a *API) Register(mux *http.ServeMux, prefix string) {
 	mux.HandleFunc("POST "+p+"/copy", a.mutating(a.handleCopy))
 	mux.HandleFunc("POST "+p+"/delete", a.mutating(a.handleDelete))
 	mux.HandleFunc("GET "+p+"/changes", a.handleChanges)
+	mux.HandleFunc("GET "+p+"/item", a.handleItem)
 	mux.HandleFunc("POST "+p+"/uploads", a.mutating(a.uploads.handleCreate))
 	mux.HandleFunc("HEAD "+p+"/uploads/{id}", a.uploads.handleStatus)
 	mux.HandleFunc("GET "+p+"/uploads/{id}", a.uploads.handleStatus)
@@ -371,6 +414,23 @@ func (a *API) handleList(w http.ResponseWriter, r *http.Request) {
 		}
 		return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name)
 	})
+	if a.scanner != nil {
+		// On-demand reconcile: the listing the client sees is what the index knows.
+		if ids, err := a.scanner.ScanDir(a.root.Rel(abs)); err == nil {
+			parentID := index.RootID
+			if abs != a.root.Path() {
+				if it, _ := a.idx.ByPath(a.root.Rel(abs)); it != nil {
+					parentID = it.ID
+				}
+			}
+			for i := range out {
+				out[i].ID = ids[out[i].Name]
+				out[i].ParentID = parentID
+			}
+		} else {
+			a.log.Warn("index reconcile failed", "dir", a.root.Rel(abs), "err", err)
+		}
+	}
 	w.Header().Set("ETag", etag(info))
 	writeJSON(w, http.StatusOK, listResponse{Path: a.root.Rel(abs), ETag: etag(info), MTime: info.ModTime().UTC(), Entries: out})
 }
@@ -402,7 +462,45 @@ func (a *API) handleStat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("ETag", etag(info))
-	writeJSON(w, http.StatusOK, a.entry(abs, info))
+	writeJSON(w, http.StatusOK, a.withID(a.entry(abs, info), info))
+}
+
+// handleItem resolves an item id to its current entry (GET /item?id=...), so a
+// client that only remembers ids (after a reinstall, say) can find its way back.
+func (a *API) handleItem(w http.ResponseWriter, r *http.Request) {
+	if a.idx == nil {
+		writeErr(w, http.StatusNotFound, "item index disabled")
+		return
+	}
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		writeErr(w, http.StatusBadRequest, "id required")
+		return
+	}
+	it, err := a.idx.ByID(id)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if it == nil {
+		writeErr(w, http.StatusNotFound, "unknown item")
+		return
+	}
+	abs, err := a.root.Resolve(it.Path)
+	if err != nil {
+		a.fsErr(w, err)
+		return
+	}
+	if !a.allowed(w, r, abs, access.Read) {
+		return
+	}
+	info, err := os.Stat(abs)
+	if err != nil {
+		_ = a.idx.Delete(it.Path)
+		a.fsErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, a.withID(a.entry(abs, info), info))
 }
 
 func (a *API) handleDownload(w http.ResponseWriter, r *http.Request) {
@@ -534,8 +632,9 @@ func (a *API) handlePut(w http.ResponseWriter, r *http.Request) {
 	if statErr == nil {
 		status = http.StatusOK
 	}
+	a.indexed(abs, info)
 	w.Header().Set("ETag", etag(info))
-	writeJSON(w, status, a.entry(abs, info))
+	writeJSON(w, status, a.withID(a.entry(abs, info), info))
 }
 
 type pathRequest struct {
@@ -583,7 +682,8 @@ func (a *API) handleMkdir(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, a.entry(abs, info))
+	a.indexed(abs, info)
+	writeJSON(w, http.StatusCreated, a.withID(a.entry(abs, info), info))
 }
 
 type moveRequest struct {
@@ -675,7 +775,13 @@ func (a *API) handleMove(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, a.entry(to, info))
+	if a.idx != nil {
+		if err := a.idx.Move(a.root.Rel(from), a.root.Rel(to)); err != nil {
+			a.log.Warn("index move failed", "err", err)
+		}
+		a.indexed(to, info)
+	}
+	writeJSON(w, http.StatusOK, a.withID(a.entry(to, info), info))
 }
 
 func (a *API) handleCopy(w http.ResponseWriter, r *http.Request) {
@@ -706,7 +812,17 @@ func (a *API) handleCopy(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, a.entry(to, info))
+	a.indexed(to, info)
+	if a.scanner != nil && info.IsDir() {
+		// Index the copied subtree so the change feed announces it.
+		filepath.WalkDir(to, func(p string, d fs.DirEntry, err error) error {
+			if err == nil && d.IsDir() {
+				_, _ = a.scanner.ScanDir(a.root.Rel(p))
+			}
+			return nil
+		})
+	}
+	writeJSON(w, http.StatusCreated, a.withID(a.entry(to, info), info))
 }
 
 func copyTree(src, dst string) error {
@@ -794,6 +910,11 @@ func (a *API) handleDelete(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
+	if a.idx != nil {
+		if err := a.idx.Delete(a.root.Rel(abs)); err != nil {
+			a.log.Warn("index delete failed", "err", err)
+		}
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -820,6 +941,75 @@ type changesResponse struct {
 // response has truncated=true and next=<last path scanned>; the client repeats
 // the call with after=<next> (and the same since) to continue exactly where
 // the walk stopped, then stores cursor only after a non-truncated page.
+// journalChange is one entry of the id-based change feed (index mode).
+type journalChange struct {
+	Seq     int64  `json:"seq"`
+	Kind    string `json:"kind"` // upsert | delete | move
+	ID      string `json:"id"`
+	Path    string `json:"path"`
+	OldPath string `json:"oldPath,omitempty"`
+	Entry   *Entry `json:"entry,omitempty"`
+}
+
+type journalResponse struct {
+	Seq       int64           `json:"seq"`   // pass back as seq= next time
+	Reset     bool            `json:"reset"` // true: forget everything and enumerate again, then continue from seq
+	Changes   []journalChange `json:"changes"`
+	Truncated bool            `json:"truncated"` // more available: call again with seq=<Seq>
+}
+
+// handleJournal answers /fs/changes?seq=N from the index journal: every item
+// created, modified, moved or deleted after sequence N, with stable ids. It is
+// instant regardless of the tree size and needs no walk.
+func (a *API) handleJournal(w http.ResponseWriter, r *http.Request, since int64) {
+	pol := access.FromContext(r.Context())
+	limit := 1000
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if n, err := strconv.Atoi(l); err == nil && n > 0 && n <= 5000 {
+			limit = n
+		}
+	}
+	changes, latest, truncated, reset, err := a.idx.Changes(since, limit)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp := journalResponse{Seq: latest, Reset: reset, Changes: []journalChange{}, Truncated: truncated}
+	// Compaction: an item deleted later in this page needs no earlier upsert/move.
+	deleted := map[string]bool{}
+	for _, c := range changes {
+		if c.Kind == "delete" {
+			deleted[c.ID] = true
+		}
+	}
+	for _, c := range changes {
+		if c.Kind != "delete" && deleted[c.ID] {
+			continue
+		}
+		share := strings.SplitN(strings.TrimPrefix(c.Path, "/"), "/", 2)[0]
+		if pol.Restricted() && pol.Level(share) == access.None {
+			continue // shares this user may not see never appear in their feed
+		}
+		if strings.Contains(c.Path, "/.") || isInternal(c.Path) {
+			continue
+		}
+		jc := journalChange{Seq: c.Seq, Kind: c.Kind, ID: c.ID, Path: c.Path, OldPath: c.OldPath}
+		if c.Item != nil {
+			typ := "file"
+			if c.Item.IsDir {
+				typ = "dir"
+			}
+			jc.Entry = &Entry{ID: c.Item.ID, ParentID: c.Item.ParentID, Name: c.Item.Name, Path: c.Item.Path, Type: typ,
+				Size: c.Item.Size, MTime: c.Item.MTime, ETag: fmt.Sprintf("\"%x-%x\"", c.Item.Size, c.Item.MTime.UnixNano())}
+		} else if c.Kind != "delete" {
+			// The item vanished after the change was journaled: report it as gone.
+			jc.Kind = "delete"
+		}
+		resp.Changes = append(resp.Changes, jc)
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
 func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 	abs, err := a.root.Resolve(queryPath(r))
 	if err != nil {
@@ -828,6 +1018,17 @@ func (a *API) handleChanges(w http.ResponseWriter, r *http.Request) {
 	}
 	if !a.allowed(w, r, abs, access.Read) {
 		return
+	}
+	if a.idx != nil {
+		if q := r.URL.Query().Get("seq"); q != "" {
+			n, err := strconv.ParseInt(q, 10, 64)
+			if err != nil || n < 0 {
+				writeErr(w, http.StatusBadRequest, "seq must be a non-negative integer")
+				return
+			}
+			a.handleJournal(w, r, n)
+			return
+		}
 	}
 	pol := access.FromContext(r.Context())
 	var since int64

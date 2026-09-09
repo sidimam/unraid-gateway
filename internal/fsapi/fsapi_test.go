@@ -9,10 +9,12 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/sidimam/unraid-gateway/internal/access"
+	"github.com/sidimam/unraid-gateway/internal/index"
 )
 
 func newTestAPI(t *testing.T) (*API, *http.ServeMux, string) {
@@ -401,5 +403,75 @@ func TestPerUserSharePolicy(t *testing.T) {
 	// Unrestricted requests are unchanged.
 	if rr := do(mux, "GET", "/fs/list?path=/private", nil, nil); rr.Code != http.StatusOK {
 		t.Fatalf("unrestricted: %d", rr.Code)
+	}
+}
+
+func TestJournalFeedWithIndex(t *testing.T) {
+	api, mux, root := newTestAPI(t)
+	ix, err := index.Open(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ix.Close()
+	api.UseIndex(ix, &index.Scanner{Index: ix, Root: root, Shares: api.MountedShares, Skip: func(n string) bool { return strings.HasPrefix(n, ".") }})
+
+	// Listing assigns stable ids.
+	rr := do(mux, "GET", "/fs/list?path=/", nil, nil)
+	if rr.Code != 200 {
+		t.Fatalf("list: %d %s", rr.Code, rr.Body)
+	}
+	var lst listResponse
+	json.Unmarshal(rr.Body.Bytes(), &lst)
+	if len(lst.Entries) != 2 || lst.Entries[0].ID == "" || lst.Entries[0].ParentID != index.RootID {
+		t.Fatalf("root listing without ids: %+v", lst.Entries)
+	}
+	// First sync: seq=0 asks for a full enumeration and hands out the current seq.
+	rr = do(mux, "GET", "/fs/changes?path=/&seq=0", nil, nil)
+	var j journalResponse
+	json.Unmarshal(rr.Body.Bytes(), &j)
+	if !j.Reset || j.Seq == 0 {
+		t.Fatalf("expected reset on first sync: %+v", j)
+	}
+	// A write through the API is journaled immediately with an id.
+	rr = do(mux, "PUT", "/fs/content?path=/share/hello.txt", strings.NewReader("hi"), nil)
+	if rr.Code != 201 {
+		t.Fatalf("put: %d %s", rr.Code, rr.Body)
+	}
+	var created Entry
+	json.Unmarshal(rr.Body.Bytes(), &created)
+	if created.ID == "" {
+		t.Fatalf("put response lacks id: %+v", created)
+	}
+	rr = do(mux, "GET", "/fs/changes?path=/&seq="+strconv.FormatInt(j.Seq, 10), nil, nil)
+	json.Unmarshal(rr.Body.Bytes(), &j)
+	if j.Reset || len(j.Changes) != 1 || j.Changes[0].Kind != "upsert" || j.Changes[0].ID != created.ID || j.Changes[0].Entry == nil {
+		t.Fatalf("expected one upsert for hello.txt: %+v", j)
+	}
+	// Rename keeps the id and appears as a move; delete appears as a delete.
+	do(mux, "POST", "/fs/move", strings.NewReader(`{"from":"/share/hello.txt","to":"/share/renamed.txt"}`), map[string]string{"Content-Type": "application/json"})
+	rr = do(mux, "GET", "/fs/item?id="+created.ID, nil, nil)
+	var byID Entry
+	json.Unmarshal(rr.Body.Bytes(), &byID)
+	if rr.Code != 200 || byID.Path != "/share/renamed.txt" {
+		t.Fatalf("item by id after move: %d %+v", rr.Code, byID)
+	}
+	rr = do(mux, "GET", "/fs/changes?path=/&seq="+strconv.FormatInt(j.Seq, 10), nil, nil)
+	json.Unmarshal(rr.Body.Bytes(), &j)
+	if len(j.Changes) == 0 || j.Changes[0].Kind != "move" || j.Changes[0].OldPath != "/share/hello.txt" || j.Changes[0].Entry.Path != "/share/renamed.txt" {
+		t.Fatalf("expected a move first: %+v", j.Changes)
+	}
+	do(mux, "POST", "/fs/delete", strings.NewReader(`{"path":"/share/renamed.txt"}`), map[string]string{"Content-Type": "application/json"})
+	rr = do(mux, "GET", "/fs/changes?path=/&seq="+strconv.FormatInt(j.Seq, 10), nil, nil)
+	json.Unmarshal(rr.Body.Bytes(), &j)
+	if len(j.Changes) != 1 || j.Changes[0].Kind != "delete" || j.Changes[0].ID != created.ID {
+		t.Fatalf("expected a single delete for the id: %+v", j.Changes)
+	}
+	// Changes made behind the gateway's back are picked up when the directory is listed.
+	os.WriteFile(filepath.Join(root, "media", "song.mp3"), []byte("x"), 0o644)
+	do(mux, "GET", "/fs/list?path=/media", nil, nil)
+	rr = do(mux, "GET", "/fs/changes?path=/&seq="+strconv.FormatInt(j.Seq, 10), nil, nil)
+	json.Unmarshal(rr.Body.Bytes(), &j)
+	if len(j.Changes) != 1 || j.Changes[0].Path != "/media/song.mp3" {
+		t.Fatalf("expected song.mp3 upsert: %+v", j.Changes)
 	}
 }

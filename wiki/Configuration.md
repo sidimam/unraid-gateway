@@ -27,6 +27,14 @@ All configuration is by environment variable. Booleans accept `true`/`false`; du
 
 ## Volumes
 
+| Container path | Host path | Purpose |
+|---|---|---|
+| `/config` | `/mnt/user/appdata/unraid-gateway` | Item index (SQLite). Optional but recommended: without it the index lives in a temporary file and is rebuilt at every restart. |
+| `/data/<share>` | `/mnt/user/<share>` | One mapping per share to expose (rw or ro). |
+| `/unraid-shares/smb-shares.conf` | `/etc/samba/smb-shares.conf` | Share security for per-user access (read-only). |
+
+### Legacy notes
+
 Mount each share at `/data/<name>`. For per-user permissions also mount `/etc/samba/smb-shares.conf` → `/unraid-shares/smb-shares.conf` read-only (the Unraid template does this by default). `<name>` is what clients see; it may differ from the share name. Use `:ro` for read-only. Nothing outside `/data` is ever touched; the container needs no other mounts.
 
 ## User and permissions

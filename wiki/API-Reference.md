@@ -28,6 +28,8 @@ Then send `Authorization: Bearer <token>`. Alternatively send `x-api-key: <unrai
 
 ## Entries
 
+Since 0.5 every entry also carries `id` (stable across renames, moves and restarts) and `parentId` (`root` for shares). `GET /fs/item?id=<id>` returns the current entry for an id; `GET /fs/changes?seq=<n>` is the id-based journal (see Change Feed).
+
 ```json
 {"name":"IMG_0001.HEIC","path":"/media/Photos/IMG_0001.HEIC","type":"file","size":2345678,
  "mtime":"2026-09-08T14:03:11.120Z","etag":"\"23cace-1856f2c0a3b1c2d0\"","mode":"-rw-rw-r--"}

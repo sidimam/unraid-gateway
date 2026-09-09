@@ -21,7 +21,10 @@
   <DonateLink/>
   <Beta>False</Beta>
   <Date>2026-09-09</Date>
-  <Changes>### 2026-09-09 (v0.4.0)
+  <Changes>### 2026-09-09 (v0.5.0)
+- Persistent item index (SQLite in /config): stable ids per file, change journal, instant `/fs/changes?seq=` feed, `/fs/item?id=`; background scanner (directory scan every 5 min, full scan every 6 h). Mount /mnt/user/appdata/unraid-gateway to /config.
+
+### 2026-09-09 (v0.4.0)
 - Readable text logs by default (LOG_FORMAT/LOG_LEVEL/LOG_HEALTHCHECKS), start-up banner, console walkthrough (`gw` command).
 
 ### 2026-09-08 (v0.3.x)
@@ -39,6 +42,7 @@
   <Config Name="documents share" Target="/data/documents" Default="/mnt/user/documents" Mode="rw" Description="Each mapped share appears as a top-level folder in the Files app. Add more shares with 'Add another Path' (container path /data/&lt;name&gt;); set Access Mode to Read Only for shares you only want to browse." Type="Path" Display="always" Required="false" Mask="false">/mnt/user/documents</Config>
   <Config Name="media share" Target="/data/media" Default="/mnt/user/media" Mode="rw" Description="" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/media</Config>
   <Config Name="downloads share" Target="/data/downloads" Default="/mnt/user/downloads" Mode="rw" Description="" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/downloads</Config>
+  <Config Name="Gateway data (item index)" Target="/config" Default="/mnt/user/appdata/unraid-gateway" Mode="rw" Description="Small SQLite catalogue of your files (stable ids, change journal) so the app syncs instantly instead of walking the shares. Safe to delete: it is rebuilt at start." Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/unraid-gateway</Config>
   <Config Name="Unraid share security (read-only)" Target="/unraid-shares/smb-shares.conf" Default="/etc/samba/smb-shares.conf" Mode="ro" Description="The share definitions Unraid generates for Samba (public/secure/private, read and write user lists). Needed so that users logging in with their Unraid username and password get exactly the permissions they have over SMB." Type="Path" Display="always" Required="false" Mask="false">/etc/samba/smb-shares.conf</Config>
   <Config Name="User authentication" Target="USER_AUTH" Default="optional" Mode="" Description="optional: clients may add an Unraid username and password to the API key and get that user's share permissions; required: every client must; off: API key only (access = container mounts)." Type="Variable" Display="always" Required="false" Mask="false">optional</Config>
   <Config Name="Unraid SMB address" Target="UNRAID_SMB_ADDR" Default="" Mode="" Description="host:port of the Unraid SMB service used to verify user passwords. Empty = host of the WebGUI URL, port 445." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
@@ -49,6 +53,8 @@
   <Config Name="Trust proxy headers" Target="TRUST_PROXY" Default="false" Mode="" Description="true when behind Nginx Proxy Manager, SWAG or Cloudflare Tunnel, so rate limiting sees the real client IP." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   <Config Name="Unraid self-signed TLS" Target="UNRAID_INSECURE_TLS" Default="false" Mode="" Description="true only if UNRAID_URL is https with a self-signed certificate." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   <Config Name="Validation query" Target="UNRAID_VALIDATE_QUERY" Default="query { me { id name roles } }" Mode="" Description="GraphQL query used to validate API keys. Change only if your Unraid version lacks the 'me' field." Type="Variable" Display="advanced" Required="false" Mask="false">query { me { id name roles } }</Config>
+  <Config Name="Index directory scan" Target="INDEX_DIR_SCAN" Default="5m" Mode="" Description="How often directories are checked for changes made outside the gateway (SMB, other containers). Only directories are stat'ed." Type="Variable" Display="advanced" Required="false" Mask="false">5m</Config>
+  <Config Name="Index full scan" Target="INDEX_FULL_SCAN" Default="6h" Mode="" Description="How often every file is re-checked (catches content edits that leave the folder date untouched)." Type="Variable" Display="advanced" Required="false" Mask="false">6h</Config>
   <Config Name="Change feed page deadline" Target="CHANGES_DEADLINE" Default="20s" Mode="" Description="Max time per /fs/changes page. Large shares on shfs scan at roughly 3000 entries per second; clients page with after=next." Type="Variable" Display="advanced" Required="false" Mask="false">20s</Config>
   <Config Name="Timezone" Target="TZ" Default="Europe/Rome" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">Europe/Rome</Config>
 </Container>

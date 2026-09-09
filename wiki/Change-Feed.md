@@ -1,6 +1,22 @@
 # Change feed and sync
 
-## Why not inotify
+## Item index and journal (gateway 0.5+)
+
+Since 0.5.0 the gateway keeps a persistent **item index**: a SQLite file (`INDEX_DB`, default `/config/index.db`, mount `/mnt/user/appdata/unraid-gateway` there) with one row per file and directory, a stable random id for each, and a **journal** of changes numbered by a growing `seq`. This is the same idea as the file cache behind OneDrive, Google Drive or Nextcloud clients.
+
+How it stays correct:
+
+- every write through the API (upload, folder, rename, move, copy, delete) is journaled immediately;
+- listing a directory reconciles that directory with the disk on the spot, so what a client sees is what the index knows;
+- a background scanner catches changes made behind the gateway's back (SMB, other containers): every `INDEX_DIR_SCAN` (5 min) it stats directories only and re-lists those whose modification time changed (that is what adding, removing or renaming an entry does), and every `INDEX_FULL_SCAN` (6 h) it re-stats every entry to catch edits that leave the folder date untouched.
+
+Clients call `GET /fs/changes?seq=<last seq>` and get exactly the items created, modified, moved or deleted since then, with their ids, in milliseconds regardless of the tree size. `seq=0` (first sync) or a seq older than the retained journal (30 days) returns `reset:true`: the client enumerates again and continues from the returned `seq`. Renames in place keep the id (same inode); moves through the API keep the id of the whole subtree; moves done over SMB across directories appear as delete + create.
+
+The index is disposable: delete the file and it is rebuilt at the next start (a full scan of 400,000 entries on shfs takes a few minutes; the gateway serves requests meanwhile).
+
+## Legacy feed (gateways before 0.5, or `INDEX_DB=off`)
+
+### Why not inotify
 
 Unraid user shares are served by `shfs`, a FUSE filesystem. inotify on `/mnt/user` does not report changes made through SMB or by other containers, so a watcher would miss most edits. The gateway therefore offers a **scan-based change feed** that clients call periodically.
 

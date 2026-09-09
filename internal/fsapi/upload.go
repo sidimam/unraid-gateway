@@ -254,8 +254,9 @@ func (s *uploadStore) handleCommit(w http.ResponseWriter, r *http.Request) {
 		s.api.fsErr(w, err)
 		return
 	}
+	s.api.indexed(u.dst, info)
 	w.Header().Set("ETag", etag(info))
-	writeJSON(w, http.StatusCreated, s.api.entry(u.dst, info))
+	writeJSON(w, http.StatusCreated, s.api.withID(s.api.entry(u.dst, info), info))
 }
 
 func (s *uploadStore) handleAbort(w http.ResponseWriter, r *http.Request) {
