@@ -21,7 +21,10 @@
   <DonateLink/>
   <Beta>False</Beta>
   <Date>2026-09-09</Date>
-  <Changes>### 2026-09-09 (v0.5.0)
+  <Changes>### 2026-09-09 (v0.5.4)
+- Final icon (author's artwork, light and dark).
+
+### 2026-09-09 (v0.5.0)
 - Persistent item index (SQLite in /config): stable ids per file, change journal, instant `/fs/changes?seq=` feed, `/fs/item?id=`; background scanner (directory scan every 5 min, full scan every 6 h). Mount /mnt/user/appdata/unraid-gateway to /config.
 
 ### 2026-09-09 (v0.4.0)

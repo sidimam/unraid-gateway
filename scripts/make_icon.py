@@ -14,9 +14,14 @@ ASSETS = os.path.join(HERE, "..", "assets")
 WEBUI = os.path.join(HERE, "..", "internal", "webui", "static")
 S = 1024
 
-def square(im):
-    w, h = im.size; side = min(w, h)
-    return im.crop(((w - side) // 2, (h - side) // 2, (w + side) // 2, (h + side) // 2)).resize((S, S), Image.LANCZOS)
+def square(im, margin=0.06):
+    """Pad (never crop) the artwork onto a square canvas of its own background colour."""
+    w, h = im.size
+    bg = im.crop((2, 2, 10, 10)).resize((1, 1), Image.BOX).getpixel((0, 0))
+    side = int(max(w, h) * (1 + 2 * margin))
+    canvas = Image.new("RGB", (side, side), bg)
+    canvas.paste(im, ((side - w) // 2, (side - h) // 2))
+    return canvas.resize((S, S), Image.LANCZOS)
 
 def bars_mask(rgb):
     h, s, v = rgb.convert("HSV").split()
@@ -25,26 +30,37 @@ def bars_mask(rgb):
     bright = v.point(lambda x: 255 if x > 64 else 0)
     return ImageChops.multiply(ImageChops.multiply(warm, sat), bright)
 
-def artwork_mask(rgb):
+def artwork_mask(rgb, lo=14, gain=6):
+    """Alpha of the artwork against its own flat background. The dark variant uses a higher
+    threshold so the soft drop shadow of the light artwork is not carried over."""
     bg = rgb.crop((2, 2, 10, 10)).resize((1, 1), Image.BOX).getpixel((0, 0))
-    diff = ImageChops.difference(rgb, Image.new("RGB", rgb.size, bg)).convert("L")
-    return diff.point(lambda x: 0 if x < 14 else min(255, (x - 14) * 6))
+    r, g, b = ImageChops.difference(rgb, Image.new("RGB", rgb.size, bg)).split()
+    diff = ImageChops.lighter(ImageChops.lighter(r, g), b)  # max channel difference (keeps pale yellow)
+    return diff.point(lambda x: 0 if x < lo else min(255, (x - lo) * gain))
 
 def darken(light):
-    """Dark background; the slate arch becomes light grey (value inverted), bars untouched."""
-    art = artwork_mask(light); bars = bars_mask(light)
+    """Dark background; the slate arch becomes light grey, bars untouched. Edge pixels are
+    un-premultiplied against the light background so no pale halo remains on the dark one."""
+    art = artwork_mask(light, lo=30, gain=6); bars = bars_mask(light)
     slate = ImageChops.subtract(art, bars)
     h, s, v = light.convert("HSV").split()
     v_inv = v.point(lambda x: min(255, 255 - x + 95))
     light_arch = Image.merge("HSV", (h, s.point(lambda x: x // 3), v_inv)).convert("RGB")
-    with_arch = Image.composite(light_arch, light, slate)
+    fg = Image.composite(light_arch, light, slate)
     w, hgt = light.size
-    bg = Image.new("RGB", (w, hgt)); px = bg.load()
+    bgc = light.crop((2, 2, 10, 10)).resize((1, 1), Image.BOX).getpixel((0, 0))
+    out = Image.new("RGB", (w, hgt)); po = out.load(); pf = fg.load(); pa = art.load(); pl = light.load()
     top, bottom = (0x30, 0x35, 0x3D), (0x19, 0x1C, 0x22)
     for y in range(hgt):
-        t = y / (hgt - 1); c = tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3))
-        for x in range(w): px[x, y] = c
-    return Image.composite(with_arch, bg, art)
+        t = y / (hgt - 1); dbg = tuple(top[i] + (bottom[i] - top[i]) * t for i in range(3))
+        for x in range(w):
+            a = pa[x, y] / 255.0
+            if a <= 0.0:
+                po[x, y] = tuple(int(c) for c in dbg); continue
+            src = pf[x, y] if a >= 0.999 else tuple(
+                max(0, min(255, (pf[x, y][i] - (1 - a) * bgc[i]) / a)) for i in range(3))
+            po[x, y] = tuple(int(src[i] * a + dbg[i] * (1 - a)) for i in range(3))
+    return out
 
 def main():
     light = square(Image.open(SRC).convert("RGB"))
