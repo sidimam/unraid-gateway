@@ -149,8 +149,12 @@ func TestDirScanPicksUpExternalChanges(t *testing.T) {
 	time.Sleep(20 * time.Millisecond)
 	os.Rename(filepath.Join(root, "docs", "readme.txt"), filepath.Join(root, "docs", "renamed.txt"))
 	write(t, filepath.Join(root, "media", "new.mp3"), "y")
+	write(t, filepath.Join(root, "docs", "2026", "deep", "note.txt"), "n")
 	os.RemoveAll(filepath.Join(root, "vm", "ubuntu"))
 	s.dirs(context.Background())
+	if it, _ := s.Index.ByPath("/docs/2026/deep/note.txt"); it == nil {
+		t.Fatal("files inside a newly created directory tree must be indexed by the directory scan")
+	}
 
 	ch, _, _, reset, _ := s.Index.Changes(latest, 100)
 	if reset {

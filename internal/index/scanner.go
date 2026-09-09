@@ -121,7 +121,22 @@ func (s *Scanner) ScanDir(rel string) (map[string]string, error) {
 		}
 		obs = append(obs, FromFileInfo(fi))
 	}
-	return s.Index.Reconcile(rel, obs)
+	ids, err := s.Index.Reconcile(rel, obs)
+	if err != nil {
+		return nil, err
+	}
+	// Directories that appeared here (or are still unexplored) are scanned right away,
+	// so a tree created behind the gateway's back is indexed as one unit.
+	for _, o := range obs {
+		if !o.IsDir {
+			continue
+		}
+		child := path.Join(rel, o.Name)
+		if kids, err := s.Index.Children(child); err == nil && len(kids) == 0 {
+			_, _ = s.ScanDir(child)
+		}
+	}
+	return ids, nil
 }
 
 // full walks every share and reconciles every directory.
@@ -239,4 +254,3 @@ func Rel(root, abs string) string {
 	return "/" + filepath.ToSlash(r)
 }
 
-var _ = path.Join
