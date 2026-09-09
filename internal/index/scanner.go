@@ -253,4 +253,3 @@ func Rel(root, abs string) string {
 	}
 	return "/" + filepath.ToSlash(r)
 }
-
