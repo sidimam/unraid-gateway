@@ -1,5 +1,11 @@
 # Installation
 
+
+## Community Applications and Homebrew
+
+- **Community Applications**: the listing has been requested (see `docs/community-applications.md` in the repository). Once approved, *Apps › search "unraid-gateway"* installs the same template as the URL method below.
+- **Homebrew** (macOS or Linux machine with the shares mounted, for example a Mac mini next to the NAS): `brew install sidimam/tap/unraid-gateway`, then `brew services start unraid-gateway`. Point `DATA_ROOT` at a folder with one sub-folder (or symlink) per share and `UNRAID_URL` at the Unraid WebGUI. The container remains the recommended way on Unraid itself.
+
 ## Unraid (recommended)
 
 1. **Docker → Add Container → Template repositories**, add

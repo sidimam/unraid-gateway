@@ -47,6 +47,10 @@ The **Console** button of the container in the Docker tab (or `docker exec -it u
 
 Nothing is configured from the console: settings live in the container's variables and path mappings in Unraid.
 
+## Nightly restarts (Appdata Backup)
+
+The *Appdata Backup* plugin stops and restarts every container it does not skip, and logs `unraid-gateway does not have any volume to back up! Skipping. Please consider ignoring this container.` The gateway keeps no state, so set it to **Skip** in the plugin's per-container settings: otherwise phones syncing during the restart see the gateway unreachable and pause their Files location until the app wakes them again.
+
 ## Updating
 
 The template uses `latest`; Unraid's *Check for Updates* compares digests with GHCR and *Update* recreates the container from the template. *CA Auto Update Applications* can automate it. Sessions are lost on update; clients log in again transparently.

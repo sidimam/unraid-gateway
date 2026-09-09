@@ -19,6 +19,20 @@
   <DateInstalled/>
   <DonateText/>
   <DonateLink/>
+  <Beta>False</Beta>
+  <Date>2026-09-09</Date>
+  <Changes>### 2026-09-09 (v0.4.0)
+- Readable text logs by default (LOG_FORMAT/LOG_LEVEL/LOG_HEALTHCHECKS), start-up banner, console walkthrough (`gw` command).
+
+### 2026-09-08 (v0.3.x)
+- Per-user access: Unraid username and password verified over SMB, share permissions (public/secure/private, read and write lists) applied as in Unraid; shares are the real container mounts.
+
+### 2026-09-08 (v0.2.x)
+- Paginated change feed for large shares, immutable share roots, resumable uploads, web UI.
+
+### 2026-09-08 (v0.1.0)
+- First release.
+  </Changes>
   <Requires>An Unraid API key (Settings &gt; Management Access &gt; API Keys). For remote access, a reverse proxy with a valid TLS certificate or Cloudflare Tunnel in front of the gateway port.</Requires>
   <Config Name="Gateway port" Target="8484" Default="8484" Mode="tcp" Description="Port exposed by the gateway. Put a reverse proxy with TLS in front of it before exposing it to the Internet." Type="Port" Display="always" Required="true" Mask="false">8484</Config>
   <Config Name="Unraid WebGUI URL" Target="UNRAID_URL" Default="http://192.168.1.10" Mode="" Description="LAN URL of your Unraid WebGUI, used to validate API keys and proxy GraphQL. Use the server IP, not localhost." Type="Variable" Display="always" Required="true" Mask="false">http://192.168.1.10</Config>

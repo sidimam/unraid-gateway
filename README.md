@@ -33,6 +33,13 @@ It is the server half of **[Unraid Drive](https://github.com/sidimam/unraid-driv
 | Also proxies the Unraid GraphQL API | ✗ | ✗ | ✗ | ✓ |
 | Needs a container on the server | ✗ | ✗ | ✓ | ✓ |
 
+## Install
+
+- **Unraid — Community Applications**: search for *unraid-gateway* in the Apps tab (listing requested; until it appears, use the template URL below).
+- **Unraid — template URL**: Docker › Add Container › Template repositories, add `https://raw.githubusercontent.com/sidimam/unraid-gateway/main/templates/unraid-gateway.xml`.
+- **Homebrew (macOS/Linux)**: `brew install sidimam/tap/unraid-gateway` then `brew services start unraid-gateway` — for a Mac or Linux box that has the shares mounted.
+- **Docker anywhere**: `ghcr.io/sidimam/unraid-gateway:latest`, see below.
+
 ## Quick start (Unraid)
 
 1. **Create an API key** in *Settings → Management Access → API Keys*. A dedicated key for the gateway is recommended.

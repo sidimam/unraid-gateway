@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-09
+- Homebrew formula `sidimam/tap/unraid-gateway` (builds v0.4.0 from source, `brew services` unit).
+- Community Applications listing prepared: template `<Changes>`/`<Date>`, submission notes in `docs/community-applications.md`.
+- Documented that Appdata Backup restarts the container nightly unless the container is skipped in the plugin.
+
 ## v0.4.0 — 2026-09-08
 - Readable logs by default: startup banner with the effective configuration, one aligned line per event with method, endpoint, status, duration, file touched, user and IP; explicit login messages; health checks hidden. `LOG_FORMAT`, `LOG_LEVEL`, `LOG_HEALTHCHECKS`.
 - Console walkthrough: the container's Console opens with a guided status check; `gw status|shares|users|login|key|env|help`.
