@@ -986,6 +986,9 @@ func (a *API) handleJournal(w http.ResponseWriter, r *http.Request, since int64)
 		if c.Kind != "delete" && deleted[c.ID] {
 			continue
 		}
+		if c.ID == index.RootID || c.Path == "/" {
+			continue // bootstrap marker
+		}
 		share := strings.SplitN(strings.TrimPrefix(c.Path, "/"), "/", 2)[0]
 		if pol.Restricted() && pol.Level(share) == access.None {
 			continue // shares this user may not see never appear in their feed

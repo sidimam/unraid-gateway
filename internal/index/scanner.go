@@ -143,7 +143,13 @@ func (s *Scanner) ScanDir(rel string) (map[string]string, error) {
 func (s *Scanner) full(ctx context.Context) {
 	start := time.Now()
 	n := 0
+	bootstrap := s.count() == 0
+	if bootstrap {
+		s.Index.SetBootstrapping(true)
+		s.logger().Info("index: first scan, cataloguing the shares (the gateway serves requests meanwhile)")
+	}
 	if _, err := s.ScanDir("/"); err != nil {
+		s.Index.SetBootstrapping(false)
 		s.logger().Warn("index: cannot scan root", "err", err)
 		return
 	}
@@ -165,6 +171,10 @@ func (s *Scanner) full(ctx context.Context) {
 			n++
 			return nil
 		})
+	}
+	if bootstrap {
+		s.Index.SetBootstrapping(false)
+		_ = s.Index.MarkBootstrapped()
 	}
 	if ctx.Err() == nil {
 		_ = s.Index.SetMeta(metaLastFull, time.Now().UTC().Format(time.RFC3339))

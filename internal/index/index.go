@@ -54,7 +54,14 @@ const RootID = "root"
 // Index is safe for concurrent use.
 type Index struct {
 	db *sql.DB
+	// bootstrapping suppresses journal rows while an empty index is filled for the
+	// first time: nobody can replay that far back anyway (since=0 answers reset),
+	// and it keeps the database a fraction of the size.
+	bootstrapping bool
 }
+
+// SetBootstrapping toggles journal suppression (see Index.bootstrapping).
+func (ix *Index) SetBootstrapping(on bool) { ix.bootstrapping = on }
 
 // Open opens or creates the database at dbPath. Use ":memory:" for tests.
 func Open(dbPath string) (*Index, error) {
@@ -346,7 +353,7 @@ func (ix *Index) Reconcile(dir string, observed []Observed) (map[string]string, 
 					b2i(o.IsDir), o.Size, o.MTime.UnixNano(), o.Ino, o.Dev, k.id); err != nil {
 					return nil, err
 				}
-				if _, err := tx.Exec(`INSERT INTO changes(kind,id,path,ts) VALUES('upsert',?,?,?)`, k.id, p, now); err != nil {
+				if err := ix.journal(tx, "upsert", k.id, p, "", now); err != nil {
 					return nil, err
 				}
 			}
@@ -383,7 +390,7 @@ func (ix *Index) Reconcile(dir string, observed []Observed) (map[string]string, 
 			id, parentID, p, o.Name, b2i(o.IsDir), o.Size, o.MTime.UnixNano(), o.Ino, o.Dev); err != nil {
 			return nil, err
 		}
-		if _, err := tx.Exec(`INSERT INTO changes(kind,id,path,ts) VALUES('upsert',?,?,?)`, id, p, now); err != nil {
+		if err := ix.journal(tx, "upsert", id, p, "", now); err != nil {
 			return nil, err
 		}
 		ids[o.Name] = id
@@ -431,6 +438,17 @@ func (ix *Index) ensurePath(dir string) error {
 	}
 	_, err := ix.db.Exec(`INSERT INTO items(id,parent,path,name,is_dir,size,mtime,seq) VALUES(?,?,?,?,1,0,0,(SELECT COALESCE(MAX(seq),0)+1 FROM changes))`,
 		newID(), parentID, dir, path.Base(dir))
+	return err
+}
+
+// journal records one change unless the index is bootstrapping.
+func (ix *Index) journal(tx interface {
+	Exec(string, ...any) (sql.Result, error)
+}, kind, id, p, oldPath string, now int64) error {
+	if ix.bootstrapping {
+		return nil
+	}
+	_, err := tx.Exec(`INSERT INTO changes(kind,id,path,old_path,ts) VALUES(?,?,?,?,?)`, kind, id, p, oldPath, now)
 	return err
 }
 
@@ -577,6 +595,14 @@ func (ix *Index) Move(from, to string) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+// MarkBootstrapped writes a single journal row once the initial catalogue is complete,
+// so sequence numbers start from 1 and clients can anchor to it. The row refers to the
+// root and is skipped by the API.
+func (ix *Index) MarkBootstrapped() error {
+	_, err := ix.db.Exec(`INSERT INTO changes(kind,id,path,ts) VALUES('upsert',?,?,?)`, RootID, "/", time.Now().UnixNano())
+	return err
 }
 
 // Prune drops journal entries older than keep.

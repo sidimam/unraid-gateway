@@ -126,10 +126,15 @@ func TestChangesResetAndTruncate(t *testing.T) {
 	}
 	s := newScanner(t, root)
 	s.full(context.Background())
+	// The first catalogue is not journaled (only a marker): clients start from reset.
 	_, latest, _, reset, _ := s.Index.Changes(0, 10)
-	if !reset || latest == 0 {
+	if !reset || latest != 1 {
 		t.Fatalf("since=0 must ask for a full enumeration: reset=%v latest=%d", reset, latest)
 	}
+	for i := 0; i < 3; i++ {
+		write(t, filepath.Join(root, "docs", "n"+string(rune('a'+i))+".txt"), "y")
+	}
+	s.ScanDir("/docs")
 	ch, newest, truncated, reset, _ := s.Index.Changes(1, 2)
 	if reset || !truncated || len(ch) != 2 || newest != ch[1].Seq {
 		t.Fatalf("pagination wrong: %d changes truncated=%v reset=%v newest=%d", len(ch), truncated, reset, newest)

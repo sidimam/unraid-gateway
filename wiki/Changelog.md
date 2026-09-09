@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.5.1 (2026-09-09)
+- First catalogue scan no longer writes a journal row per file (the database stays small; a 420,000-entry tree took 330 MB before, a few tens of MB now). Delete `/config/index.db` once after upgrading from 0.5.0 to rebuild it lean.
+
 ## v0.5.0 (2026-09-09)
 - Persistent item index (SQLite, `INDEX_DB`, mount `/config`): stable ids on every entry (`id`, `parentId`), change journal served by `GET /fs/changes?seq=`, `GET /fs/item?id=`, background scanner (`INDEX_DIR_SCAN` 5m, `INDEX_FULL_SCAN` 6h), write-through from every API write, on-demand reconcile on listings. The legacy mtime feed stays for older clients.
 - Template: new `/config` path and index settings; `<Changes>`/`<Date>` for Community Applications.
