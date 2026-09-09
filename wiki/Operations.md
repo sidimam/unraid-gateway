@@ -51,6 +51,10 @@ Nothing is configured from the console: settings live in the container's variabl
 
 The *Appdata Backup* plugin stops and restarts every container it does not skip, and logs `unraid-gateway does not have any volume to back up! Skipping. Please consider ignoring this container.` The gateway keeps no state, so set it to **Skip** in the plugin's per-container settings: otherwise phones syncing during the restart see the gateway unreachable and pause their Files location until the app wakes them again.
 
+## Item index
+
+The catalogue lives in `/config/index.db` (SQLite, WAL mode). Observed on an Unraid 7.3 server with shares on shfs: the first scan of 418,000 entries in 67,000 directories took 13 minutes at about 40 % of one CPU core and 140 MB of RAM, and the gateway served requests normally meanwhile; the resulting database is a few tens of MB (0.5.1; 0.5.0 wrote a journal row per file and reached 330 MB, delete the file once after upgrading). Afterwards the directory scan every 5 minutes only stats directories and takes seconds; the full scan every 6 hours repeats the initial walk in the background. The log reports `index: full scan done` and `index: directory scan` with counts and timings. Deleting `index.db` (container stopped) is always safe: it is rebuilt at the next start and clients simply re-enumerate.
+
 ## Updating
 
 The template uses `latest`; Unraid's *Check for Updates* compares digests with GHCR and *Update* recreates the container from the template. *CA Auto Update Applications* can automate it. Sessions are lost on update; clients log in again transparently.
