@@ -135,3 +135,42 @@ func TestChangesResetAndTruncate(t *testing.T) {
 		t.Fatalf("pagination wrong: %d changes truncated=%v reset=%v newest=%d", len(ch), truncated, reset, newest)
 	}
 }
+
+func TestDirScanPicksUpExternalChanges(t *testing.T) {
+	root := t.TempDir()
+	write(t, filepath.Join(root, "docs", "readme.txt"), "x")
+	write(t, filepath.Join(root, "media", "song.mp3"), "x")
+	write(t, filepath.Join(root, "vm", "ubuntu", "disk.img"), "x")
+	s := newScanner(t, root)
+	s.full(context.Background())
+	latest, _ := s.Index.LatestSeq()
+	old, _ := s.Index.ByPath("/docs/readme.txt")
+
+	time.Sleep(20 * time.Millisecond)
+	os.Rename(filepath.Join(root, "docs", "readme.txt"), filepath.Join(root, "docs", "renamed.txt"))
+	write(t, filepath.Join(root, "media", "new.mp3"), "y")
+	os.RemoveAll(filepath.Join(root, "vm", "ubuntu"))
+	s.dirs(context.Background())
+
+	ch, _, _, reset, _ := s.Index.Changes(latest, 100)
+	if reset {
+		t.Fatal("unexpected reset")
+	}
+	got := map[string]string{}
+	for _, c := range ch {
+		got[c.Kind+" "+c.Path] = c.OldPath
+	}
+	if _, ok := got["move /docs/renamed.txt"]; !ok || got["move /docs/renamed.txt"] != "/docs/readme.txt" {
+		t.Fatalf("rename not detected as move: %v", got)
+	}
+	if _, ok := got["upsert /media/new.mp3"]; !ok {
+		t.Fatalf("new file not detected: %v", got)
+	}
+	if _, ok := got["delete /vm/ubuntu"]; !ok {
+		t.Fatalf("deleted directory not detected: %v", got)
+	}
+	nw, _ := s.Index.ByPath("/docs/renamed.txt")
+	if nw == nil || nw.ID != old.ID {
+		t.Fatalf("renamed file must keep its id")
+	}
+}

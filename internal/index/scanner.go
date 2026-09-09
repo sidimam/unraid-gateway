@@ -158,44 +158,45 @@ func (s *Scanner) full(ctx context.Context) {
 	}
 }
 
-// dirs re-lists only the directories whose mtime changed since they were indexed.
+// dirs re-lists only the directories whose mtime changed since they were indexed
+// (adding, removing or renaming an entry changes its directory's mtime).
 func (s *Scanner) dirs(ctx context.Context) {
 	start := time.Now()
 	changed := 0
-	if _, err := s.ScanDir("/"); err != nil {
-		return
-	}
-	for _, share := range s.shares() {
-		var walk func(rel string)
-		walk = func(rel string) {
-			if ctx.Err() != nil {
-				return
+	var walk func(rel string)
+	walk = func(rel string) {
+		if ctx.Err() != nil {
+			return
+		}
+		it, err := s.Index.ByPath(rel)
+		if err != nil || it == nil {
+			return
+		}
+		fi, err := os.Stat(filepath.Join(s.Root, filepath.FromSlash(rel)))
+		if err != nil {
+			return // vanished: the parent's re-listing removes it
+		}
+		if fi.ModTime().UnixNano() != it.MTime.UnixNano() {
+			if _, err := s.ScanDir(rel); err == nil {
+				changed++
 			}
-			children, err := s.Index.Children(rel)
-			if err != nil {
-				return
-			}
-			for _, c := range children {
-				if !c.IsDir {
-					continue
-				}
-				abs := filepath.Join(s.Root, filepath.FromSlash(c.Path))
-				fi, err := os.Stat(abs)
-				if err != nil {
-					// Gone: the parent listing will notice; re-list the parent now.
-					_, _ = s.ScanDir(rel)
-					changed++
-					continue
-				}
-				if fi.ModTime().UnixNano() != c.MTime.UnixNano() {
-					if _, err := s.ScanDir(c.Path); err == nil {
-						changed++
-					}
-				}
+		}
+		children, err := s.Index.Children(rel)
+		if err != nil {
+			return
+		}
+		for _, c := range children {
+			if c.IsDir {
 				walk(c.Path)
 			}
 		}
+	}
+	for _, share := range s.shares() {
 		walk("/" + share)
+	}
+	// The root last: it refreshes the share entries (and notices mounted/unmounted shares).
+	if _, err := s.ScanDir("/"); err != nil {
+		return
 	}
 	if changed > 0 {
 		s.logger().Info("index: directory scan", "changedDirs", changed, "took", time.Since(start).Round(time.Millisecond))
