@@ -48,18 +48,30 @@ def main():
         d.rectangle([x, abot - stroke // 2, x + stroke, abot], fill=255)
         d.ellipse([x, abot - stroke // 2, x + stroke, abot + stroke // 2], fill=255)
     d.rectangle([0, abot + stroke // 2 + 1, N, N], fill=0)
-    # stub connector from the bars to the left leg, mid height
-    sy = int(0.56 * N); st = int(0.052 * N)
-    d.rounded_rectangle([int((bx1 / S - 0.01) * N), sy - st // 2, ax0 + stroke // 2, sy + st // 2], radius=st // 3, fill=255)
     arch = arch.resize((S, S), Image.LANCZOS)
+    # stub connector from the third bar to the left leg: rounded, fading from the bar's orange
+    # into the arch's slate (drawn separately so it can carry its own gradient)
+    sy = int(0.56 * S); st = int(0.052 * S)
+    sx0 = int(bx1 - 0.035 * S); sx1 = int((ax0 + stroke // 2) / SS)   # starts under the bar, so no notch shows
+    stub_mask = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(stub_mask).rounded_rectangle([sx0, sy - st // 2, sx1, sy + st // 2], radius=st // 2, fill=255)
+    bar_col = src.getpixel((max(bx0, bx1 - 12), sy))          # orange at the bar's edge, same height
+    stub = Image.new("RGB", (S, S)); spx = stub.load()
+    for x in range(sx0, sx1 + 1):
+        t = min(1.0, max(0.0, (x - sx0) / max(1, (sx1 - sx0))))
+        t = t * t * (3 - 2 * t)                                 # smooth step
+        sl = tuple(int(slate_top[i] + (slate_bot[i] - slate_top[i]) * (sy / S)) for i in range(3))
+        c = tuple(int(bar_col[i] + (sl[i] - bar_col[i]) * t) for i in range(3))
+        for y in range(sy - st, sy + st): spx[x, y] = c
     grad = Image.new("RGB", (S, S)); px = grad.load()
     for y in range(S):
         t = y / (S - 1); c = tuple(int(slate_top[i] + (slate_bot[i] - slate_top[i]) * t) for i in range(3))
         for x in range(S): px[x, y] = c
-    arch_shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); arch_shadow.paste((0, 0, 0, 80), (6, 8), arch)
+    arch_shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); arch_shadow.paste((0, 0, 0, 80), (6, 8), ImageChops.lighter(arch, stub_mask))
     arch_shadow = arch_shadow.filter(ImageFilter.GaussianBlur(10))
     out = canvas.convert("RGBA")
     out.alpha_composite(shadow); out.alpha_composite(arch_shadow)
+    out = Image.composite(stub.convert("RGBA"), out, stub_mask)
     out = Image.composite(grad.convert("RGBA"), out, arch)
     out = Image.composite(src.convert("RGBA"), out, bars_soft)
     out.convert("RGB").save(OUT)
