@@ -239,6 +239,8 @@ Health-check probes are hidden unless `LOG_HEALTHCHECKS=true`; `LOG_FORMAT=json`
 
 ## Development
 
+`scripts/fake_unraid.py` is a tiny stand-in for the Unraid GraphQL endpoint (accepts the API key `good-key` on port 18080), handy to run the container locally: `UNRAID_URL=http://host.docker.internal:18080`.
+
 ```bash
 go test ./...
 go run ./cmd/unraid-gateway   # needs UNRAID_URL, DATA_ROOT
