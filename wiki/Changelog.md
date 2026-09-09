@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.5.2 (2026-09-09)
+- New icon (artwork by the author, light and dark versions in `assets/`); the web UI uses the dark one.
+
 ## v0.5.1 (2026-09-09)
 - First catalogue scan no longer writes a journal row per file (the database stays small; a 420,000-entry tree took 330 MB before, a few tens of MB now). Delete `/config/index.db` once after upgrading from 0.5.0 to rebuild it lean.
 

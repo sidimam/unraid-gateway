@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
-"""unraid-gateway icon, coherent with the Unraid Drive app icon: the same Unraid bars artwork
-(Design/bars-source.png, shared with the app) feeding a short connector into the gateway arch,
-drawn in the same slate grey with the same soft shadow. Writes assets/icon.png (1024). Pillow only."""
+"""unraid-gateway icon from the author's artwork (Design/icon-source.png: Unraid bars, rounded
+connector fading into the slate gateway arch). Writes:
+  assets/icon.png        light version, 1024 px (Unraid template / Community Applications)
+  assets/icon-dark.png   dark version derived from the same artwork (dark background, arch lightened)
+  internal/webui/static/icon.png  256 px dark version used by the web UI (dark theme)
+Pillow only."""
 import os
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops
 
 HERE = os.path.dirname(__file__)
-SRC = os.path.join(HERE, "..", "Design", "bars-source.png")
-OUT = os.path.join(HERE, "..", "assets", "icon.png")
+SRC = os.path.join(HERE, "..", "Design", "icon-source.png")
+ASSETS = os.path.join(HERE, "..", "assets")
+WEBUI = os.path.join(HERE, "..", "internal", "webui", "static")
 S = 1024
+
+def square(im):
+    w, h = im.size; side = min(w, h)
+    return im.crop(((w - side) // 2, (h - side) // 2, (w + side) // 2, (h + side) // 2)).resize((S, S), Image.LANCZOS)
 
 def bars_mask(rgb):
     h, s, v = rgb.convert("HSV").split()
@@ -17,65 +25,35 @@ def bars_mask(rgb):
     bright = v.point(lambda x: 255 if x > 64 else 0)
     return ImageChops.multiply(ImageChops.multiply(warm, sat), bright)
 
+def artwork_mask(rgb):
+    bg = rgb.crop((2, 2, 10, 10)).resize((1, 1), Image.BOX).getpixel((0, 0))
+    diff = ImageChops.difference(rgb, Image.new("RGB", rgb.size, bg)).convert("L")
+    return diff.point(lambda x: 0 if x < 14 else min(255, (x - 14) * 6))
+
+def darken(light):
+    """Dark background; the slate arch becomes light grey (value inverted), bars untouched."""
+    art = artwork_mask(light); bars = bars_mask(light)
+    slate = ImageChops.subtract(art, bars)
+    h, s, v = light.convert("HSV").split()
+    v_inv = v.point(lambda x: min(255, 255 - x + 95))
+    light_arch = Image.merge("HSV", (h, s.point(lambda x: x // 3), v_inv)).convert("RGB")
+    with_arch = Image.composite(light_arch, light, slate)
+    w, hgt = light.size
+    bg = Image.new("RGB", (w, hgt)); px = bg.load()
+    top, bottom = (0x30, 0x35, 0x3D), (0x19, 0x1C, 0x22)
+    for y in range(hgt):
+        t = y / (hgt - 1); c = tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3))
+        for x in range(w): px[x, y] = c
+    return Image.composite(with_arch, bg, art)
+
 def main():
-    src = Image.open(SRC).convert("RGB")
-    w, h = src.size; side = min(w, h)
-    src = src.crop(((w - side) // 2, (h - side) // 2, (w + side) // 2, (h + side) // 2)).resize((S, S), Image.LANCZOS)
-    bg_col = src.crop((2, 2, 10, 10)).resize((1, 1), Image.BOX).getpixel((0, 0))
-    bars = bars_mask(src)
-    # keep only the three bars: the artwork's connector line starts right of the third bar,
-    # so measure the bars' extent on the upper part of the image (above the line) and cut there
-    upper = bars.crop((0, 0, S, int(S * 0.45)))
-    bx0, _, bx1, _ = upper.getbbox()
-    cut = Image.new("L", (S, S), 0); ImageDraw.Draw(cut).rectangle([0, 0, bx1 + 2, S], fill=255)
-    bars = ImageChops.multiply(bars, cut)
-    bars_soft = bars.filter(ImageFilter.GaussianBlur(1))
-    canvas = Image.new("RGB", (S, S), bg_col)
-    # soft shadow like the artwork
-    shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); shadow.paste((0, 0, 0, 70), (6, 8), bars)
-    shadow = shadow.filter(ImageFilter.GaussianBlur(10))
-    # slate arch: thick rounded "∩" with legs, plus a short stub from the third bar
-    slate_top, slate_bot = (0x55, 0x61, 0x6D), (0x3A, 0x43, 0x4D)
-    SS = 4; N = S * SS
-    arch = Image.new("L", (N, N), 0); d = ImageDraw.Draw(arch)
-    stroke = int(0.078 * N)
-    ax0, ax1 = int((bx1 / S + 0.055) * N), int(0.945 * N)
-    atop, abot = int(0.24 * N), int(0.79 * N)
-    r = int((ax1 - ax0) * 0.42)
-    d.rounded_rectangle([ax0, atop, ax1, abot + r], radius=r, outline=255, width=stroke)
-    d.rectangle([0, abot, N, N], fill=0)                     # open the bottom: legs end flat
-    for x in (ax0, ax1 - stroke):                            # round the leg ends
-        d.rectangle([x, abot - stroke // 2, x + stroke, abot], fill=255)
-        d.ellipse([x, abot - stroke // 2, x + stroke, abot + stroke // 2], fill=255)
-    d.rectangle([0, abot + stroke // 2 + 1, N, N], fill=0)
-    arch = arch.resize((S, S), Image.LANCZOS)
-    # stub connector from the third bar to the left leg: rounded, fading from the bar's orange
-    # into the arch's slate (drawn separately so it can carry its own gradient)
-    sy = int(0.56 * S); st = int(0.052 * S)
-    sx0 = int(bx1 - 0.035 * S); sx1 = int((ax0 + stroke // 2) / SS)   # starts under the bar, so no notch shows
-    stub_mask = Image.new("L", (S, S), 0)
-    ImageDraw.Draw(stub_mask).rounded_rectangle([sx0, sy - st // 2, sx1, sy + st // 2], radius=st // 2, fill=255)
-    bar_col = src.getpixel((max(bx0, bx1 - 12), sy))          # orange at the bar's edge, same height
-    stub = Image.new("RGB", (S, S)); spx = stub.load()
-    for x in range(sx0, sx1 + 1):
-        t = min(1.0, max(0.0, (x - sx0) / max(1, (sx1 - sx0))))
-        t = t * t * (3 - 2 * t)                                 # smooth step
-        sl = tuple(int(slate_top[i] + (slate_bot[i] - slate_top[i]) * (sy / S)) for i in range(3))
-        c = tuple(int(bar_col[i] + (sl[i] - bar_col[i]) * t) for i in range(3))
-        for y in range(sy - st, sy + st): spx[x, y] = c
-    grad = Image.new("RGB", (S, S)); px = grad.load()
-    for y in range(S):
-        t = y / (S - 1); c = tuple(int(slate_top[i] + (slate_bot[i] - slate_top[i]) * t) for i in range(3))
-        for x in range(S): px[x, y] = c
-    arch_shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); arch_shadow.paste((0, 0, 0, 80), (6, 8), ImageChops.lighter(arch, stub_mask))
-    arch_shadow = arch_shadow.filter(ImageFilter.GaussianBlur(10))
-    out = canvas.convert("RGBA")
-    out.alpha_composite(shadow); out.alpha_composite(arch_shadow)
-    out = Image.composite(stub.convert("RGBA"), out, stub_mask)
-    out = Image.composite(grad.convert("RGBA"), out, arch)
-    out = Image.composite(src.convert("RGBA"), out, bars_soft)
-    out.convert("RGB").save(OUT)
-    print("written", os.path.abspath(OUT))
+    light = square(Image.open(SRC).convert("RGB"))
+    dark = darken(light)
+    os.makedirs(ASSETS, exist_ok=True)
+    light.save(os.path.join(ASSETS, "icon.png"))
+    dark.save(os.path.join(ASSETS, "icon-dark.png"))
+    dark.resize((256, 256), Image.LANCZOS).save(os.path.join(WEBUI, "icon.png"))
+    print("written", os.path.abspath(ASSETS), "and web UI icon")
 
 if __name__ == "__main__":
     main()

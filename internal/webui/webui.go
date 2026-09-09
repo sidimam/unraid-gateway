@@ -23,7 +23,7 @@ func Register(mux *http.ServeMux) {
 	if err != nil {
 		panic(err)
 	}
-	icon, err := fs.ReadFile(sub, "icon.svg")
+	icon, err := fs.ReadFile(sub, "icon.png")
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +38,7 @@ func Register(mux *http.ServeMux) {
 	})
 	mux.Handle("GET /ui/", http.StripPrefix("/ui/", files))
 	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Header().Set("Content-Type", "image/png")
 		_, _ = w.Write(icon)
 	})
 }
