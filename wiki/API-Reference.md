@@ -126,4 +126,4 @@ Tickets are HMAC-SHA256 signed tokens (`base64url(payload).base64url(signature)`
 |---|---|---|
 | `GET` | `/api/v1/activity` | `{now, scope: "all"|"user", clients: [{clientId, user, key, ip, agent, firstSeen, lastSeen, requests, lastPath, lastPathAt, active}], active: [{id, kind: download|stream|upload, path, size, bytes, started, range, user, key, ip, agent}], recent: [… + ended], idleAfter}`. Sessions opened with an Unraid user only see their own rows unless the API key has the ADMIN role. |
 
-Clients identify themselves with `X-Unraid-Drive-Client` (free text, shown as the device); without it the User-Agent is shown.
+`?format=text` renders the same as plain text (used by `gw activity`); requests from the container's loopback address need no token. Clients identify themselves with `X-Unraid-Drive-Client` (free text, shown as the device); without it the User-Agent is shown.

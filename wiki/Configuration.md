@@ -40,3 +40,12 @@ Mount each share at `/data/<name>`. For per-user permissions also mount `/etc/sa
 ## User and permissions
 
 The image runs as UID 99 / GID 100 (`nobody:users`), Unraid's defaults, so files created through the gateway carry the same ownership as files created over SMB and are visible to every Unraid share user. Files are created `0664`, directories `0775`. If your shares use different ownership, run the container with `--user <uid>:<gid>`.
+
+## Web UI stored key (0.8+)
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `WEBUI_API_KEY` | empty | An Unraid API key the web UI may use with one click. |
+| `WEBUI_API_KEY_FILE` | `/config/webui.key` | Where "Remember this key on the gateway" stores the key (0600). Empty disables remembering. |
+
+Whoever can open the web UI can use the stored key: keep the gateway on the LAN or behind Cloudflare Access. The Unraid user/password (USER_AUTH) are still asked.

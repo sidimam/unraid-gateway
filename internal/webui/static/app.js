@@ -45,23 +45,47 @@
     window.ugwShares = shares || null; // share → 'rw' | 'ro' when a user is logged in
     list(cwd);
     startActivity();
+    $('forget').hidden = !(storedInfo.available && storedInfo.canForget);
   }
   function logout() {
     if (token) fetch(API + '/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
     token = ''; sessionStorage.removeItem('ugw.token'); clearInterval(activityTimer);
     $('login').hidden = false; $('app').hidden = true; $('who').hidden = true;
   }
-  $('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  // A key kept on the gateway (WEBUI_API_KEY or /config/webui.key) logs the web UI in with one click.
+  let storedInfo = { available: false, canRemember: false, canForget: false };
+  async function loadStoredKey() {
+    try { storedInfo = await (await fetch(API + '/auth/stored-key')).json(); } catch { storedInfo = { available: false }; }
+    $('stored').hidden = !storedInfo.available;
+    $('stored-note').textContent = storedInfo.available ? (storedInfo.source === 'env' ? 'from the WEBUI_API_KEY variable' : 'remembered on this gateway') : '';
+    $('remember-label').hidden = !storedInfo.canRemember;
+    $('apikey').required = !storedInfo.available;
+  }
+  async function login(body) {
     $('login-error').hidden = true;
     try {
-      const body = { apiKey: $('apikey').value.trim() };
       if ($('username').value.trim()) { body.username = $('username').value.trim(); body.password = $('password').value; }
       const r = await api('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       token = r.token; sessionStorage.setItem('ugw.token', token);
+      if (body.apiKey && $('remember').checked) {
+        try { await api('/auth/remember', { method: 'POST' }); } catch (err) { alert('Could not remember the key: ' + err.message); }
+        $('remember').checked = false;
+      }
       $('apikey').value = ''; $('password').value = '';
       showApp(r.identity, r.user, r.shares);
+      loadStoredKey();
     } catch (err) { $('login-error').textContent = err.message; $('login-error').hidden = false; }
+  }
+  $('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const key = $('apikey').value.trim();
+    if (!key && storedInfo.available) { login({ useStoredKey: true }); return; }
+    login({ apiKey: key });
+  });
+  $('stored-connect').addEventListener('click', () => login({ useStoredKey: true }));
+  $('forget').addEventListener('click', async () => {
+    if (!confirm('Delete the API key stored on the gateway? You will paste it again next time.')) return;
+    try { await api('/auth/remember', { method: 'DELETE' }); await loadStoredKey(); $('forget').hidden = true; } catch (err) { alert(err.message); }
   });
   $('logout').addEventListener('click', logout);
 
@@ -236,5 +260,6 @@
 
   // ---- boot -----------------------------------------------------------------
   loadStatus();
+  loadStoredKey();
   if (token) api('/auth/session').then((s) => showApp(s.identity, s.user, s.shares)).catch(() => logout());
 })();

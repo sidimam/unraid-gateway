@@ -21,7 +21,11 @@
   <DonateLink/>
   <Beta>False</Beta>
   <Date>2026-09-11</Date>
-  <Changes>### 2026-09-11 (v0.7.0)
+  <Changes>### 2026-09-11 (v0.8.0)
+- Web UI: the API key can be remembered on the gateway (`WEBUI_API_KEY` variable or "Remember this key on the gateway" → /config/webui.key) for one-click login; "Forget stored key" to remove it.
+- Console: `gw activity` (and `gw activity -w` live) prints connected devices, streams/uploads in progress and recent transfers; `?format=text` on the activity API; loopback access from the container console needs no token.
+
+### 2026-09-11 (v0.7.0)
 - Activity panel in the web UI: who is connected (device, Unraid user, IP, since/last seen, requests, last file), streams and transfers in progress with progress bar and speed, recent transfers. `GET /api/v1/activity`. Sessions opened with an Unraid user see only their own activity; API-key-only and ADMIN sessions see everyone.
 
 ### 2026-09-11 (v0.6.0)
@@ -57,6 +61,7 @@
   <Config Name="downloads share" Target="/data/downloads" Default="/mnt/user/downloads" Mode="rw" Description="" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/downloads</Config>
   <Config Name="Gateway data (item index)" Target="/config" Default="/mnt/user/appdata/unraid-gateway" Mode="rw" Description="Small SQLite catalogue of your files (stable ids, change journal) so the app syncs instantly instead of walking the shares. Safe to delete: it is rebuilt at start." Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/unraid-gateway</Config>
   <Config Name="Unraid share security (read-only)" Target="/unraid-shares/smb-shares.conf" Default="/etc/samba/smb-shares.conf" Mode="ro" Description="The share definitions Unraid generates for Samba (public/secure/private, read and write user lists). Needed so that users logging in with their Unraid username and password get exactly the permissions they have over SMB." Type="Path" Display="always" Required="false" Mask="false">/etc/samba/smb-shares.conf</Config>
+  <Config Name="Web UI stored API key (optional)" Target="WEBUI_API_KEY" Default="" Mode="" Description="An Unraid API key the web UI on port 8484 can use with one click, so you do not paste it at every visit. Leave empty and tick 'Remember this key on the gateway' in the web UI instead (saved in /config/webui.key). Anyone who can open the web UI can then use the key: keep the gateway on the LAN or behind Cloudflare Access." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
   <Config Name="User authentication" Target="USER_AUTH" Default="optional" Mode="" Description="optional: clients may add an Unraid username and password to the API key and get that user's share permissions; required: every client must; off: API key only (access = container mounts)." Type="Variable" Display="always" Required="false" Mask="false">optional</Config>
   <Config Name="Unraid SMB address" Target="UNRAID_SMB_ADDR" Default="" Mode="" Description="host:port of the Unraid SMB service used to verify user passwords. Empty = host of the WebGUI URL, port 445." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="Read-only mode" Target="READ_ONLY" Default="false" Mode="" Description="true disables every write operation on all mapped shares." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>

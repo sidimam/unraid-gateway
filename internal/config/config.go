@@ -55,6 +55,10 @@ type Config struct {
 	UserAuth string
 	// SMBAddr is the Unraid SMB endpoint used to validate user passwords (host:445).
 	SMBAddr string
+	// WebUIKey is an Unraid API key the web UI may use with one click (WEBUI_API_KEY); empty = none.
+	WebUIKey string
+	// WebUIKeyFile is where "Remember this key on the gateway" stores the key (WEBUI_API_KEY_FILE).
+	WebUIKeyFile string
 	// IndexDB is the SQLite file of the item index ("" disables the index, ":memory:" keeps it in RAM).
 	IndexDB string
 	// IndexDirScan is how often directories are checked for changes made behind the gateway's back.
@@ -88,6 +92,8 @@ func Load() (Config, error) {
 		SMBAddr:          env("UNRAID_SMB_ADDR", ""),
 		SharesConfig:     env("SHARES_CONFIG", env("SHARES_CONFIG_DIR", "/unraid-shares/smb-shares.conf")),
 		IndexDB:          env("INDEX_DB", "/config/index.db"),
+		WebUIKey:         env("WEBUI_API_KEY", ""),
+		WebUIKeyFile:     env("WEBUI_API_KEY_FILE", "/config/webui.key"),
 		IndexDirScan:     dur("INDEX_DIR_SCAN", 5*time.Minute),
 		IndexFullScan:    dur("INDEX_FULL_SCAN", 6*time.Hour),
 	}

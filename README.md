@@ -239,7 +239,7 @@ Logs (*Docker → unraid-gateway → Logs*) start with a banner summarising the 
 
 Health-check probes are hidden unless `LOG_HEALTHCHECKS=true`; `LOG_FORMAT=json` switches to machine-readable output.
 
-**Console walkthrough**: the *Console* button of the container (or `docker exec -it unraid-gateway sh`) opens a shell that greets you with a guided status check. The `gw` helper offers: `gw status` (API, Unraid API, mounted shares rw/ro, user-auth prerequisites), `gw shares` (each share's Unraid security and user lists), `gw users`, `gw login <user>` (interactive test login showing the resulting permissions), `gw key`, `gw env`.
+**Console walkthrough**: the *Console* button of the container (or `docker exec -it unraid-gateway sh`) opens a shell that greets you with a guided status check. The `gw` helper offers: `gw status` (API, Unraid API, mounted shares rw/ro, user-auth prerequisites), `gw shares` (each share's Unraid security and user lists), `gw users`, `gw login <user>` (interactive test login showing the resulting permissions), `gw key`, `gw env`, `gw activity` (who is connected, what is streaming; `-w` live). The web UI can remember the API key on the gateway (`WEBUI_API_KEY` or the *Remember* checkbox → `/config/webui.key`) for one-click login.
 
 ## Development
 

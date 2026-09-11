@@ -150,12 +150,18 @@ func (s *Server) routes() http.Handler {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "version": Version})
 	})
 	public.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
+	public.HandleFunc("GET /api/v1/auth/stored-key", s.handleStoredKeyInfo)
 
 	private := http.NewServeMux()
 	private.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
+	private.HandleFunc("POST /api/v1/auth/remember", s.handleRemember)
+	private.HandleFunc("DELETE /api/v1/auth/remember", s.handleForget)
 	private.HandleFunc("GET /api/v1/auth/session", s.handleSession)
 	private.HandleFunc("GET /api/v1/info", s.handleInfo)
 	private.HandleFunc("GET /api/v1/activity", s.handleActivity)
+	// The container console (`gw activity`) reads it on loopback without a token; everyone else
+	// goes through the normal authentication. More specific pattern, so it wins over /api/v1/.
+	public.Handle("GET /api/v1/activity", s.loopbackOr(s.authenticate(private)))
 	private.HandleFunc("POST /api/v1/graphql", s.handleGraphQL)
 	s.files.Register(private, "/api/v1/fs")
 
@@ -170,9 +176,10 @@ func (s *Server) routes() http.Handler {
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		APIKey   string `json:"apiKey"`
-		Username string `json:"username"`
-		Password string `json:"password"`
+		APIKey       string `json:"apiKey"`
+		Username     string `json:"username"`
+		Password     string `json:"password"`
+		UseStoredKey bool   `json:"useStoredKey"`
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -180,6 +187,14 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ip := auth.ClientIP(r, s.cfg.TrustProxy)
+	if req.UseStoredKey {
+		key, _ := s.storedKey()
+		if key == "" {
+			writeErr(w, http.StatusBadRequest, "no API key is stored on this gateway (set WEBUI_API_KEY or tick \"Remember this key\" once)")
+			return
+		}
+		req.APIKey = key
+	}
 	req.Username = strings.TrimSpace(req.Username)
 	if s.cfg.UserAuth == "required" && req.Username == "" {
 		writeErr(w, http.StatusUnauthorized, "this gateway requires an Unraid username and password in addition to the API key")

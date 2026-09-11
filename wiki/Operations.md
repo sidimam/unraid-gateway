@@ -33,6 +33,8 @@ Versions before 0.4.0 logged every 30-second health probe as a JSON line (about 
 
 ## Console walkthrough
 
+`gw activity` (0.7.1+) shows who is connected and what is streaming right in the console; `gw activity -w` keeps refreshing. The same data is in the web UI's Activity panel after login.
+
 The **Console** button of the container in the Docker tab (or `docker exec -it unraid-gateway sh`) opens a shell that immediately prints a guided status check. The `gw` helper is available:
 
 | Command | What it shows |

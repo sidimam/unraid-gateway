@@ -17,6 +17,7 @@
   <div class="spacer"></div>
   <div id="who" class="who" hidden>
     <span id="who-name"></span>
+    <button id="forget" class="ghost" hidden title="Delete the key stored on the gateway">Forget stored key</button>
     <button id="logout" class="ghost">Disconnect</button>
   </div>
 </header>
@@ -25,13 +26,19 @@
   <section id="login" class="card">
     <h2>Connect with your Unraid API key</h2>
     <p class="muted">Create a key in <b>Settings → Management Access → API Keys</b> (role <code>VIEWER</code> is enough for the file API; use <code>ADMIN</code> if you want the GraphQL proxy to manage the server). The key is validated by Unraid and exchanged for a short-lived session token; it is never stored by the gateway.</p>
+    <div id="stored" class="row" hidden>
+      <button id="stored-connect">Connect with the key stored on this gateway</button>
+      <span class="muted small" id="stored-note"></span>
+    </div>
     <form id="login-form">
-      <input id="apikey" type="password" autocomplete="off" placeholder="paste your Unraid API key" required>
+      <input id="apikey" type="password" autocomplete="off" placeholder="paste your Unraid API key">
       <input id="username" type="text" autocomplete="username" placeholder="Unraid user (optional)">
       <input id="password" type="password" autocomplete="current-password" placeholder="Unraid password">
       <button type="submit">Connect</button>
     </form>
+    <label class="muted small" id="remember-label"><input type="checkbox" id="remember"> Remember this key on the gateway (saved in /config/webui.key; anyone who can open this page could then use it — keep the gateway on the LAN or behind Cloudflare Access)</label>
     <p class="muted">With an Unraid user and password the gateway applies that user's share permissions (public / secure / private, read or write lists), exactly as over SMB. Without them, access is whatever the container mounts allow.</p>
+    <p class="muted">After connecting: browse and upload files, see who is connected and what is streaming (<b>Activity</b>), try the GraphQL proxy.</p>
     <p id="login-error" class="error" hidden></p>
   </section>
 
