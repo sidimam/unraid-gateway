@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.6.0 (2026-09-11)
+- **Media tickets.** `POST /api/v1/fs/ticket {"path": "/media/movie.mkv", "ttl": "2h"}` (normal authentication, read access checked) answers `{"ticket", "url": "/media/<ticket>", "expiresAt"}`. `GET|HEAD /media/<ticket>` streams that one file with ETag and Range support and needs no header: it is how Unraid Drive on Apple TV feeds libmpv, and it works for VLC or a browser too. Tickets are HMAC-SHA256 signed with a per-process random secret (they expire on restart), bound to the file, default TTL 8 h, maximum 24 h. Nothing secret is in the URL; a leaked ticket gives read access to that single file until it expires. Behind Cloudflare Access the `/media/*` path must be excluded from the Access policy for header-less players (or use the gateway on the LAN).
+
 ## v0.5.5 (2026-09-11)
 - Files and folders created through the gateway get Unraid's standard permissions: owner `nobody:users`, mode `0777` for folders and `0666` for files (what Tools › New Permissions sets). The process now runs with umask 0; before, the container umask reduced them to `0755`/`0644`, which locked other Unraid users (over SMB) and other containers out of files created from the app.
 - A `403 permission denied` now explains itself: the folder the gateway could not write, its owner and mode, and the fix (`Tools › New Permissions` on the share, or `chmod -R ugo+rwX`). Typical cause: folders created over SSH, rsync or by another container as a different user with a 755 mode. The same message is logged at `WARN`.

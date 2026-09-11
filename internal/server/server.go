@@ -153,6 +153,8 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("POST /api/v1/graphql", s.handleGraphQL)
 	s.files.Register(private, "/api/v1/fs")
 
+	// Media tickets carry their own signature: no bearer token, players can stream by URL.
+	s.files.RegisterPublic(public)
 	public.Handle("/api/v1/", s.authenticate(private))
 	webui.Register(public)
 	return s.recoverer(s.securityHeaders(s.accessLog(public)))

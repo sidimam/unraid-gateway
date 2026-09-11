@@ -110,3 +110,12 @@ curl -s "$GW/api/v1/fs/content?path=/documents/file.pdf" -H "$H" -o file.pdf
 curl -s -X POST $GW/api/v1/fs/mkdir -H "$H" -d '{"path":"/documents/New"}'
 curl -s "$GW/api/v1/fs/changes?path=/documents&since=0" -H "$H" | jq '{cursor,truncated,next,dirs:(.dirs|length),files:(.files|length)}'
 ```
+
+## Media tickets (0.6+)
+
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/api/v1/fs/ticket` | Body `{"path": "/share/file", "ttl": "8h"}` (ttl optional, max 24h). Needs read access. Returns `{"ticket", "url": "/media/<ticket>", "path", "expiresAt"}`. |
+| `GET`/`HEAD` | `/media/<ticket>` | Public: the ticket is the credential. Streams the file with `Accept-Ranges`, `ETag`, `Content-Type` by extension. 403 for a bad or expired ticket. |
+
+Tickets are HMAC-SHA256 signed tokens (`base64url(payload).base64url(signature)`) bound to one path and an expiry, with a random per-process secret: a gateway restart invalidates them. Use them for players that cannot set headers (libmpv, VLC, `<video>`).

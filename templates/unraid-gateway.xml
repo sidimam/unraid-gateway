@@ -21,7 +21,10 @@
   <DonateLink/>
   <Beta>False</Beta>
   <Date>2026-09-11</Date>
-  <Changes>### 2026-09-11 (v0.5.5)
+  <Changes>### 2026-09-11 (v0.6.0)
+- Media tickets: `POST /api/v1/fs/ticket` gives a signed, expiring URL (`/media/<ticket>`) for one file, so players that cannot send headers (the mpv player of Unraid Drive on Apple TV, VLC, a browser) can stream with Range support. No credential in the URL; tickets die with a restart.
+
+### 2026-09-11 (v0.5.5)
 - Files and folders created through the gateway now get Unraid's standard permissions (nobody:users, 0777/0666, as Tools › New Permissions), so other Unraid users and containers can always modify them.
 - "Permission denied" errors now say which folder, its owner and mode, and what to do (Tools › New Permissions); a warning at start-up lists shares the gateway cannot write to.
 

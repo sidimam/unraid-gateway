@@ -33,12 +33,14 @@ type Options struct {
 
 // API serves the /fs endpoints.
 type API struct {
-	root    *Root
-	opts    Options
-	log     *slog.Logger
-	uploads *uploadStore
-	idx     *index.Index
-	scanner *index.Scanner
+	root *Root
+	opts Options
+	log  *slog.Logger
+	// Signs media tickets (see ticket.go); random per process.
+	ticketSecret []byte
+	uploads      *uploadStore
+	idx          *index.Index
+	scanner      *index.Scanner
 }
 
 // UseIndex attaches the persistent item index: listings then carry stable ids,
@@ -69,7 +71,7 @@ func New(dir string, opts Options, log *slog.Logger) (*API, error) {
 	if opts.ChangesDeadline <= 0 {
 		opts.ChangesDeadline = 20 * time.Second
 	}
-	a := &API{root: root, opts: opts, log: log}
+	a := &API{root: root, opts: opts, log: log, ticketSecret: newTicketSecret()}
 	a.uploads = newUploadStore(a, opts.UploadTTL)
 	return a, nil
 }
@@ -148,6 +150,7 @@ func (a *API) Register(mux *http.ServeMux, prefix string) {
 	mux.HandleFunc("POST "+p+"/delete", a.mutating(a.handleDelete))
 	mux.HandleFunc("GET "+p+"/changes", a.handleChanges)
 	mux.HandleFunc("GET "+p+"/item", a.handleItem)
+	mux.HandleFunc("POST "+p+"/ticket", a.handleTicket)
 	mux.HandleFunc("POST "+p+"/uploads", a.mutating(a.uploads.handleCreate))
 	mux.HandleFunc("HEAD "+p+"/uploads/{id}", a.uploads.handleStatus)
 	mux.HandleFunc("GET "+p+"/uploads/{id}", a.uploads.handleStatus)
@@ -514,6 +517,11 @@ func (a *API) handleDownload(w http.ResponseWriter, r *http.Request) {
 	if !a.allowed(w, r, abs, access.Read) {
 		return
 	}
+	a.serveFile(w, r, abs, r.URL.Query().Get("download") == "1")
+}
+
+// serveFile streams a regular file with ETag and Range support (access already checked).
+func (a *API) serveFile(w http.ResponseWriter, r *http.Request, abs string, attachment bool) {
 	f, err := os.Open(abs)
 	if err != nil {
 		a.fsErr(w, err)
@@ -532,7 +540,7 @@ func (a *API) handleDownload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("ETag", etag(info))
 	w.Header().Set("Accept-Ranges", "bytes")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if r.URL.Query().Get("download") == "1" {
+	if attachment {
 		w.Header().Set("Content-Disposition", "attachment; filename*=UTF-8''"+escapeFilename(info.Name()))
 	}
 	http.ServeContent(w, r, info.Name(), info.ModTime(), f)
