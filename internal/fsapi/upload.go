@@ -87,7 +87,7 @@ func (s *uploadStore) handleCreate(w http.ResponseWriter, r *http.Request) {
 		s.api.fsErr(w, err)
 		return
 	}
-	if err := os.MkdirAll(filepath.Dir(dst), 0o775); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), DirMode); err != nil {
 		s.api.fsErr(w, err)
 		return
 	}
@@ -240,7 +240,7 @@ func (s *uploadStore) handleCommit(w http.ResponseWriter, r *http.Request) {
 			_ = os.Chtimes(u.tmp, t, t)
 		}
 	}
-	_ = os.Chmod(u.tmp, 0o664)
+	_ = os.Chmod(u.tmp, FileMode)
 	if err := os.Rename(u.tmp, u.dst); err != nil {
 		s.release(u)
 		s.api.fsErr(w, err)

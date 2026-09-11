@@ -78,3 +78,15 @@ Nothing to back up: the gateway holds no state besides in-memory sessions and in
 | `404 share not found` on write | the first path component is not a mounted share (typo, or share not mapped). |
 | Change feed always truncated | very large share: normal; clients page with `after`. Raise `CHANGES_DEADLINE` if you prefer fewer, longer pages. |
 | Dates off by hours | display only: API times are UTC; set `TZ` for log timestamps. |
+
+### "permission denied" although the share is read-write
+
+The container runs as Unraid's `nobody:users` (uid 99, gid 100), like Samba does for files it creates. It can only write where that account may write. Unraid's convention is that everything on the shares is `nobody:users` with mode `0777`/`0666` — this is what **Tools › New Permissions** enforces and what the gateway itself creates (0.5.5+). Folders created **outside** Unraid Drive — over SSH, with `rsync`/`scp`, or by another container running as a different user — usually get `0755`/`0644` and lock the gateway out.
+
+Since 0.5.5 the error names the culprit, for example:
+
+```
+permission denied: the gateway runs as nobody (uid 99) and may not write in "/programs/Unraid-Drive/wiki" (owner sdimambro (uid 1000), gid 100, mode 0755). On Unraid run Tools › New Permissions on this share, or chmod -R ugo+rwX the folder.
+```
+
+Fix: in the Unraid web UI run **Tools › New Permissions** on that share (or `chmod -R ugo+rwX` the folder). When copying with rsync over SSH, add `--chown=nobody:users --chmod=ugo=rwX`. The start-up log also warns for every read-write share the gateway cannot write to.

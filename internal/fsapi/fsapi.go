@@ -308,7 +308,9 @@ func (a *API) fsErr(w http.ResponseWriter, err error) {
 	case errors.Is(err, os.ErrExist):
 		writeErr(w, http.StatusConflict, "already exists")
 	case errors.Is(err, os.ErrPermission):
-		writeErr(w, http.StatusForbidden, "permission denied")
+		msg := a.permissionDetail(err)
+		a.log.Warn("permission denied", "detail", msg)
+		writeErr(w, http.StatusForbidden, msg)
 	case errors.Is(err, syscall.EROFS):
 		writeErr(w, http.StatusForbidden, "share is mounted read-only")
 	case errors.Is(err, syscall.ENOSPC):
@@ -590,7 +592,7 @@ func (a *API) handlePut(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusPreconditionFailed, "target does not exist")
 		return
 	}
-	if err := os.MkdirAll(filepath.Dir(abs), 0o775); err != nil {
+	if err := os.MkdirAll(filepath.Dir(abs), DirMode); err != nil {
 		a.fsErr(w, err)
 		return
 	}
@@ -617,7 +619,7 @@ func (a *API) handlePut(w http.ResponseWriter, r *http.Request) {
 			_ = os.Chtimes(tmpName, t, t)
 		}
 	}
-	_ = os.Chmod(tmpName, 0o664)
+	_ = os.Chmod(tmpName, FileMode)
 	if err := os.Rename(tmpName, abs); err != nil {
 		os.Remove(tmpName)
 		a.fsErr(w, err)
@@ -669,9 +671,9 @@ func (a *API) handleMkdir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Parents {
-		err = os.MkdirAll(abs, 0o775)
+		err = os.MkdirAll(abs, DirMode)
 	} else {
-		err = os.Mkdir(abs, 0o775)
+		err = os.Mkdir(abs, DirMode)
 	}
 	if err != nil {
 		a.fsErr(w, err)
@@ -755,7 +757,7 @@ func (a *API) handleMove(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	if err := os.MkdirAll(filepath.Dir(to), 0o775); err != nil {
+	if err := os.MkdirAll(filepath.Dir(to), DirMode); err != nil {
 		a.fsErr(w, err)
 		return
 	}
@@ -799,7 +801,7 @@ func (a *API) handleCopy(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if err := os.MkdirAll(filepath.Dir(to), 0o775); err != nil {
+	if err := os.MkdirAll(filepath.Dir(to), DirMode); err != nil {
 		a.fsErr(w, err)
 		return
 	}
@@ -832,7 +834,7 @@ func copyTree(src, dst string) error {
 	}
 	switch {
 	case st.IsDir():
-		if err := os.MkdirAll(dst, st.Mode().Perm()|0o700); err != nil {
+		if err := os.MkdirAll(dst, st.Mode().Perm()|DirMode); err != nil {
 			return err
 		}
 		ents, err := os.ReadDir(src)
@@ -851,7 +853,7 @@ func copyTree(src, dst string) error {
 			return err
 		}
 		defer in.Close()
-		out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, st.Mode().Perm()|0o600)
+		out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, st.Mode().Perm()|FileMode)
 		if err != nil {
 			return err
 		}
@@ -1154,4 +1156,59 @@ func isAncestor(dir, p string) bool {
 		return p != "/"
 	}
 	return strings.HasPrefix(p, dir+"/")
+}
+
+// permissionDetail explains an EACCES in terms the Unraid admin can act on:
+// which folder the gateway could not write, who owns it and with which mode,
+// and what to do about it. Files created via SSH, rsync or other containers
+// often end up 0755/0644 and owned by another user, which locks out the
+// gateway's nobody:users account.
+func (a *API) permissionDetail(err error) string {
+	var pe *fs.PathError
+	if !errors.As(err, &pe) || pe.Path == "" {
+		return "permission denied: the gateway account " + gatewayIdentity() + " may not write here. On Unraid run Tools › New Permissions on the share."
+	}
+	// Describe the closest existing path (the target or its parent folder).
+	target := pe.Path
+	st, statErr := os.Lstat(target)
+	for statErr != nil && target != "/" && target != "." {
+		target = filepath.Dir(target)
+		st, statErr = os.Lstat(target)
+	}
+	if statErr != nil {
+		return "permission denied: the gateway account " + gatewayIdentity() + " may not write here. On Unraid run Tools › New Permissions on the share."
+	}
+	shown := a.root.Rel(target)
+	if !a.root.within(target) {
+		shown = target
+	}
+	return fmt.Sprintf("permission denied: the gateway runs as %s and may not write in %q (%s, mode %04o). On Unraid run Tools › New Permissions on this share, or chmod -R ugo+rwX the folder.",
+		gatewayIdentity(), shown, ownerOf(st), st.Mode().Perm())
+}
+
+// WarnUnwritableShares logs, at start-up, every mounted share the gateway
+// account cannot write to although the mount is read-write: typically a
+// folder created over SSH or by another container with a restrictive owner
+// or mode. Read-only mounts are legitimate and skipped.
+func (a *API) WarnUnwritableShares() {
+	if a.opts.ReadOnly {
+		return
+	}
+	for _, share := range a.MountedShares() {
+		dir := filepath.Join(a.root.Path(), share)
+		f, err := os.CreateTemp(dir, ".gw-write-test-*")
+		if err == nil {
+			f.Close()
+			os.Remove(f.Name())
+			continue
+		}
+		if errors.Is(err, syscall.EROFS) {
+			continue
+		}
+		if errors.Is(err, os.ErrPermission) {
+			a.log.Warn("share not writable by the gateway account: run Tools › New Permissions on it in Unraid", "share", share, "detail", a.permissionDetail(err))
+			continue
+		}
+		a.log.Warn("share write test failed", "share", share, "err", err)
+	}
 }

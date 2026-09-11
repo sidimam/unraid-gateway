@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.5 (2026-09-11)
+- Files and folders created through the gateway get Unraid's standard permissions: owner `nobody:users`, mode `0777` for folders and `0666` for files (what Tools › New Permissions sets). The process now runs with umask 0; before, the container umask reduced them to `0755`/`0644`, which locked other Unraid users (over SMB) and other containers out of files created from the app.
+- A `403 permission denied` now explains itself: the folder the gateway could not write, its owner and mode, and the fix (`Tools › New Permissions` on the share, or `chmod -R ugo+rwX`). Typical cause: folders created over SSH, rsync or by another container as a different user with a 755 mode. The same message is logged at `WARN`.
+- Start-up warns for every read-write share the gateway account cannot write to.
+
 ## v0.5.2 (2026-09-09)
 - New icon (artwork by the author, light and dark versions in `assets/`); the web UI uses the dark one.
 

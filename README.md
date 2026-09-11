@@ -22,6 +22,8 @@ It is the server half of **[Unraid Drive](https://github.com/sidimam/unraid-driv
 
 > No Unraid logo is used: the icon is an original design in the Unraid colour palette.
 
+**File ownership.** The container runs as Unraid's `nobody:users` and creates files and folders with Unraid's standard modes (`0777`/`0666`, as Tools › New Permissions), so everything created from the app stays editable for every Unraid user over SMB. Folders created over SSH or by other containers with a restrictive owner/mode make the gateway answer `403 permission denied` with the folder, its owner and mode and the fix (see the wiki, Operations › Troubleshooting).
+
 ## Why not SMB / SFTP / WebDAV?
 
 | | SMB | SFTP | WebDAV | unraid-gateway |

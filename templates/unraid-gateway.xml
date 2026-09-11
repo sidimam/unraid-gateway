@@ -20,8 +20,12 @@
   <DonateText/>
   <DonateLink/>
   <Beta>False</Beta>
-  <Date>2026-09-09</Date>
-  <Changes>### 2026-09-09 (v0.5.4)
+  <Date>2026-09-11</Date>
+  <Changes>### 2026-09-11 (v0.5.5)
+- Files and folders created through the gateway now get Unraid's standard permissions (nobody:users, 0777/0666, as Tools › New Permissions), so other Unraid users and containers can always modify them.
+- "Permission denied" errors now say which folder, its owner and mode, and what to do (Tools › New Permissions); a warning at start-up lists shares the gateway cannot write to.
+
+### 2026-09-09 (v0.5.4)
 - Final icon (author's artwork, light and dark).
 
 ### 2026-09-09 (v0.5.0)

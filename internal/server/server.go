@@ -82,12 +82,13 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	files.WarnUnwritableShares()
 	var ix *index.Index
 	var scanner *index.Scanner
 	if cfg.IndexDB != "" && strings.ToLower(cfg.IndexDB) != "off" {
 		dbPath := cfg.IndexDB
 		if dbPath != ":memory:" {
-			if err := os.MkdirAll(filepath.Dir(dbPath), 0o775); err != nil || !writable(filepath.Dir(dbPath)) {
+			if err := os.MkdirAll(filepath.Dir(dbPath), fsapi.DirMode); err != nil || !writable(filepath.Dir(dbPath)) {
 				fallback := filepath.Join(os.TempDir(), "unraid-gateway-index.db")
 				log.Warn("index: INDEX_DB location not writable, using a temporary database (mount /config to keep it across restarts)", "wanted", dbPath, "using", fallback)
 				dbPath = fallback
