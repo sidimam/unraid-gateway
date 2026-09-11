@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/sidimam/unraid-gateway/internal/access"
+	"github.com/sidimam/unraid-gateway/internal/activity"
 	"github.com/sidimam/unraid-gateway/internal/auth"
 	"github.com/sidimam/unraid-gateway/internal/config"
 	"github.com/sidimam/unraid-gateway/internal/fsapi"
@@ -41,6 +42,7 @@ type Server struct {
 	handler  http.Handler
 	index    *index.Index
 	scanner  *index.Scanner
+	activity *activity.Tracker
 }
 
 // StartIndexer runs the background scanner until ctx is cancelled (no-op without index).
@@ -72,7 +74,9 @@ func writable(dir string) bool {
 // New builds the server.
 func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	validator := auth.NewUnraidValidator(cfg.UnraidURL, cfg.ValidateQuery, cfg.UnraidInsecureTLS)
+	tracker := activity.New()
 	files, err := fsapi.New(cfg.DataRoot, fsapi.Options{
+		Activity:         &activityHook{t: tracker, trustProxy: cfg.TrustProxy},
 		ReadOnly:         cfg.ReadOnly,
 		MaxJSONBody:      cfg.MaxJSONBody,
 		ChangesWalkLimit: cfg.ChangesWalkLimit,
@@ -117,6 +121,7 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		gql:      proxy.New(cfg.UnraidURL, cfg.UnraidInsecureTLS),
 		smb:      &smbauth.Authenticator{Addr: cfg.SMBAddr, Timeout: 10 * time.Second},
 		shares:   &unraidshares.Loader{Path: cfg.SharesConfig},
+		activity: tracker,
 	}
 	if cfg.UserAuth != "off" {
 		if _, err := s.shares.Shares(); err != nil {
@@ -150,6 +155,7 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
 	private.HandleFunc("GET /api/v1/auth/session", s.handleSession)
 	private.HandleFunc("GET /api/v1/info", s.handleInfo)
+	private.HandleFunc("GET /api/v1/activity", s.handleActivity)
 	private.HandleFunc("POST /api/v1/graphql", s.handleGraphQL)
 	s.files.Register(private, "/api/v1/fs")
 
@@ -288,6 +294,7 @@ func (s *Server) authError(w http.ResponseWriter, ip string, err error) {
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	if tok := bearer(r); tok != "" {
 		s.sessions.Logout(tok)
+		s.activity.Forget("s:" + shortHash(tok))
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -358,6 +365,7 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 		if p.Policy != nil {
 			ctx = access.WithPolicy(ctx, p.Policy)
 		}
+		s.activity.Touch(whoFor(r, p, ip), r.URL.Query().Get("path"))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

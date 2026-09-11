@@ -150,6 +150,7 @@ Then send `Authorization: Bearer <token>` on every call. For scripts you may ins
 | `POST` | `/fs/delete` `{"path":"/a","recursive":false}` | Non-empty directory without `recursive` → `409`. |
 | `GET` | `/fs/changes?seq=<n>` | **Change journal** (0.5+): every item created, modified, moved or deleted after sequence `n`, with stable ids; instant. |
 | `GET` | `/fs/item?id=<id>` | Entry for a stable id (0.5+). |
+| `GET` | `/activity` | **Activity** (0.7+): connected devices, streams/transfers in progress with bytes and speed, recent transfers; drives the web UI's Activity panel. |
 | `POST` | `/fs/ticket` | **Media ticket** (0.6+): signed, expiring URL `/media/<ticket>` for one file, for players that cannot send headers (mpv on Apple TV, VLC, browsers); Range supported. |
 | `GET` | `/fs/changes?path=/&since=<unix ns>&after=&cursor=` | Legacy change feed (mtime walk), paginated, see below. |
 

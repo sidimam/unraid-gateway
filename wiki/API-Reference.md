@@ -119,3 +119,11 @@ curl -s "$GW/api/v1/fs/changes?path=/documents&since=0" -H "$H" | jq '{cursor,tr
 | `GET`/`HEAD` | `/media/<ticket>` | Public: the ticket is the credential. Streams the file with `Accept-Ranges`, `ETag`, `Content-Type` by extension. 403 for a bad or expired ticket. |
 
 Tickets are HMAC-SHA256 signed tokens (`base64url(payload).base64url(signature)`) bound to one path and an expiry, with a random per-process secret: a gateway restart invalidates them. Use them for players that cannot set headers (libmpv, VLC, `<video>`).
+
+## Activity (0.7+)
+
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/api/v1/activity` | `{now, scope: "all"|"user", clients: [{clientId, user, key, ip, agent, firstSeen, lastSeen, requests, lastPath, lastPathAt, active}], active: [{id, kind: download|stream|upload, path, size, bytes, started, range, user, key, ip, agent}], recent: [… + ended], idleAfter}`. Sessions opened with an Unraid user only see their own rows unless the API key has the ADMIN role. |
+
+Clients identify themselves with `X-Unraid-Drive-Client` (free text, shown as the device); without it the User-Agent is shown.

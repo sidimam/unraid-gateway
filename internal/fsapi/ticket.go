@@ -146,7 +146,7 @@ func (a *API) HandleMedia(w http.ResponseWriter, r *http.Request) {
 		a.fsErr(w, err)
 		return
 	}
-	a.serveFile(w, r, abs, false)
+	a.serveFile(w, r, abs, false, "stream")
 }
 
 // RegisterPublic mounts the endpoints that carry their own authentication.

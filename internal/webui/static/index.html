@@ -53,6 +53,34 @@
       <p id="empty" class="muted" hidden>Empty folder.</p>
     </div>
 
+    <div class="card" id="activity-card">
+      <div class="toolbar">
+        <h2 style="margin:0">Activity</h2>
+        <span id="activity-scope" class="muted"></span>
+        <div class="spacer"></div>
+        <label class="muted small"><input type="checkbox" id="activity-live" checked> live</label>
+      </div>
+      <h3>Connected devices</h3>
+      <table id="act-clients">
+        <thead><tr><th>Device</th><th>User</th><th>From</th><th>Since</th><th>Last seen</th><th class="num">Requests</th><th>Last file</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="act-clients-empty" class="muted" hidden>Nobody connected right now (sessions disappear 30 minutes after their last request).</p>
+      <h3>Streams and transfers in progress</h3>
+      <table id="act-active">
+        <thead><tr><th>What</th><th>File</th><th>Who</th><th>Progress</th><th class="num">Speed</th><th class="num">Elapsed</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="act-active-empty" class="muted" hidden>Nothing playing or transferring.</p>
+      <details>
+        <summary class="muted">Recent transfers</summary>
+        <table id="act-recent">
+          <thead><tr><th>What</th><th>File</th><th>Who</th><th class="num">Bytes</th><th>Ended</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </details>
+    </div>
+
     <div class="card">
       <h2>For the iOS app</h2>
       <p>Server URL to enter in the app: <code id="origin"></code></p>

@@ -21,7 +21,10 @@
   <DonateLink/>
   <Beta>False</Beta>
   <Date>2026-09-11</Date>
-  <Changes>### 2026-09-11 (v0.6.0)
+  <Changes>### 2026-09-11 (v0.7.0)
+- Activity panel in the web UI: who is connected (device, Unraid user, IP, since/last seen, requests, last file), streams and transfers in progress with progress bar and speed, recent transfers. `GET /api/v1/activity`. Sessions opened with an Unraid user see only their own activity; API-key-only and ADMIN sessions see everyone.
+
+### 2026-09-11 (v0.6.0)
 - Media tickets: `POST /api/v1/fs/ticket` gives a signed, expiring URL (`/media/<ticket>`) for one file, so players that cannot send headers (the mpv player of Unraid Drive on Apple TV, VLC, a browser) can stream with Range support. No credential in the URL; tickets die with a restart.
 
 ### 2026-09-11 (v0.5.5)

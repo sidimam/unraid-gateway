@@ -29,6 +29,53 @@ type Options struct {
 	ChangesWalkLimit int
 	ChangesDeadline  time.Duration
 	UploadTTL        time.Duration
+	// Activity, when set, is told about transfers in flight (web UI "Activity" panel).
+	Activity ActivityTracker
+}
+
+// ActivityTracker receives downloads, streams and uploads as they happen.
+type ActivityTracker interface {
+	Begin(r *http.Request, kind, path string, size int64) TransferHandle
+}
+
+// TransferHandle counts bytes of one transfer and marks its end.
+type TransferHandle interface {
+	Add(n int64)
+	End()
+}
+
+type noTransfer struct{}
+
+func (noTransfer) Add(int64) {}
+func (noTransfer) End()      {}
+
+func (a *API) track(r *http.Request, kind, path string, size int64) TransferHandle {
+	if a.opts.Activity == nil {
+		return noTransfer{}
+	}
+	return a.opts.Activity.Begin(r, kind, path, size)
+}
+
+type countingWriter struct {
+	http.ResponseWriter
+	h TransferHandle
+}
+
+func (w *countingWriter) Write(p []byte) (int, error) {
+	n, err := w.ResponseWriter.Write(p)
+	w.h.Add(int64(n))
+	return n, err
+}
+
+type countingReader struct {
+	r io.Reader
+	h TransferHandle
+}
+
+func (c *countingReader) Read(p []byte) (int, error) {
+	n, err := c.r.Read(p)
+	c.h.Add(int64(n))
+	return n, err
 }
 
 // API serves the /fs endpoints.
@@ -517,11 +564,15 @@ func (a *API) handleDownload(w http.ResponseWriter, r *http.Request) {
 	if !a.allowed(w, r, abs, access.Read) {
 		return
 	}
-	a.serveFile(w, r, abs, r.URL.Query().Get("download") == "1")
+	kind := "download"
+	if r.Header.Get("Range") != "" {
+		kind = "stream"
+	}
+	a.serveFile(w, r, abs, r.URL.Query().Get("download") == "1", kind)
 }
 
 // serveFile streams a regular file with ETag and Range support (access already checked).
-func (a *API) serveFile(w http.ResponseWriter, r *http.Request, abs string, attachment bool) {
+func (a *API) serveFile(w http.ResponseWriter, r *http.Request, abs string, attachment bool, kind string) {
 	f, err := os.Open(abs)
 	if err != nil {
 		a.fsErr(w, err)
@@ -543,7 +594,13 @@ func (a *API) serveFile(w http.ResponseWriter, r *http.Request, abs string, atta
 	if attachment {
 		w.Header().Set("Content-Disposition", "attachment; filename*=UTF-8''"+escapeFilename(info.Name()))
 	}
-	http.ServeContent(w, r, info.Name(), info.ModTime(), f)
+	if r.Method == http.MethodHead {
+		http.ServeContent(w, r, info.Name(), info.ModTime(), f)
+		return
+	}
+	h := a.track(r, kind, a.root.Rel(abs), info.Size())
+	defer h.End()
+	http.ServeContent(&countingWriter{ResponseWriter: w, h: h}, r, info.Name(), info.ModTime(), f)
 }
 
 func escapeFilename(s string) string {
@@ -611,7 +668,9 @@ func (a *API) handlePut(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpName := tmp.Name()
 	cleanup := func() { tmp.Close(); os.Remove(tmpName) }
-	if _, err := io.Copy(tmp, r.Body); err != nil {
+	th := a.track(r, "upload", a.root.Rel(abs), r.ContentLength)
+	defer th.End()
+	if _, err := io.Copy(tmp, &countingReader{r: r.Body, h: th}); err != nil {
 		cleanup()
 		a.log.Warn("upload aborted", "path", a.root.Rel(abs), "err", err)
 		writeErr(w, http.StatusBadRequest, "upload interrupted")

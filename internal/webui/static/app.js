@@ -44,10 +44,11 @@
     $('who-name').textContent = user ? `${user} · ${key}` : key;
     window.ugwShares = shares || null; // share → 'rw' | 'ro' when a user is logged in
     list(cwd);
+    startActivity();
   }
   function logout() {
     if (token) fetch(API + '/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
-    token = ''; sessionStorage.removeItem('ugw.token');
+    token = ''; sessionStorage.removeItem('ugw.token'); clearInterval(activityTimer);
     $('login').hidden = false; $('app').hidden = true; $('who').hidden = true;
   }
   $('login-form').addEventListener('submit', async (e) => {
@@ -164,6 +165,74 @@
       $('gql-out').textContent = typeof r === 'string' ? r : JSON.stringify(r, null, 2);
     } catch (err) { $('gql-out').textContent = 'error: ' + err.message; }
   });
+
+  // ---- activity -------------------------------------------------------------
+  // Who is connected, from which device, what is streaming. Polled every 3 s while "live" is on.
+  const ago = (iso, now) => {
+    const d = Math.max(0, (now - new Date(iso)) / 1000);
+    if (d < 5) return 'now'; if (d < 60) return Math.round(d) + ' s ago';
+    if (d < 3600) return Math.round(d / 60) + ' min ago'; if (d < 86400) return Math.round(d / 3600) + ' h ago';
+    return fmtDate(iso);
+  };
+  const dur = (sec) => { sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return (h ? h + ':' : '') + String(m).padStart(h ? 2 : 1, '0') + ':' + String(s).padStart(2, '0'); };
+  const device = (c) => {
+    // "Unraid Drive 1.3 (28) · iPhone 17 Pro · iOS 26.1 · App" from the apps; anything else is a browser/other UA.
+    if (!c.agent) return 'unknown';
+    if (c.agent.startsWith('Unraid Drive')) return c.agent;
+    if (/CFNetwork/.test(c.agent)) return 'Unraid Drive (older build) · ' + (c.agent.match(/Darwin\/[\d.]+/) || [''])[0];
+    if (/Mozilla/.test(c.agent)) return 'Browser · ' + ((c.agent.match(/(Firefox|Edg|Chrome|Safari)\/[\d.]+/) || ['browser'])[0]);
+    if (/mpv|libmpv/i.test(c.agent)) return 'mpv player';
+    return c.agent.slice(0, 60);
+  };
+  const who = (t) => (t.user ? t.user : (t.key ? 'key: ' + t.key : '—'));
+  const kindLabel = { download: '⬇︎ download', stream: '▶︎ stream', upload: '⬆︎ upload' };
+  let activityTimer = null;
+  const speeds = {}; // id → [bytes, time]
+  async function loadActivity() {
+    if (!token || $('app').hidden) return;
+    try {
+      const a = await api('/activity');
+      const now = new Date(a.now);
+      $('activity-scope').textContent = a.scope === 'user' ? 'your devices only' : 'all users';
+      const tc = $('act-clients').querySelector('tbody'); tc.innerHTML = '';
+      $('act-clients-empty').hidden = a.clients.length > 0;
+      for (const c of a.clients) {
+        const tr = document.createElement('tr');
+        const cells = [device(c), c.user || (c.key ? 'key: ' + c.key : '—'), c.ip, ago(c.firstSeen, now), ago(c.lastSeen, now), String(c.requests), c.lastPath ? `${c.lastPath} (${ago(c.lastPathAt, now)})` : ''];
+        cells.forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 5) td.className = 'num'; if (i === 6 || i === 0) td.className = 'wrap'; tr.appendChild(td); });
+        if (c.active) tr.classList.add('live');
+        tc.appendChild(tr);
+      }
+      const ta = $('act-active').querySelector('tbody'); ta.innerHTML = '';
+      $('act-active-empty').hidden = a.active.length > 0;
+      for (const t of a.active) {
+        const tr = document.createElement('tr');
+        const prev = speeds[t.id]; speeds[t.id] = [t.bytes, now.getTime()];
+        const speed = prev && now.getTime() > prev[1] ? (t.bytes - prev[0]) / ((now.getTime() - prev[1]) / 1000) : 0;
+        const pct = t.size > 0 ? Math.min(100, Math.round(t.bytes / t.size * 100)) : null;
+        const kind = document.createElement('td'); kind.textContent = kindLabel[t.kind] || t.kind;
+        const file = document.createElement('td'); file.className = 'wrap'; file.textContent = t.path;
+        const w = document.createElement('td'); w.className = 'wrap'; w.textContent = `${who(t)} · ${device(t)} · ${t.ip}`;
+        const prog = document.createElement('td'); prog.className = 'wrap';
+        prog.innerHTML = `<div class="bar"><div style="width:${pct ?? 0}%"></div></div><span class="small">${fmtSize(t.bytes)}${t.size > 0 ? ' / ' + fmtSize(t.size) + ' · ' + pct + '%' : ''}${t.range ? ' · ' + t.range : ''}</span>`;
+        const sp = document.createElement('td'); sp.className = 'num'; sp.textContent = speed > 0 ? fmtSize(speed) + '/s' : '';
+        const el = document.createElement('td'); el.className = 'num'; el.textContent = dur((now - new Date(t.started)) / 1000);
+        tr.append(kind, file, w, prog, sp, el); ta.appendChild(tr);
+      }
+      for (const id of Object.keys(speeds)) if (!a.active.some((t) => String(t.id) === id)) delete speeds[id];
+      const trc = $('act-recent').querySelector('tbody'); trc.innerHTML = '';
+      for (const t of a.recent.slice(0, 30)) {
+        const tr = document.createElement('tr');
+        [kindLabel[t.kind] || t.kind, t.path, `${who(t)} · ${device(t)}`, fmtSize(t.bytes), ago(t.ended, now)].forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 3) td.className = 'num'; if (i === 1 || i === 2) td.className = 'wrap'; tr.appendChild(td); });
+        trc.appendChild(tr);
+      }
+    } catch (err) { $('activity-scope').textContent = 'activity unavailable: ' + err.message; }
+  }
+  function startActivity() {
+    clearInterval(activityTimer); loadActivity();
+    activityTimer = setInterval(() => { if ($('activity-live').checked && !document.hidden) loadActivity(); }, 3000);
+  }
+  $('activity-live').addEventListener('change', () => { if ($('activity-live').checked) loadActivity(); });
 
   // ---- boot -----------------------------------------------------------------
   loadStatus();

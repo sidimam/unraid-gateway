@@ -30,6 +30,10 @@ Roles (`VIEWER`, `ADMIN`, …) are enforced by Unraid on the **GraphQL proxy** o
 
 `POST /api/v1/fs/ticket` is only reachable with normal credentials and checks read access to the file. It returns an HMAC-SHA256 token bound to that one path and an expiry (default 8 h, max 24 h) signed with a secret generated at start-up, so **a restart invalidates every ticket**. `GET /media/<ticket>` needs no header: it is meant for players that cannot send one (libmpv on Apple TV, VLC, a browser). Threat model: a leaked ticket grants **read-only access to that single file until it expires**, nothing else — no key, token or password is ever in the URL. Keep TTLs short when the gateway is exposed to the Internet; behind Cloudflare Access the `/media/*` path has to be excluded from the Access policy for such players to work, which is why LAN use is the safer default.
 
+## Activity panel (0.7+)
+
+The web UI shows who is connected and what is being streamed. A session opened with an Unraid username sees only its own devices and transfers; API-key-only sessions and ADMIN keys see every user. The data lives in memory only (no history beyond the last 50 transfers, idle clients dropped after 30 minutes). If family members should not see each other's activity, give them Unraid users and keep the API key with the ADMIN/VIEWER role for yourself.
+
 ## Recommendations
 
 1. One API key per device, named after it; revoke on loss.

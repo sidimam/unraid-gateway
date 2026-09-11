@@ -207,7 +207,9 @@ func (s *uploadStore) handleAppend(w http.ResponseWriter, r *http.Request) {
 		s.api.fsErr(w, err)
 		return
 	}
-	n, copyErr := io.Copy(f, r.Body)
+	th := s.api.track(r, "upload", u.Path, u.Size)
+	n, copyErr := io.Copy(f, &countingReader{r: r.Body, h: th})
+	th.End()
 	closeErr := f.Close()
 	s.mu.Lock()
 	u.Offset += n

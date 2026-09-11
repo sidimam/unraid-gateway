@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.0 (2026-09-11)
+- **Activity panel** in the web UI (after login): *Connected devices* — one row per session or API key + IP with device (the apps send `X-Unraid-Drive-Client: Unraid Drive 1.3 (28) · iPhone 17 Pro · iOS 26 · App/File Provider`; browsers and older builds show their User-Agent), Unraid user, IP, since / last seen, request count, last file touched; *Streams and transfers in progress* — downloads, streams (Range requests, media tickets) and uploads with file, who, progress bar, bytes, speed and elapsed time; *Recent transfers* (last 50). Refreshes every 3 s (toggle "live").
+- `GET /api/v1/activity` returns the same data as JSON. Scope: a session opened with an Unraid user sees only that user's rows; API-key-only sessions and keys with the ADMIN role see everyone. Nothing is persisted: idle clients disappear 30 minutes after their last request, and a restart clears the lists.
+- Transfers are counted at the byte level (response writer / request body wrappers), so progress is real, not estimated.
+
 ## v0.6.0 (2026-09-11)
 - **Media tickets.** `POST /api/v1/fs/ticket {"path": "/media/movie.mkv", "ttl": "2h"}` (normal authentication, read access checked) answers `{"ticket", "url": "/media/<ticket>", "expiresAt"}`. `GET|HEAD /media/<ticket>` streams that one file with ETag and Range support and needs no header: it is how Unraid Drive on Apple TV feeds libmpv, and it works for VLC or a browser too. Tickets are HMAC-SHA256 signed with a per-process random secret (they expire on restart), bound to the file, default TTL 8 h, maximum 24 h. Nothing secret is in the URL; a leaked ticket gives read access to that single file until it expires. Behind Cloudflare Access the `/media/*` path must be excluded from the Access policy for header-less players (or use the gateway on the LAN).
 
