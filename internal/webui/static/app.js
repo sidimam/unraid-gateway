@@ -283,8 +283,15 @@
       for (const x of d.devices) {
         const tr = document.createElement('tr');
         const mine = x.id === d.thisDevice;
-        [x.name + (mine ? ' (this browser)' : ''), x.user || '—', x.key || '—', ago(x.firstSeen, now), ago(x.lastSeen, now), x.lastIp || '', String(x.logins)].forEach((v, i) => {
-          const td = document.createElement('td'); td.textContent = v; if (i === 0) td.className = 'wrap'; if (i === 6) td.className = 'num'; tr.appendChild(td);
+        // Reinstalled on the same hardware: the new installation registered with the same name and
+        // the gateway marked this entry as superseded. Shown as "old" with its last seen date.
+        const old = !!x.supersededBy;
+        if (old) tr.className = 'muted';
+        const label = x.name + (mine ? ' (this browser)' : '') + (old ? ' — old' : '');
+        [label, x.user || '—', x.key || '—', ago(x.firstSeen, now), (old ? 'last seen ' : '') + ago(x.lastSeen, now), x.lastIp || '', String(x.logins)].forEach((v, i) => {
+          const td = document.createElement('td'); td.textContent = v; if (i === 0) td.className = 'wrap'; if (i === 6) td.className = 'num';
+          if (i === 0 && old) td.title = 'Replaced by a new installation on ' + new Date(x.supersededAt).toLocaleString() + '. Safe to remove.';
+          tr.appendChild(td);
         });
         const act = document.createElement('td'); act.className = 'actions';
         const b = document.createElement('button'); b.className = 'ghost'; b.textContent = 'Remove';

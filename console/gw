@@ -68,8 +68,8 @@ case "${1:-help}" in
         if [ "$3" = all ]; then curl -s -m 5 -X DELETE "$API/api/v1/devices"; echo; else curl -s -m 5 -o /dev/null -w 'HTTP %{http_code}\n' -X DELETE "$API/api/v1/devices/$3"; fi
         note "The apps on those devices will ask to sign in again; that re-registers them and sends a notification." ;;
       *)
-        bold "Registered devices"
-        curl -s -m 5 "$API/api/v1/devices" | tr '{' '\n' | grep '"id"' | sed -E 's/.*"id":"([^"]*)".*"name":"([^"]*)".*"user":"([^"]*)".*"lastSeen":"([^"]*)".*"lastIp":"([^"]*)".*/  \1  \2  user=\3  last=\4  ip=\5/; s/.*"id":"([^"]*)".*"name":"([^"]*)".*"lastSeen":"([^"]*)".*/  \1  \2  last=\3/' || bad "API not answering on $API"
+        bold "Registered devices   (\"old\" = replaced by a newer installation with the same name; safe to remove)"
+        curl -s -m 5 "$API/api/v1/devices" | tr '{' '\n' | grep '"id"' | sed -E 's/.*"id":"([^"]*)".*"name":"([^"]*)".*"user":"([^"]*)".*"lastSeen":"([^"]*)".*"lastIp":"([^"]*)".*/  \1  \2  user=\3  last=\4  ip=\5/; s/.*"id":"([^"]*)".*"name":"([^"]*)".*"lastSeen":"([^"]*)".*/  \1  \2  last=\3/' | sed -E 's/(.*)  (last=[^ ]*)(.*)"supersededBy"(.*)/\1  OLD \2\3/'
         note "gw devices rm <id> removes one (its app will ask to sign in again), gw devices rm all removes every device." ;;
     esac
     ;;

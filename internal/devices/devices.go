@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -24,6 +25,11 @@ type Device struct {
 	LastSeen  time.Time `json:"lastSeen"`
 	LastIP    string    `json:"lastIp,omitempty"`
 	Logins    int       `json:"logins"`
+	// SupersededBy is set when a *new* device registered with the same name and user: the app was
+	// reinstalled (new id) on the same hardware. The old entry stays listed as "old" with its last
+	// seen date until the admin removes it; it is cleared again if that old installation shows up.
+	SupersededBy string    `json:"supersededBy,omitempty"`
+	SupersededAt time.Time `json:"supersededAt,omitempty"`
 }
 
 // Store is safe for concurrent use.
@@ -108,7 +114,36 @@ func (s *Store) Register(id, name, user, key, ip string) (isNew bool, err error)
 	}
 	d.LastSeen, d.LastIP = now, ip
 	d.Logins++
+	// A device that signs in again is not old, whatever happened in between.
+	d.SupersededBy, d.SupersededAt = "", time.Time{}
+	if isNew {
+		// The same device name (model + user's device name) with the same user: a reinstall on the
+		// same hardware, or the same person's new phone. Mark the older entries as superseded.
+		for _, o := range s.list {
+			if o.ID != id && o.SupersededBy == "" && sameDevice(o, d) {
+				o.SupersededBy, o.SupersededAt = id, now
+			}
+		}
+	}
 	return isNew, s.save()
+}
+
+// sameDevice: identical description (case-insensitive, ignoring the app version/build prefix)
+// and identical Unraid user.
+func sameDevice(a, b *Device) bool {
+	if a.User != b.User || a.Name == "" || b.Name == "" {
+		return false
+	}
+	return strings.EqualFold(stripVersion(a.Name), stripVersion(b.Name))
+}
+
+// stripVersion drops the leading "Unraid Drive 1.3 (29) · " so that an update does not count as a
+// different device.
+func stripVersion(name string) string {
+	if i := strings.Index(name, "·"); i >= 0 && strings.HasPrefix(name, "Unraid Drive") {
+		return strings.TrimSpace(name[i+len("·"):])
+	}
+	return strings.TrimSpace(name)
 }
 
 // Touch updates last-seen data for a known device; unknown ids return ErrNotRegistered.
@@ -119,8 +154,11 @@ func (s *Store) Touch(id, ip string) error {
 	if !ok {
 		return ErrNotRegistered
 	}
+	// An installation that still talks to the gateway is not old.
+	revived := d.SupersededBy != ""
+	d.SupersededBy, d.SupersededAt = "", time.Time{}
 	// Save at most once a minute per device to spare the flash.
-	if time.Since(d.LastSeen) > time.Minute {
+	if revived || time.Since(d.LastSeen) > time.Minute {
 		d.LastSeen, d.LastIP = time.Now(), ip
 		return s.save()
 	}

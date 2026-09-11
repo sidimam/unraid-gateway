@@ -8,6 +8,10 @@ Every Unraid Drive installation (iPhone, iPad, Mac, Vision Pro, Apple TV — and
 
 Who sees what: a session opened with an Unraid user sees and removes only its own devices; an API-key-only session or an ADMIN key manages all of them. `DEVICE_REGISTRATION=off` turns the registry off. Apps older than 1.3 build 29 send no device id: they keep working but are not listed.
 
+### Reinstalled or replaced devices (0.9.1+)
+
+A reinstalled app usually comes back with the **same** id (Unraid Drive 1.3 build 30 keeps it in iCloud per hardware) and simply refreshes its entry. When it cannot (all the developer's apps were removed, a new phone with the same name), it registers a new id: the gateway then marks the older entry with the same name and Unraid user as **old** — greyed in the web UI with *last seen …*, `OLD` in `gw devices`, `supersededBy`/`supersededAt` in the JSON. Remove it when you like; if that old installation ever signs in again, the flag is cleared.
+
 ## Notifications
 
 A **new device** (warning) and a **removed device** (info) are announced on every configured channel:
