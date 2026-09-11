@@ -60,28 +60,75 @@ case "${1:-help}" in
       note "gw activity -w refreshes every 3 s. The web UI (port 8484, after login) shows the same with progress bars."
     fi
     ;;
+  devices)
+    # Registered app installations. `gw devices rm <id>` revokes one, `gw devices rm all` every one.
+    case "$2" in
+      rm|remove|delete)
+        [ -z "$3" ] && { echo "usage: gw devices rm <device-id|all>"; exit 1; }
+        if [ "$3" = all ]; then curl -s -m 5 -X DELETE "$API/api/v1/devices"; echo; else curl -s -m 5 -o /dev/null -w 'HTTP %{http_code}\n' -X DELETE "$API/api/v1/devices/$3"; fi
+        note "The apps on those devices will ask to sign in again; that re-registers them and sends a notification." ;;
+      *)
+        bold "Registered devices"
+        curl -s -m 5 "$API/api/v1/devices" | tr '{' '\n' | grep '"id"' | sed -E 's/.*"id":"([^"]*)".*"name":"([^"]*)".*"user":"([^"]*)".*"lastSeen":"([^"]*)".*"lastIp":"([^"]*)".*/  \1  \2  user=\3  last=\4  ip=\5/; s/.*"id":"([^"]*)".*"name":"([^"]*)".*"lastSeen":"([^"]*)".*/  \1  \2  last=\3/' || bad "API not answering on $API"
+        note "gw devices rm <id> removes one (its app will ask to sign in again), gw devices rm all removes every device." ;;
+    esac
+    ;;
+  notify-test|notify)
+    bold "Sending a test notification on every configured channel"
+    curl -s -m 20 -X POST "$API/api/v1/notify/test"; echo
+    note "Channels: NOTIFY_UNRAID (Unraid notifications), SMTP_HOST/PORT/USER/PASSWORD/FROM/TO/TLS (e-mail), TELEGRAM_BOT_TOKEN/CHAT_ID."
+    ;;
   env)
-    env | grep -E '^(UNRAID_URL|USER_AUTH|UNRAID_SMB_ADDR|SHARES_CONFIG|DATA_ROOT|READ_ONLY|TRUST_PROXY|SESSION_TTL|MAX_LOGIN_ATTEMPTS|LOGIN_LOCKOUT|LOG_FORMAT|LOG_LEVEL|TZ)=' | sort | sed 's/^/  /'
+    env | grep -E '^(UNRAID_URL|USER_AUTH|UNRAID_SMB_ADDR|SHARES_CONFIG|DATA_ROOT|READ_ONLY|TRUST_PROXY|SESSION_TTL|MAX_LOGIN_ATTEMPTS|LOGIN_LOCKOUT|LOG_FORMAT|LOG_LEVEL|TZ|DEVICE_REGISTRATION|DEVICES_FILE|NOTIFY_UNRAID|SMTP_HOST|SMTP_PORT|SMTP_USER|SMTP_FROM|SMTP_TO|SMTP_TLS|TELEGRAM_CHAT_ID|WEBUI_API_KEY_FILE)=' | sort | sed 's/^/  /'
+    [ -n "$SMTP_PASSWORD" ] && echo "  SMTP_PASSWORD=(set)"; [ -n "$TELEGRAM_BOT_TOKEN" ] && echo "  TELEGRAM_BOT_TOKEN=(set)"; [ -n "$WEBUI_API_KEY" ] && echo "  WEBUI_API_KEY=(set)"; [ -n "$NOTIFY_UNRAID_API_KEY" ] && echo "  NOTIFY_UNRAID_API_KEY=(set)"
     ;;
   help|*)
     bold "unraid-gateway console — walkthrough"
     cat <<'TXT'
-  This container serves your Unraid shares to the Unraid Drive app (and its web UI at port 8484).
-  Nothing is configured here: settings are the container's variables and path mappings in Unraid.
+  WHAT THIS IS
+  This container is the server side of Unraid Drive: one authenticated HTTPS port that serves the
+  shares mapped under /data to the apps (iPhone, iPad, Mac, Vision Pro, Apple TV) and to the web UI
+  on port 8484. Nothing is configured here: settings are the container's variables and path
+  mappings in Unraid (Docker → unraid-gateway → Edit).
 
-  1. gw status    health of the API, Unraid API reachability, mounted shares (rw/ro), user-auth prerequisites
-  2. gw shares    each mounted share with its Unraid security (Public/Secure/Private) and user lists
-  3. gw users     Unraid users that appear in the share lists
-  4. gw login U   try a login as Unraid user U (asks API key + password) and show the resulting permissions
-  5. gw key       try a login with the API key only
-  6. gw env       the effective configuration variables
-  7. gw activity  who is connected (device, user, IP), streams/uploads in progress, recent transfers (-w = live)
+  HOW ACCESS WORKS
+  · Every client presents an Unraid API key (Settings → Management Access → API Keys). VIEWER is
+    enough for files; ADMIN also unlocks key management in the web UI. Unraid validates the key.
+  · With USER_AUTH=optional|required the client may/must add an Unraid username and password:
+    Samba verifies them and the gateway applies that user's share security (Public/Secure/Private,
+    read/write lists) exactly as over SMB. Without a user, access = the container's mounts.
+  · Files the gateway creates get Unraid's standard permissions (nobody:users, 0777/0666).
+  · Devices: each app installation registers itself the first time it signs in. The web UI (Devices)
+    and `gw devices` list them; removing one closes its sessions and the app asks to sign in again.
+  · Notifications: a new or removed device is announced via Unraid notifications, e-mail and/or
+    Telegram, whichever is configured (`gw notify-test` to try).
+  · Media tickets: players that cannot send headers (Infuse, VLC) get a signed, expiring URL per file.
+  · The web UI can remember your API key (WEBUI_API_KEY or "Remember this key") for one-click login.
 
-  Logs: Unraid → Docker → unraid-gateway → Logs. One line per request:
+  COMMANDS
+  1. gw status       health of the API, Unraid API reachability, mounted shares (rw/ro), user-auth prerequisites
+  2. gw shares       each mounted share with its Unraid security (Public/Secure/Private) and user lists
+  3. gw users        Unraid users that appear in the share lists
+  4. gw login U      try a login as Unraid user U (asks API key + password) and show the resulting permissions
+  5. gw key          try a login with the API key only
+  6. gw env          the effective configuration variables (secrets shown as "(set)")
+  7. gw activity     who is connected (device, user, IP), streams/uploads in progress, recent transfers (-w = live)
+  8. gw devices      registered app installations; gw devices rm <id> | rm all revokes them
+  9. gw notify-test  send a test notification through every configured channel
+
+  WHERE THINGS LIVE
+  /data/<share>              the mounted shares            /config/index.db      file index (safe to delete)
+  /config/devices.json       registered devices            /config/webui.key     remembered web UI key (0600)
+  /unraid-shares/smb-shares.conf  Unraid share security (read-only mount)
+
+  LOGS: Unraid → Docker → unraid-gateway → Logs. One line per request:
      TIME INFO  METHOD PATH → STATUS in Nms  file=/share/path user=… ip=…
-  Common lines: "login ok (user)", "login failed: Unraid rejected the API key",
-  "login failed: Unraid rejected the username/password", "login refused: too many failed attempts".
-  Health checks are hidden (LOG_HEALTHCHECKS=true to see them); LOG_FORMAT=json for machine-readable logs.
+  Common lines: "login ok (user)", "login failed: Unraid rejected the API key", "login refused: device not
+  registered", "device registered", "permission denied: the gateway runs as nobody …" (run Tools → New
+  Permissions on that share). Health checks hidden (LOG_HEALTHCHECKS=true to see them); LOG_FORMAT=json.
+
+  UPDATES: the Community Applications template uses tag latest (Check for Updates → Update). If Unraid
+  keeps saying up-to-date, edit the container and set the Repository to ghcr.io/sidimam/unraid-gateway:X.Y.Z.
 
   Docs: https://github.com/sidimam/unraid-gateway/wiki
 TXT

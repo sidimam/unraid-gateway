@@ -2,6 +2,11 @@
   const $ = (id) => document.getElementById(id);
   const API = '/api/v1';
   let token = sessionStorage.getItem('ugw.token') || '';
+  // This browser is a "device" like an app installation: a stable id, registered on manual login.
+  let deviceId = localStorage.getItem('ugw.device') || '';
+  if (!deviceId) { deviceId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)); localStorage.setItem('ugw.device', deviceId); }
+  const deviceName = () => `Web UI · ${(navigator.userAgent.match(/(Firefox|Edg|Chrome|Safari)\/[\d.]+/) || ['browser'])[0]} on ${navigator.platform || 'unknown'}`;
+  let identityRoles = [];
   let cwd = '/';
 
   const fmtSize = (n) => {
@@ -16,7 +21,11 @@
   async function api(path, opts = {}) {
     opts.headers = Object.assign({}, opts.headers, token ? { Authorization: 'Bearer ' + token } : {});
     const res = await fetch(API + path, opts);
-    if (res.status === 401 && token) { logout(); throw new Error('session expired'); }
+    if (res.status === 401 && token) {
+      let msg = 'session expired';
+      try { const b = await res.clone().json(); if (b && b.code === 'device_revoked') msg = 'this browser was removed from the gateway: sign in again to register it'; } catch {}
+      logout(); $('login-error').textContent = msg; $('login-error').hidden = false; throw new Error(msg);
+    }
     if (res.status === 204) return null;
     const ct = res.headers.get('content-type') || '';
     const body = ct.includes('json') ? await res.json() : await res.text();
@@ -39,12 +48,15 @@
 
   // ---- auth -----------------------------------------------------------------
   function showApp(identity, user, shares) {
+    identityRoles = (identity && identity.roles) || [];
     $('login').hidden = true; $('app').hidden = false; $('who').hidden = false;
     const key = identity ? `${identity.name || 'api key'} · ${(identity.roles || []).join(', ')}` : '';
     $('who-name').textContent = user ? `${user} · ${key}` : key;
     window.ugwShares = shares || null; // share → 'rw' | 'ro' when a user is logged in
     list(cwd);
     startActivity();
+    loadDevices();
+    loadNotifyChannels();
     $('forget').hidden = !(storedInfo.available && storedInfo.canForget);
   }
   function logout() {
@@ -65,6 +77,7 @@
     $('login-error').hidden = true;
     try {
       if ($('username').value.trim()) { body.username = $('username').value.trim(); body.password = $('password').value; }
+      body.deviceId = deviceId; body.deviceName = deviceName(); body.registerDevice = true;
       const r = await api('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       token = r.token; sessionStorage.setItem('ugw.token', token);
       if (body.apiKey && $('remember').checked) {
@@ -257,6 +270,95 @@
     activityTimer = setInterval(() => { if ($('activity-live').checked && !document.hidden) loadActivity(); }, 3000);
   }
   $('activity-live').addEventListener('change', () => { if ($('activity-live').checked) loadActivity(); });
+
+  // ---- devices --------------------------------------------------------------
+  async function loadDevices() {
+    try {
+      const d = await api('/devices');
+      const now = new Date();
+      $('devices-scope').textContent = d.registration === 'off' ? 'registration is off (DEVICE_REGISTRATION=off)' : '';
+      const tb = $('devices').querySelector('tbody'); tb.innerHTML = '';
+      $('devices-empty').hidden = d.devices.length > 0;
+      $('devices-remove-all').hidden = d.devices.length === 0;
+      for (const x of d.devices) {
+        const tr = document.createElement('tr');
+        const mine = x.id === d.thisDevice;
+        [x.name + (mine ? ' (this browser)' : ''), x.user || '—', x.key || '—', ago(x.firstSeen, now), ago(x.lastSeen, now), x.lastIp || '', String(x.logins)].forEach((v, i) => {
+          const td = document.createElement('td'); td.textContent = v; if (i === 0) td.className = 'wrap'; if (i === 6) td.className = 'num'; tr.appendChild(td);
+        });
+        const act = document.createElement('td'); act.className = 'actions';
+        const b = document.createElement('button'); b.className = 'ghost'; b.textContent = 'Remove';
+        b.onclick = async () => {
+          if (!confirm(`Remove "${x.name}"?\nIts sessions are closed and the app will ask to sign in again.${mine ? '\n\nThis is the browser you are using: you will be signed out.' : ''}`)) return;
+          try { await api('/devices/' + encodeURIComponent(x.id), { method: 'DELETE' }); if (mine) logout(); else loadDevices(); } catch (err) { alert(err.message); }
+        };
+        act.appendChild(b); tr.appendChild(act); tb.appendChild(tr);
+      }
+    } catch (err) { $('devices-scope').textContent = 'devices unavailable: ' + err.message; }
+  }
+  $('devices-refresh').addEventListener('click', loadDevices);
+  $('devices-remove-all').addEventListener('click', async () => {
+    if (!confirm('Remove ALL devices? Every app (and this browser) will have to sign in again.')) return;
+    try { await api('/devices', { method: 'DELETE' }); logout(); } catch (err) { alert(err.message); }
+  });
+
+  // ---- notifications --------------------------------------------------------
+  async function loadNotifyChannels() {
+    try { const c = await api('/notify/channels'); $('notify-channels').textContent = c.channels.length ? 'channels: ' + c.channels.join(', ') : 'no channel configured'; } catch {}
+  }
+  $('notify-test').addEventListener('click', async () => {
+    $('notify-result').hidden = false; $('notify-result').textContent = 'sending…';
+    try {
+      const r = await api('/notify/test', { method: 'POST' });
+      $('notify-result').textContent = r.channels.length === 0 ? 'No channel configured: set NOTIFY_UNRAID / SMTP_* / TELEGRAM_* in the container.' : (r.errors.length ? 'Errors: ' + r.errors.join(' · ') : 'Sent to ' + r.channels.join(', ') + '.');
+    } catch (err) { $('notify-result').textContent = 'error: ' + err.message; }
+  });
+
+  // ---- api keys -------------------------------------------------------------
+  async function loadKeys() {
+    $('keys-error').hidden = true;
+    try {
+      const r = await api('/keys');
+      const list = (r && r.apiKeys) || [];
+      const tb = $('keys').querySelector('tbody'); tb.innerHTML = ''; $('keys').hidden = false;
+      for (const k of list) {
+        const tr = document.createElement('tr');
+        [k.name, (k.roles || []).join(', '), k.createdAt ? fmtDate(k.createdAt) : ''].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+        const act = document.createElement('td'); act.className = 'actions';
+        const rot = document.createElement('button'); rot.className = 'ghost'; rot.textContent = 'Rotate';
+        rot.onclick = async () => {
+          const name = prompt('Name of the replacement key', k.name + ' new'); if (!name) return;
+          const remember = confirm('Also remember the new key for this web UI (one-click login)?');
+          const del = confirm(`Delete the old key "${k.name}" right away?\nEvery app still using it stops working until you update it. Choose Cancel to delete it later.`);
+          try {
+            const res = await api('/keys/rotate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, roles: k.roles, remember, deleteOldId: del ? k.id : '' }) });
+            showNewKey(res); loadKeys();
+          } catch (err) { $('keys-error').textContent = err.message; $('keys-error').hidden = false; }
+        };
+        const delb = document.createElement('button'); delb.className = 'ghost'; delb.textContent = 'Delete';
+        delb.onclick = async () => {
+          if (!confirm(`Delete the API key "${k.name}"? Every app using it stops working.`)) return;
+          try { await api('/keys/' + encodeURIComponent(k.id), { method: 'DELETE' }); loadKeys(); } catch (err) { $('keys-error').textContent = err.message; $('keys-error').hidden = false; }
+        };
+        act.append(rot, delb); tr.appendChild(act); tb.appendChild(tr);
+      }
+    } catch (err) { $('keys-error').textContent = err.message; $('keys-error').hidden = false; }
+  }
+  function showNewKey(res) {
+    const box = $('key-new'); box.hidden = false;
+    box.textContent = `New key "${res.name}" (${(res.roles || []).join(', ')}):\n\n${res.key || '(Unraid did not return the key)'}\n\nCopy it now: it is not shown again.` + (res.remembered ? '\nRemembered for this web UI.' : '') + (res.deletedOld ? '\nOld key deleted.' : '') + (res.deleteError ? '\nOld key NOT deleted: ' + res.deleteError : '') + (res.rememberError ? '\nNot remembered: ' + res.rememberError : '');
+  }
+  $('keys-refresh').addEventListener('click', loadKeys);
+  $('key-create').addEventListener('click', async () => {
+    const name = $('key-name').value.trim(); if (!name) { alert('Give the key a name'); return; }
+    $('keys-error').hidden = true;
+    try {
+      const r = await api('/keys', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, roles: [$('key-role').value] }) });
+      const c = (r && r.apiKey && r.apiKey.create) || {};
+      showNewKey({ name: c.name || name, roles: c.roles || [$('key-role').value], key: c.key });
+      $('key-name').value = ''; loadKeys();
+    } catch (err) { $('keys-error').textContent = err.message; $('keys-error').hidden = false; }
+  });
 
   // ---- boot -----------------------------------------------------------------
   loadStatus();

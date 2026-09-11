@@ -47,3 +47,4 @@ tr.live td:first-child{border-left:3px solid var(--accent)}
 .bar div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .small{font-size:12px;color:var(--muted)}
 label.small input{vertical-align:middle;margin-right:4px}
+select{background:#0e0e0e;border:1px solid var(--line);color:var(--fg);border-radius:10px;padding:10px 12px;font:inherit}

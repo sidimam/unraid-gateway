@@ -39,6 +39,8 @@ type Identity struct {
 type Principal struct {
 	APIKey   string
 	Identity Identity
+	// DeviceID of the session, when it registered one.
+	DeviceID string
 	// User is the Unraid user name when the session was opened with user credentials.
 	User string
 	// Policy is the per-share access of the session (nil = unrestricted).
@@ -140,6 +142,8 @@ type Session struct {
 	User      string
 	Policy    access.Policy
 	ExpiresAt time.Time
+	// DeviceID is the registered installation that opened the session ("" for older clients / raw keys).
+	DeviceID string
 }
 
 // Store keeps sessions, an API-key validation cache and the login limiter.
@@ -211,6 +215,20 @@ func (s *Store) Logout(token string) {
 	s.mu.Lock()
 	delete(s.sessions, token)
 	s.mu.Unlock()
+}
+
+// LogoutDevice removes every session of a device (or of all devices when id is "").
+func (s *Store) LogoutDevice(id string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	n := 0
+	for k, v := range s.sessions {
+		if v.DeviceID != "" && (id == "" || v.DeviceID == id) {
+			delete(s.sessions, k)
+			n++
+		}
+	}
+	return n
 }
 
 // Lookup returns the session for a token, if valid.

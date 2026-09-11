@@ -21,7 +21,13 @@
   <DonateLink/>
   <Beta>False</Beta>
   <Date>2026-09-11</Date>
-  <Changes>### 2026-09-11 (v0.8.0)
+  <Changes>### 2026-09-11 (v0.9.0)
+- Device registry: every Unraid Drive installation registers itself; the web UI (Devices) and `gw devices` list them; removing one (or all) closes its sessions and the app asks to sign in again.
+- Notifications for new/removed devices via Unraid notifications (NOTIFY_UNRAID), e-mail (SMTP_*) and Telegram (TELEGRAM_*); test from the web UI or `gw notify-test`.
+- Unraid API keys from the web UI (ADMIN key): list, create, delete, rotate (new key shown once, optionally remembered for the web UI, old key deleted).
+- Console walkthrough rewritten: what the gateway is, how access works, every command, where files live.
+
+### 2026-09-11 (v0.8.0)
 - Web UI: the API key can be remembered on the gateway (`WEBUI_API_KEY` variable or "Remember this key on the gateway" → /config/webui.key) for one-click login; "Forget stored key" to remove it.
 - Console: `gw activity` (and `gw activity -w` live) prints connected devices, streams/uploads in progress and recent transfers; `?format=text` on the activity API; loopback access from the container console needs no token.
 
@@ -62,6 +68,18 @@
   <Config Name="Gateway data (item index)" Target="/config" Default="/mnt/user/appdata/unraid-gateway" Mode="rw" Description="Small SQLite catalogue of your files (stable ids, change journal) so the app syncs instantly instead of walking the shares. Safe to delete: it is rebuilt at start." Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/unraid-gateway</Config>
   <Config Name="Unraid share security (read-only)" Target="/unraid-shares/smb-shares.conf" Default="/etc/samba/smb-shares.conf" Mode="ro" Description="The share definitions Unraid generates for Samba (public/secure/private, read and write user lists). Needed so that users logging in with their Unraid username and password get exactly the permissions they have over SMB." Type="Path" Display="always" Required="false" Mask="false">/etc/samba/smb-shares.conf</Config>
   <Config Name="Web UI stored API key (optional)" Target="WEBUI_API_KEY" Default="" Mode="" Description="An Unraid API key the web UI on port 8484 can use with one click, so you do not paste it at every visit. Leave empty and tick 'Remember this key on the gateway' in the web UI instead (saved in /config/webui.key). Anyone who can open the web UI can then use the key: keep the gateway on the LAN or behind Cloudflare Access." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Device registration" Target="DEVICE_REGISTRATION" Default="on" Mode="" Description="on: every Unraid Drive installation registers itself at first sign-in and can be revoked from the web UI (Devices) or gw devices; off: no registry." Type="Variable" Display="advanced" Required="false" Mask="false">on</Config>
+  <Config Name="Notify via Unraid" Target="NOTIFY_UNRAID" Default="true" Mode="" Description="Announce new/removed devices through Unraid's notification system (uses the signing-in key; set 'Notify Unraid API key' to an ADMIN key if VIEWER keys are refused)." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Notify Unraid API key (optional)" Target="NOTIFY_UNRAID_API_KEY" Default="" Mode="" Description="ADMIN API key used only to create Unraid notifications." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="SMTP host (optional)" Target="SMTP_HOST" Default="" Mode="" Description="E-mail notifications: SMTP server. Also set SMTP_PORT (587), SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS (starttls|tls|none)." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="SMTP port" Target="SMTP_PORT" Default="587" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">587</Config>
+  <Config Name="SMTP user" Target="SMTP_USER" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="SMTP password" Target="SMTP_PASSWORD" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="SMTP from" Target="SMTP_FROM" Default="" Mode="" Description="Sender address (defaults to SMTP user)." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="SMTP to" Target="SMTP_TO" Default="" Mode="" Description="Recipient(s), comma separated." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="SMTP TLS" Target="SMTP_TLS" Default="starttls" Mode="" Description="starttls (587) | tls (465) | none" Type="Variable" Display="advanced" Required="false" Mask="false">starttls</Config>
+  <Config Name="Telegram bot token (optional)" Target="TELEGRAM_BOT_TOKEN" Default="" Mode="" Description="Telegram notifications: token from @BotFather; also set TELEGRAM_CHAT_ID." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Telegram chat id" Target="TELEGRAM_CHAT_ID" Default="" Mode="" Description="Chat or channel id that receives the messages." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="User authentication" Target="USER_AUTH" Default="optional" Mode="" Description="optional: clients may add an Unraid username and password to the API key and get that user's share permissions; required: every client must; off: API key only (access = container mounts)." Type="Variable" Display="always" Required="false" Mask="false">optional</Config>
   <Config Name="Unraid SMB address" Target="UNRAID_SMB_ADDR" Default="" Mode="" Description="host:port of the Unraid SMB service used to verify user passwords. Empty = host of the WebGUI URL, port 445." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="Read-only mode" Target="READ_ONLY" Default="false" Mode="" Description="true disables every write operation on all mapped shares." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>

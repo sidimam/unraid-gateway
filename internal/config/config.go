@@ -55,6 +55,15 @@ type Config struct {
 	UserAuth string
 	// SMBAddr is the Unraid SMB endpoint used to validate user passwords (host:445).
 	SMBAddr string
+	// DeviceRegistration "on" requires apps to register their installation (DEVICE_REGISTRATION); "off" disables the registry.
+	DeviceRegistration string
+	// DevicesFile persists the registry (DEVICES_FILE).
+	DevicesFile string
+	// Notifications.
+	NotifyUnraid                                                          bool
+	NotifyUnraidAPIKey                                                    string
+	SMTPHost, SMTPPort, SMTPUser, SMTPPassword, SMTPFrom, SMTPTo, SMTPTLS string
+	TelegramToken, TelegramChatID                                         string
 	// WebUIKey is an Unraid API key the web UI may use with one click (WEBUI_API_KEY); empty = none.
 	WebUIKey string
 	// WebUIKeyFile is where "Remember this key on the gateway" stores the key (WEBUI_API_KEY_FILE).
@@ -73,29 +82,41 @@ type Config struct {
 // Load reads the configuration from the environment.
 func Load() (Config, error) {
 	c := Config{
-		ListenAddr:       env("LISTEN_ADDR", ":8484"),
-		UnraidURL:        strings.TrimRight(env("UNRAID_URL", ""), "/"),
-		ValidateQuery:    env("UNRAID_VALIDATE_QUERY", "query { me { id name roles } }"),
-		DataRoot:         env("DATA_ROOT", "/data"),
-		TLSCert:          env("TLS_CERT", ""),
-		TLSKey:           env("TLS_KEY", ""),
-		SessionTTL:       dur("SESSION_TTL", 12*time.Hour),
-		LoginLockout:     dur("LOGIN_LOCKOUT", 15*time.Minute),
-		UploadTTL:        dur("UPLOAD_TTL", 24*time.Hour),
-		ChangesDeadline:  dur("CHANGES_DEADLINE", 20*time.Second),
-		MaxLoginAttempts: num("MAX_LOGIN_ATTEMPTS", 5),
-		ChangesWalkLimit: num("CHANGES_WALK_LIMIT", 250000),
-		MaxJSONBody:      int64(num("MAX_JSON_BODY", 1<<20)),
-		UserAuth:         strings.ToLower(env("USER_AUTH", "optional")),
-		LogFormat:        strings.ToLower(env("LOG_FORMAT", "text")),
-		LogLevel:         strings.ToLower(env("LOG_LEVEL", "info")),
-		SMBAddr:          env("UNRAID_SMB_ADDR", ""),
-		SharesConfig:     env("SHARES_CONFIG", env("SHARES_CONFIG_DIR", "/unraid-shares/smb-shares.conf")),
-		IndexDB:          env("INDEX_DB", "/config/index.db"),
-		WebUIKey:         env("WEBUI_API_KEY", ""),
-		WebUIKeyFile:     env("WEBUI_API_KEY_FILE", "/config/webui.key"),
-		IndexDirScan:     dur("INDEX_DIR_SCAN", 5*time.Minute),
-		IndexFullScan:    dur("INDEX_FULL_SCAN", 6*time.Hour),
+		ListenAddr:         env("LISTEN_ADDR", ":8484"),
+		UnraidURL:          strings.TrimRight(env("UNRAID_URL", ""), "/"),
+		ValidateQuery:      env("UNRAID_VALIDATE_QUERY", "query { me { id name roles } }"),
+		DataRoot:           env("DATA_ROOT", "/data"),
+		TLSCert:            env("TLS_CERT", ""),
+		TLSKey:             env("TLS_KEY", ""),
+		SessionTTL:         dur("SESSION_TTL", 12*time.Hour),
+		LoginLockout:       dur("LOGIN_LOCKOUT", 15*time.Minute),
+		UploadTTL:          dur("UPLOAD_TTL", 24*time.Hour),
+		ChangesDeadline:    dur("CHANGES_DEADLINE", 20*time.Second),
+		MaxLoginAttempts:   num("MAX_LOGIN_ATTEMPTS", 5),
+		ChangesWalkLimit:   num("CHANGES_WALK_LIMIT", 250000),
+		MaxJSONBody:        int64(num("MAX_JSON_BODY", 1<<20)),
+		UserAuth:           strings.ToLower(env("USER_AUTH", "optional")),
+		LogFormat:          strings.ToLower(env("LOG_FORMAT", "text")),
+		LogLevel:           strings.ToLower(env("LOG_LEVEL", "info")),
+		SMBAddr:            env("UNRAID_SMB_ADDR", ""),
+		SharesConfig:       env("SHARES_CONFIG", env("SHARES_CONFIG_DIR", "/unraid-shares/smb-shares.conf")),
+		IndexDB:            env("INDEX_DB", "/config/index.db"),
+		WebUIKey:           env("WEBUI_API_KEY", ""),
+		DeviceRegistration: env("DEVICE_REGISTRATION", "on"),
+		DevicesFile:        env("DEVICES_FILE", "/config/devices.json"),
+		NotifyUnraidAPIKey: env("NOTIFY_UNRAID_API_KEY", ""),
+		SMTPHost:           env("SMTP_HOST", ""),
+		SMTPPort:           env("SMTP_PORT", "587"),
+		SMTPUser:           env("SMTP_USER", ""),
+		SMTPPassword:       env("SMTP_PASSWORD", ""),
+		SMTPFrom:           env("SMTP_FROM", ""),
+		SMTPTo:             env("SMTP_TO", ""),
+		SMTPTLS:            env("SMTP_TLS", "starttls"),
+		TelegramToken:      env("TELEGRAM_BOT_TOKEN", ""),
+		TelegramChatID:     env("TELEGRAM_CHAT_ID", ""),
+		WebUIKeyFile:       env("WEBUI_API_KEY_FILE", "/config/webui.key"),
+		IndexDirScan:       dur("INDEX_DIR_SCAN", 5*time.Minute),
+		IndexFullScan:      dur("INDEX_FULL_SCAN", 6*time.Hour),
 	}
 	var err error
 	if c.UnraidInsecureTLS, err = boolean("UNRAID_INSECURE_TLS", false); err != nil {
@@ -105,6 +126,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if c.TrustProxy, err = boolean("TRUST_PROXY", false); err != nil {
+		return c, err
+	}
+	if c.NotifyUnraid, err = boolean("NOTIFY_UNRAID", true); err != nil {
 		return c, err
 	}
 	if c.LogRequests, err = boolean("LOG_REQUESTS", true); err != nil {

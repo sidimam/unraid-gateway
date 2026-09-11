@@ -51,7 +51,7 @@ func (s *Server) handleRemember(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusInternalServerError, "cannot create the key folder: "+err.Error())
 		return
 	}
-	if err := os.WriteFile(s.cfg.WebUIKeyFile, []byte(p.APIKey+"\n"), 0o600); err != nil {
+	if err := writeSecret(s.cfg.WebUIKeyFile, p.APIKey); err != nil {
 		writeErr(w, http.StatusInternalServerError, "cannot write the key file: "+err.Error()+" (mount /config read-write)")
 		return
 	}
@@ -66,4 +66,12 @@ func (s *Server) handleForget(w http.ResponseWriter, r *http.Request) {
 	}
 	s.log.Info("web UI key forgotten", "file", s.cfg.WebUIKeyFile, "ip", auth.ClientIP(r, s.cfg.TrustProxy))
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// writeSecret stores a secret in a 0600 file (folder created if needed).
+func writeSecret(path, value string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(value+"\n"), 0o600)
 }

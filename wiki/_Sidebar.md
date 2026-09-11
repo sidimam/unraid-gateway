@@ -14,3 +14,5 @@
 - [Changelog](Changelog)
 
 **App**: [Unraid Drive wiki](https://github.com/sidimam/unraid-drive/wiki)
+
+* [Devices, notifications and API keys](Devices-Notifications-and-API-Keys)

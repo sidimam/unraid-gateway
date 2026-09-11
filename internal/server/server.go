@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/sidimam/unraid-gateway/internal/index"
 	"log/slog"
 	"net/http"
@@ -18,7 +19,9 @@ import (
 	"github.com/sidimam/unraid-gateway/internal/activity"
 	"github.com/sidimam/unraid-gateway/internal/auth"
 	"github.com/sidimam/unraid-gateway/internal/config"
+	"github.com/sidimam/unraid-gateway/internal/devices"
 	"github.com/sidimam/unraid-gateway/internal/fsapi"
+	"github.com/sidimam/unraid-gateway/internal/notify"
 	"github.com/sidimam/unraid-gateway/internal/proxy"
 	"github.com/sidimam/unraid-gateway/internal/smbauth"
 	"github.com/sidimam/unraid-gateway/internal/unraidshares"
@@ -43,6 +46,8 @@ type Server struct {
 	index    *index.Index
 	scanner  *index.Scanner
 	activity *activity.Tracker
+	devices  *devices.Store
+	notifier *notify.Notifier
 }
 
 // StartIndexer runs the background scanner until ctx is cancelled (no-op without index).
@@ -111,14 +116,26 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 			log.Info("index: enabled", "db", dbPath, "dirScan", cfg.IndexDirScan, "fullScan", cfg.IndexFullScan)
 		}
 	}
+	devStore, err := devices.Open(cfg.DevicesFile)
+	if err != nil {
+		log.Warn("devices: registry unreadable, starting empty", "file", cfg.DevicesFile, "err", err)
+		devStore, _ = devices.Open("")
+	}
+	gqlProxy := proxy.New(cfg.UnraidURL, cfg.UnraidInsecureTLS)
 	s := &Server{
-		cfg:      cfg,
+		cfg:     cfg,
+		devices: devStore,
+		notifier: notify.New(notify.Config{
+			UnraidEnabled: cfg.NotifyUnraid, UnraidAPIKey: cfg.NotifyUnraidAPIKey,
+			SMTPHost: cfg.SMTPHost, SMTPPort: cfg.SMTPPort, SMTPUser: cfg.SMTPUser, SMTPPassword: cfg.SMTPPassword, SMTPFrom: cfg.SMTPFrom, SMTPTo: cfg.SMTPTo, SMTPTLS: cfg.SMTPTLS,
+			TelegramToken: cfg.TelegramToken, TelegramChatID: cfg.TelegramChatID,
+		}, gqlProxy, log),
 		index:    ix,
 		scanner:  scanner,
 		log:      log,
 		sessions: auth.NewStore(validator, cfg.SessionTTL, cfg.MaxLoginAttempts, cfg.LoginLockout),
 		files:    files,
-		gql:      proxy.New(cfg.UnraidURL, cfg.UnraidInsecureTLS),
+		gql:      gqlProxy,
 		smb:      &smbauth.Authenticator{Addr: cfg.SMBAddr, Timeout: 10 * time.Second},
 		shares:   &unraidshares.Loader{Path: cfg.SharesConfig},
 		activity: tracker,
@@ -159,9 +176,23 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("GET /api/v1/auth/session", s.handleSession)
 	private.HandleFunc("GET /api/v1/info", s.handleInfo)
 	private.HandleFunc("GET /api/v1/activity", s.handleActivity)
+	private.HandleFunc("GET /api/v1/devices", s.handleDevicesList)
+	private.HandleFunc("DELETE /api/v1/devices/{id}", s.handleDeviceRemove)
+	private.HandleFunc("DELETE /api/v1/devices", s.handleDevicesRemoveAll)
+	private.HandleFunc("POST /api/v1/notify/test", s.handleNotifyTest)
+	private.HandleFunc("GET /api/v1/notify/channels", s.handleNotifyChannels)
+	private.HandleFunc("GET /api/v1/keys", s.handleKeysList)
+	private.HandleFunc("POST /api/v1/keys", s.handleKeyCreate)
+	private.HandleFunc("DELETE /api/v1/keys/{id}", s.handleKeyDelete)
+	private.HandleFunc("POST /api/v1/keys/rotate", s.handleKeyRotate)
 	// The container console (`gw activity`) reads it on loopback without a token; everyone else
 	// goes through the normal authentication. More specific pattern, so it wins over /api/v1/.
 	public.Handle("GET /api/v1/activity", s.loopbackOr(s.authenticate(private)))
+	public.Handle("GET /api/v1/devices", s.loopbackOr(s.authenticate(private)))
+	public.Handle("DELETE /api/v1/devices", s.loopbackOr(s.authenticate(private)))
+	public.Handle("DELETE /api/v1/devices/{id}", s.loopbackOr(s.authenticate(private)))
+	public.Handle("POST /api/v1/notify/test", s.loopbackOr(s.authenticate(private)))
+	public.Handle("GET /api/v1/notify/channels", s.loopbackOr(s.authenticate(private)))
 	private.HandleFunc("POST /api/v1/graphql", s.handleGraphQL)
 	s.files.Register(private, "/api/v1/fs")
 
@@ -176,10 +207,13 @@ func (s *Server) routes() http.Handler {
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		APIKey       string `json:"apiKey"`
-		Username     string `json:"username"`
-		Password     string `json:"password"`
-		UseStoredKey bool   `json:"useStoredKey"`
+		APIKey         string `json:"apiKey"`
+		Username       string `json:"username"`
+		Password       string `json:"password"`
+		UseStoredKey   bool   `json:"useStoredKey"`
+		DeviceID       string `json:"deviceId"`
+		DeviceName     string `json:"deviceName"`
+		RegisterDevice bool   `json:"registerDevice"`
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -249,6 +283,38 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.User, sess.Policy = req.Username, policy
 	}
+	// 3. Device registration: apps identify their installation; a device the admin removed must be
+	//    registered again explicitly (the app asks the user), which also raises a notification.
+	req.DeviceID = strings.TrimSpace(req.DeviceID)
+	if s.cfg.DeviceRegistration != "off" && req.DeviceID != "" {
+		name := strings.TrimSpace(req.DeviceName)
+		if name == "" {
+			name = strings.TrimSpace(r.Header.Get("X-Unraid-Drive-Client"))
+		}
+		if name == "" {
+			name = r.UserAgent()
+		}
+		if !s.devices.Known(req.DeviceID) && !req.RegisterDevice {
+			s.sessions.Logout(sess.Token)
+			s.log.Warn("login refused: device not registered", "device", req.DeviceID, "name", name, "user", sess.User, "ip", ip)
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "this device is not registered on the gateway: sign in again to register it", "code": "device_not_registered"})
+			return
+		}
+		isNew, err := s.devices.Register(req.DeviceID, name, sess.User, sess.Identity.Name, ip)
+		if err != nil {
+			s.log.Warn("devices: cannot save the registry", "err", err, "file", s.cfg.DevicesFile)
+		}
+		sess.DeviceID = req.DeviceID
+		if isNew {
+			s.log.Info("device registered", "device", req.DeviceID, "name", name, "user", sess.User, "key", sess.Identity.Name, "ip", ip)
+			who := sess.User
+			if who == "" {
+				who = "key " + sess.Identity.Name
+			}
+			body := fmt.Sprintf("%s\nUser: %s\nFrom: %s\nWhen: %s\n\nNot you? Remove it in the gateway web UI (port 8484) → Devices, or with `gw devices rm`.", name, who, ip, time.Now().Format("2006-01-02 15:04"))
+			go s.notifier.Send(context.Background(), sess.APIKey, "New device registered on unraid-gateway", body, notify.Warning)
+		}
+	}
 	if sess.User != "" {
 		s.log.Info("login ok (user)", "user", sess.User, "key", sess.Identity.Name, "ip", ip, "shares", sharesLine(sess, s.files.MountedShares()))
 	} else {
@@ -277,6 +343,9 @@ func (s *Server) sessionResponse(sess *auth.Session) map[string]any {
 		"readOnly":  s.cfg.ReadOnly,
 		"version":   Version,
 		"userAuth":  s.cfg.UserAuth,
+	}
+	if sess.DeviceID != "" {
+		out["deviceId"] = sess.DeviceID
 	}
 	if sess.User != "" {
 		out["user"] = sess.User
@@ -356,7 +425,15 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 				writeErr(w, http.StatusUnauthorized, "invalid or expired session")
 				return
 			}
-			p = auth.Principal{APIKey: sess.APIKey, Identity: sess.Identity, User: sess.User, Policy: sess.Policy}
+			if sess.DeviceID != "" && s.cfg.DeviceRegistration != "off" && !s.devices.Known(sess.DeviceID) {
+				s.sessions.Logout(tok)
+				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "this device was removed from the gateway: sign in again to register it", "code": "device_revoked"})
+				return
+			}
+			if sess.DeviceID != "" {
+				_ = s.devices.Touch(sess.DeviceID, ip)
+			}
+			p = auth.Principal{APIKey: sess.APIKey, Identity: sess.Identity, User: sess.User, Policy: sess.Policy, DeviceID: sess.DeviceID}
 		} else if key := strings.TrimSpace(r.Header.Get("x-api-key")); key != "" {
 			if s.cfg.UserAuth == "required" {
 				writeErr(w, http.StatusUnauthorized, "this gateway requires a login with Unraid username and password")

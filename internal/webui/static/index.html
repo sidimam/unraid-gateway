@@ -88,6 +88,50 @@
       </details>
     </div>
 
+    <div class="card" id="devices-card">
+      <div class="toolbar">
+        <h2 style="margin:0">Devices</h2>
+        <span id="devices-scope" class="muted"></span>
+        <div class="spacer"></div>
+        <button id="devices-refresh" class="ghost" title="Refresh">↻</button>
+        <button id="devices-remove-all" class="ghost" hidden>Remove all</button>
+      </div>
+      <p class="muted small">Every Unraid Drive installation registers itself when you add the server. Removing a device closes its sessions and the app asks to sign in again (which registers it anew and sends a notification).</p>
+      <table id="devices">
+        <thead><tr><th>Device</th><th>User</th><th>Key</th><th>Registered</th><th>Last seen</th><th>From</th><th class="num">Logins</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="devices-empty" class="muted" hidden>No device registered yet (older app builds do not register; update to 1.3 build 29 or later).</p>
+    </div>
+
+    <div class="card" id="notify-card">
+      <div class="toolbar">
+        <h2 style="margin:0">Notifications</h2>
+        <span id="notify-channels" class="muted"></span>
+        <div class="spacer"></div>
+        <button id="notify-test" class="ghost">Send a test</button>
+      </div>
+      <p class="muted small">A new or removed device raises a notification on every configured channel: Unraid's notifications (NOTIFY_UNRAID, needs a key allowed to create them — set NOTIFY_UNRAID_API_KEY to an ADMIN key if yours is VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) and Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Set them in the container settings.</p>
+      <p id="notify-result" class="muted small" hidden></p>
+    </div>
+
+    <details class="card" id="keys-card">
+      <summary>Unraid API keys <span class="muted small">(needs an ADMIN key)</span></summary>
+      <p class="muted small">List, create, delete and rotate the API keys of your Unraid server through its API. A new key is shown once: copy it into the apps (Edit server or credentials). Rotate = create a replacement, optionally remember it for this web UI and delete the old one.</p>
+      <div class="row">
+        <button id="keys-refresh" class="ghost">List keys</button>
+        <input id="key-name" type="text" placeholder="new key name (letters, digits, spaces)">
+        <select id="key-role"><option value="VIEWER">VIEWER</option><option value="ADMIN">ADMIN</option></select>
+        <button id="key-create" class="ghost">Create</button>
+      </div>
+      <table id="keys" hidden>
+        <thead><tr><th>Name</th><th>Roles</th><th>Created</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="keys-error" class="error" hidden></p>
+      <div id="key-new" class="out" hidden></div>
+    </details>
+
     <div class="card">
       <h2>For the iOS app</h2>
       <p>Server URL to enter in the app: <code id="origin"></code></p>

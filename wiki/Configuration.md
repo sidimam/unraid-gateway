@@ -49,3 +49,14 @@ The image runs as UID 99 / GID 100 (`nobody:users`), Unraid's defaults, so files
 | `WEBUI_API_KEY_FILE` | `/config/webui.key` | Where "Remember this key on the gateway" stores the key (0600). Empty disables remembering. |
 
 Whoever can open the web UI can use the stored key: keep the gateway on the LAN or behind Cloudflare Access. The Unraid user/password (USER_AUTH) are still asked.
+
+## Devices and notifications (0.9+)
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `DEVICE_REGISTRATION` | `on` | Apps register their installation; revoke from the web UI or `gw devices rm`. `off` disables the registry. |
+| `DEVICES_FILE` | `/config/devices.json` | Where the registry is persisted. |
+| `NOTIFY_UNRAID` | `true` | Announce new/removed devices through Unraid's notifications (GraphQL `createNotification`). |
+| `NOTIFY_UNRAID_API_KEY` | empty | ADMIN key used only for those notifications (when the signing-in key is refused). |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_TO`, `SMTP_TLS` | port 587, TLS `starttls` | E-mail channel; `SMTP_TLS` is `starttls`, `tls` (implicit, 465) or `none`; `SMTP_TO` may list several addresses. |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | empty | Telegram channel (bot from @BotFather; the chat id of you or a group). |

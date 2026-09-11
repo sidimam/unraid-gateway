@@ -34,6 +34,10 @@ Roles (`VIEWER`, `ADMIN`, …) are enforced by Unraid on the **GraphQL proxy** o
 
 `WEBUI_API_KEY` / `/config/webui.key` let the web UI log in without pasting the key. The key is stored in clear (0600, inside the container's /config); whoever can open the web UI can use it, with the key's role and, without USER_AUTH, the full mounts. Only enable it on a gateway that is not reachable from the Internet without Cloudflare Access.
 
+## Devices (0.9+)
+
+Every app installation is registered; revoking it closes its sessions and forces a new sign-in. This is the tool to cut off a lost phone: remove the device, then rotate the API key if the key itself may have leaked. See [Devices, notifications and API keys](Devices-Notifications-and-API-Keys).
+
 ## Activity panel (0.7+)
 
 The web UI shows who is connected and what is being streamed. A session opened with an Unraid username sees only its own devices and transfers; API-key-only sessions and ADMIN keys see every user. The data lives in memory only (no history beyond the last 50 transfers, idle clients dropped after 30 minutes). If family members should not see each other's activity, give them Unraid users and keep the API key with the ADMIN/VIEWER role for yourself.
