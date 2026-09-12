@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.10.1 (2026-09-12)
+- Notifications: when Unraid refuses to create a notification because the key is VIEWER, the test and the log now say so and what to do — *create an ADMIN key in Unraid (Settings › Management Access › API Keys) and set it as `NOTIFY_UNRAID_API_KEY` in the container settings (Show more settings…)* — instead of the bare "Forbidden resource".
+
 ## v0.10.0 (2026-09-12)
 - **Web UI redesigned.** A dashboard with four counters (connected now, streams/transfers, registered devices, gateway version) and tabs — *Files*, *Activity*, *Devices*, *Notifications*, *API keys*, *Advanced* — instead of one long page. Tables scroll horizontally inside their card and the Device column keeps a sensible width (no more one-letter-per-line wrapping).
 - **Theme**: system / light / dark switch in the header (remembered in the browser; follows `prefers-color-scheme` by default).

@@ -83,7 +83,17 @@ func (n *Notifier) Send(ctx context.Context, sessionKey, title, body string, imp
 		if key == "" {
 			errs = append(errs, errors.New("unraid: no API key available for the notification"))
 		} else if err := n.sendUnraid(ctx, key, title, body, imp); err != nil {
-			errs = append(errs, fmt.Errorf("unraid: %w", err))
+			// Unraid answers "Forbidden resource" when the key lacks the notification permission
+			// (a VIEWER key): say what to do instead of echoing the GraphQL error.
+			if strings.Contains(strings.ToLower(err.Error()), "forbidden") {
+				which := "the signing-in key"
+				if n.cfg.UnraidAPIKey != "" {
+					which = "NOTIFY_UNRAID_API_KEY"
+				}
+				errs = append(errs, fmt.Errorf("unraid: %s is not allowed to create notifications (VIEWER role). Create an ADMIN key in Unraid (Settings › Management Access › API Keys) and set it as NOTIFY_UNRAID_API_KEY in the container settings (Show more settings…)", which))
+			} else {
+				errs = append(errs, fmt.Errorf("unraid: %w", err))
+			}
 		}
 	}
 	if n.cfg.SMTPHost != "" && n.cfg.SMTPTo != "" {
