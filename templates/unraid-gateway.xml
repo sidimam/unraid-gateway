@@ -21,7 +21,10 @@
   <DonateLink/>
   <Beta>False</Beta>
   <Date>2026-09-11</Date>
-  <Changes>### 2026-09-11 (v0.9.0)
+  <Changes>### 2026-09-12 (v0.10.0)
+- Web UI redesigned: dashboard counters + tabs (Files, Activity, Devices, Notifications, API keys, Advanced), readable tables, theme system/light/dark, seven languages (system/en/it/es/fr/de/zh-Hans/ar), login form that password managers (iCloud Keychain, Chrome, Firefox) can save and fill.
+
+### 2026-09-11 (v0.9.0)
 - Device registry: every Unraid Drive installation registers itself; the web UI (Devices) and `gw devices` list them; removing one (or all) closes its sessions and the app asks to sign in again.
 - Notifications for new/removed devices via Unraid notifications (NOTIFY_UNRAID), e-mail (SMTP_*) and Telegram (TELEGRAM_*); test from the web UI or `gw notify-test`.
 - Unraid API keys from the web UI (ADMIN key): list, create, delete, rotate (new key shown once, optionally remembered for the web UI, old key deleted).
