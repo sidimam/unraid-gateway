@@ -104,6 +104,7 @@ curl -s https://gw.example.com/healthz
 | `TRUST_PROXY` | `false` | Honour `X-Forwarded-For` / `X-Real-IP`. |
 | `USER_AUTH` | `optional` | `optional`: clients may add an Unraid username+password and get that user's share permissions; `required`: they must; `off`: API key only. |
 | `UNRAID_SMB_ADDR` | host of `UNRAID_URL`:445 | Unraid SMB endpoint used to verify user passwords. |
+| `UNRAID_NOTIFY_DIR` | `/unraid-notifications` | Mount the host's `/tmp/notifications` here and the gateway raises Unraid notifications (new/removed device) itself, with any API key role; without it the GraphQL fallback needs an ADMIN key (`NOTIFY_UNRAID_API_KEY`). |
 | `SHARES_CONFIG` | `/unraid-shares/smb-shares.conf` | Unraid share security source: mount `/etc/samba/smb-shares.conf` (read-only) here. A directory of `/boot/config/shares/*.cfg` is accepted too. |
 | `UPLOAD_TTL` | `24h` | How long an unfinished resumable upload is kept. |
 | `INDEX_DB` | `/config/index.db` | SQLite item index (stable ids, change journal). Mount `/config` to keep it across restarts; `off` disables it. |
