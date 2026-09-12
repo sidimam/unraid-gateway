@@ -14,7 +14,9 @@ A reinstalled app usually comes back with the **same** id (Unraid Drive 1.3 buil
 
 ## Notifications
 
-A **new device** (warning) and a **removed device** (info) are announced on every configured channel:
+A **new device** (warning) and a **removed device** (info) are announced on every configured channel. **Unraid's own notifications need nothing (0.11+):** the template maps the host folder `/tmp/notifications` to `/unraid-notifications` and the gateway writes the notification file itself, with any API key role — if your container predates 0.11, add the Path once (Edit › Add another Path: container `/unraid-notifications`, host `/tmp/notifications`, read/write). Without the mapping the gateway falls back to the API mutation, which Unraid allows only to ADMIN keys (`NOTIFY_UNRAID_API_KEY`). Spool notifications do not trigger Unraid's external agents (e-mail, Pushover…): configure SMTP or Telegram below for those.
+
+Channels:
 
 - **Unraid** (`NOTIFY_UNRAID=true`, default): the gateway creates a notification through the Unraid API with the key of the session that registered the device. If Unraid refuses (a VIEWER key may lack the permission), set `NOTIFY_UNRAID_API_KEY` to an ADMIN key used only for this.
 - **E-mail**: `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_TO` (comma-separated), `SMTP_TLS` = `starttls` | `tls` | `none`. Gmail: `smtp.gmail.com`, 587, starttls, an app password.

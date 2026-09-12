@@ -126,7 +126,7 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		cfg:     cfg,
 		devices: devStore,
 		notifier: notify.New(notify.Config{
-			UnraidEnabled: cfg.NotifyUnraid, UnraidAPIKey: cfg.NotifyUnraidAPIKey,
+			UnraidEnabled: cfg.NotifyUnraid, UnraidAPIKey: cfg.NotifyUnraidAPIKey, UnraidDir: cfg.NotifyUnraidDir,
 			SMTPHost: cfg.SMTPHost, SMTPPort: cfg.SMTPPort, SMTPUser: cfg.SMTPUser, SMTPPassword: cfg.SMTPPassword, SMTPFrom: cfg.SMTPFrom, SMTPTo: cfg.SMTPTo, SMTPTLS: cfg.SMTPTLS,
 			TelegramToken: cfg.TelegramToken, TelegramChatID: cfg.TelegramChatID,
 		}, gqlProxy, log),

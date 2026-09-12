@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.11.0 (2026-09-12)
+- **Unraid notifications out of the box.** The template maps the host folder `/tmp/notifications` (Unraid's notification spool) to `/unraid-notifications`; when that folder is present the gateway writes the notification file itself — exactly what Unraid's own `notify` script does — so a new or removed device shows up in the Unraid bell with **any** API key role. No ADMIN key, nothing to configure. The GraphQL `createNotification` mutation stays as fallback when the folder is not mapped (there it still needs an ADMIN key, and the error says so). `UNRAID_NOTIFY_DIR` overrides the folder. Unraid's external agents (e-mail, Pushover…) are not triggered by a spool file: use the gateway's SMTP/Telegram channels for that.
+- The container entrypoint starts as root only to make the spool folder writable for user 99 (`chmod 1777 unread`), then drops to `nobody:users` with `su-exec` — file ownership on the shares is unchanged.
+- Web UI › Notifications and `gw notify-test` show `unraid` when the spool is available and `unraid (api)` when only the API path is.
+
 ## v0.10.1 (2026-09-12)
 - Notifications: when Unraid refuses to create a notification because the key is VIEWER, the test and the log now say so and what to do — *create an ADMIN key in Unraid (Settings › Management Access › API Keys) and set it as `NOTIFY_UNRAID_API_KEY` in the container settings (Show more settings…)* — instead of the bare "Forbidden resource".
 
