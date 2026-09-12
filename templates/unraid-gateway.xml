@@ -21,7 +21,10 @@
   <DonateLink/>
   <Beta>False</Beta>
   <Date>2026-09-11</Date>
-  <Changes>### 2026-09-12 (v0.10.1)
+  <Changes>### 2026-09-12 (v0.11.0)
+- Unraid notifications work out of the box: map the host folder /tmp/notifications to /unraid-notifications (new Path in the template) and the gateway writes notifications itself, with any API key role — no ADMIN key needed. The API mutation stays as fallback. The container entrypoint now starts as root only to make that folder writable, then drops to nobody:users as before.
+
+### 2026-09-12 (v0.10.1)
 - Notifications: a VIEWER key that cannot create Unraid notifications now gets an explicit message (set NOTIFY_UNRAID_API_KEY to an ADMIN key) instead of "Forbidden resource".
 
 ### 2026-09-12 (v0.10.0)
@@ -75,7 +78,8 @@
   <Config Name="Unraid share security (read-only)" Target="/unraid-shares/smb-shares.conf" Default="/etc/samba/smb-shares.conf" Mode="ro" Description="The share definitions Unraid generates for Samba (public/secure/private, read and write user lists). Needed so that users logging in with their Unraid username and password get exactly the permissions they have over SMB." Type="Path" Display="always" Required="false" Mask="false">/etc/samba/smb-shares.conf</Config>
   <Config Name="Web UI stored API key (optional)" Target="WEBUI_API_KEY" Default="" Mode="" Description="An Unraid API key the web UI on port 8484 can use with one click, so you do not paste it at every visit. Leave empty and tick 'Remember this key on the gateway' in the web UI instead (saved in /config/webui.key). Anyone who can open the web UI can then use the key: keep the gateway on the LAN or behind Cloudflare Access." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
   <Config Name="Device registration" Target="DEVICE_REGISTRATION" Default="on" Mode="" Description="on: every Unraid Drive installation registers itself at first sign-in and can be revoked from the web UI (Devices) or gw devices; off: no registry." Type="Variable" Display="advanced" Required="false" Mask="false">on</Config>
-  <Config Name="Notify via Unraid" Target="NOTIFY_UNRAID" Default="true" Mode="" Description="Announce new/removed devices through Unraid's notification system (uses the signing-in key; set 'Notify Unraid API key' to an ADMIN key if VIEWER keys are refused)." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Unraid notifications (spool)" Target="/unraid-notifications" Default="/tmp/notifications" Mode="rw" Description="Unraid's notification folder. With this mapping the gateway raises Unraid notifications (new/removed device) directly, with any API key role — nothing else to configure." Type="Path" Display="always" Required="false" Mask="false">/tmp/notifications</Config>
+  <Config Name="Notify via Unraid" Target="NOTIFY_UNRAID" Default="true" Mode="" Description="Announce new/removed devices through Unraid's notification system: written straight into the notification folder when it is mapped (any key role), otherwise through the API (needs an ADMIN key)." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
   <Config Name="Notify Unraid API key (optional)" Target="NOTIFY_UNRAID_API_KEY" Default="" Mode="" Description="ADMIN API key used only to create Unraid notifications." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
   <Config Name="SMTP host (optional)" Target="SMTP_HOST" Default="" Mode="" Description="E-mail notifications: SMTP server. Also set SMTP_PORT (587), SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS (starttls|tls|none)." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="SMTP port" Target="SMTP_PORT" Default="587" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">587</Config>

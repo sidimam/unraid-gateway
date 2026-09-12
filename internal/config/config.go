@@ -60,8 +60,12 @@ type Config struct {
 	// DevicesFile persists the registry (DEVICES_FILE).
 	DevicesFile string
 	// Notifications.
-	NotifyUnraid                                                          bool
-	NotifyUnraidAPIKey                                                    string
+	NotifyUnraid       bool
+	NotifyUnraidAPIKey string
+	// NotifyUnraidDir is Unraid's notification spool mounted into the container (UNRAID_NOTIFY_DIR,
+	// default /unraid-notifications ← host /tmp/notifications). When present, notifications are
+	// written there directly — no API key or role needed; the GraphQL mutation is the fallback.
+	NotifyUnraidDir                                                       string
 	SMTPHost, SMTPPort, SMTPUser, SMTPPassword, SMTPFrom, SMTPTo, SMTPTLS string
 	TelegramToken, TelegramChatID                                         string
 	// WebUIKey is an Unraid API key the web UI may use with one click (WEBUI_API_KEY); empty = none.
@@ -105,6 +109,7 @@ func Load() (Config, error) {
 		DeviceRegistration: env("DEVICE_REGISTRATION", "on"),
 		DevicesFile:        env("DEVICES_FILE", "/config/devices.json"),
 		NotifyUnraidAPIKey: env("NOTIFY_UNRAID_API_KEY", ""),
+		NotifyUnraidDir:    env("UNRAID_NOTIFY_DIR", "/unraid-notifications"),
 		SMTPHost:           env("SMTP_HOST", ""),
 		SMTPPort:           env("SMTP_PORT", "587"),
 		SMTPUser:           env("SMTP_USER", ""),

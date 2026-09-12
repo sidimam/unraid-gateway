@@ -14,6 +14,8 @@ import (
 	"net"
 	"net/http"
 	"net/smtp"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -36,6 +38,7 @@ type UnraidSender interface {
 type Config struct {
 	UnraidEnabled bool
 	UnraidAPIKey  string // optional fixed key; otherwise the key of the session that caused the event
+	UnraidDir     string // Unraid's /tmp/notifications mounted in the container; written directly when it exists
 
 	SMTPHost, SMTPPort, SMTPUser, SMTPPassword, SMTPFrom, SMTPTo string
 	SMTPTLS                                                      string // starttls (default) | tls | none
@@ -60,7 +63,11 @@ func New(cfg Config, unraid UnraidSender, log *slog.Logger) *Notifier {
 func (n *Notifier) Channels() []string {
 	var out []string
 	if n.cfg.UnraidEnabled {
-		out = append(out, "unraid")
+		if n.UnraidSpoolAvailable() {
+			out = append(out, "unraid")
+		} else {
+			out = append(out, "unraid (api)")
+		}
 	}
 	if n.cfg.SMTPHost != "" && n.cfg.SMTPTo != "" {
 		out = append(out, "smtp")
@@ -75,25 +82,9 @@ func (n *Notifier) Channels() []string {
 // It returns one error per failed channel (nil when everything went through).
 func (n *Notifier) Send(ctx context.Context, sessionKey, title, body string, imp Importance) []error {
 	var errs []error
-	if n.cfg.UnraidEnabled && n.unraid != nil {
-		key := n.cfg.UnraidAPIKey
-		if key == "" {
-			key = sessionKey
-		}
-		if key == "" {
-			errs = append(errs, errors.New("unraid: no API key available for the notification"))
-		} else if err := n.sendUnraid(ctx, key, title, body, imp); err != nil {
-			// Unraid answers "Forbidden resource" when the key lacks the notification permission
-			// (a VIEWER key): say what to do instead of echoing the GraphQL error.
-			if strings.Contains(strings.ToLower(err.Error()), "forbidden") {
-				which := "the signing-in key"
-				if n.cfg.UnraidAPIKey != "" {
-					which = "NOTIFY_UNRAID_API_KEY"
-				}
-				errs = append(errs, fmt.Errorf("unraid: %s is not allowed to create notifications (VIEWER role). Create an ADMIN key in Unraid (Settings › Management Access › API Keys) and set it as NOTIFY_UNRAID_API_KEY in the container settings (Show more settings…)", which))
-			} else {
-				errs = append(errs, fmt.Errorf("unraid: %w", err))
-			}
+	if n.cfg.UnraidEnabled {
+		if err := n.sendUnraidAny(ctx, sessionKey, title, body, imp); err != nil {
+			errs = append(errs, err)
 		}
 	}
 	if n.cfg.SMTPHost != "" && n.cfg.SMTPTo != "" {
@@ -110,6 +101,102 @@ func (n *Notifier) Send(ctx context.Context, sessionKey, title, body string, imp
 		n.log.Warn("notification failed", "err", e, "title", title)
 	}
 	return errs
+}
+
+// UnraidSpoolAvailable reports whether Unraid's notification folder is mounted and writable:
+// the "works out of the box" path, independent of API keys and roles.
+func (n *Notifier) UnraidSpoolAvailable() bool {
+	if n.cfg.UnraidDir == "" {
+		return false
+	}
+	unread := filepath.Join(n.cfg.UnraidDir, "unread")
+	st, err := os.Stat(unread)
+	if err != nil || !st.IsDir() {
+		return false
+	}
+	f, err := os.CreateTemp(unread, ".gateway-probe-*")
+	if err != nil {
+		return false
+	}
+	name := f.Name()
+	_ = f.Close()
+	_ = os.Remove(name)
+	return true
+}
+
+// sendUnraidAny prefers the notification spool (no key needed) and falls back to the GraphQL
+// mutation with the fixed or signing-in key; errors say which path failed and what to do.
+func (n *Notifier) sendUnraidAny(ctx context.Context, sessionKey, title, body string, imp Importance) error {
+	var spoolErr error
+	if n.cfg.UnraidDir != "" {
+		if _, err := os.Stat(n.cfg.UnraidDir); err == nil {
+			if spoolErr = n.writeUnraidSpool(title, body, imp); spoolErr == nil {
+				return nil
+			}
+		}
+	}
+	if n.unraid == nil {
+		if spoolErr != nil {
+			return fmt.Errorf("unraid: %w", spoolErr)
+		}
+		return errors.New("unraid: neither the notification folder (/tmp/notifications → /unraid-notifications) nor the API are available")
+	}
+	key := n.cfg.UnraidAPIKey
+	if key == "" {
+		key = sessionKey
+	}
+	if key == "" {
+		return errors.New("unraid: no API key available for the notification")
+	}
+	err := n.sendUnraid(ctx, key, title, body, imp)
+	if err == nil {
+		return nil
+	}
+	// Unraid answers "Forbidden resource" when the key lacks the notification permission (a VIEWER key).
+	if strings.Contains(strings.ToLower(err.Error()), "forbidden") {
+		which := "the signing-in key"
+		if n.cfg.UnraidAPIKey != "" {
+			which = "NOTIFY_UNRAID_API_KEY"
+		}
+		err = fmt.Errorf("%s is not allowed to create notifications (VIEWER role). Map the host folder /tmp/notifications to /unraid-notifications in the container settings (no key needed), or set NOTIFY_UNRAID_API_KEY to an ADMIN key", which)
+	}
+	if spoolErr != nil {
+		return fmt.Errorf("unraid: notification folder: %v; API: %w", spoolErr, err)
+	}
+	return fmt.Errorf("unraid: %w", err)
+}
+
+// writeUnraidSpool drops a notification file where Unraid's own `notify` script puts them
+// (/tmp/notifications/unread/*.notify, ini-style); the webGui shows it at once. Agents (e-mail,
+// Pushover…) are not triggered by a plain file: use the gateway's SMTP/Telegram channels for that.
+func (n *Notifier) writeUnraidSpool(title, body string, imp Importance) error {
+	unread := filepath.Join(n.cfg.UnraidDir, "unread")
+	if err := os.MkdirAll(unread, 0o777); err != nil {
+		return err
+	}
+	level := map[Importance]string{Info: "normal", Warning: "warning", Alert: "alert"}[imp]
+	if level == "" {
+		level = "normal"
+	}
+	ts := time.Now()
+	clean := func(v string) string { return strings.NewReplacer("\n", " ", "\r", " ").Replace(strings.TrimSpace(v)) }
+	content := fmt.Sprintf("timestamp=%d\nevent=unraid-gateway\nsubject=%s\ndescription=%s\nimportance=%s\n",
+		ts.Unix(), clean(title), clean(body), level)
+	tmp, err := os.CreateTemp(unread, ".gateway-*")
+	if err != nil {
+		return err
+	}
+	name := fmt.Sprintf("unraid-gateway_%d_%s.notify", ts.Unix(), strings.TrimPrefix(filepath.Base(tmp.Name()), ".gateway-"))
+	if _, err := tmp.WriteString(content); err != nil {
+		_ = tmp.Close()
+		_ = os.Remove(tmp.Name())
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	_ = os.Chmod(tmp.Name(), 0o644)
+	return os.Rename(tmp.Name(), filepath.Join(unread, name))
 }
 
 func (n *Notifier) sendUnraid(ctx context.Context, key, title, body string, imp Importance) error {
