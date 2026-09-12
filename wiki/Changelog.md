@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.10.0 (2026-09-12)
+- **Web UI redesigned.** A dashboard with four counters (connected now, streams/transfers, registered devices, gateway version) and tabs — *Files*, *Activity*, *Devices*, *Notifications*, *API keys*, *Advanced* — instead of one long page. Tables scroll horizontally inside their card and the Device column keeps a sensible width (no more one-letter-per-line wrapping).
+- **Theme**: system / light / dark switch in the header (remembered in the browser; follows `prefers-color-scheme` by default).
+- **Languages**: system / English / Italiano / Español / Français / Deutsch / 简体中文 / العربية — the same seven as Unraid Drive — switch in the header, dates in the chosen locale, right-to-left layout for Arabic.
+- **Password managers**: the login is a real form with an account-name field (default `unraid-gateway`, editable) and the API key as the password field (`autocomplete="current-password"`), so Safari/iCloud Keychain, Chrome and Firefox offer to save it and fill it next time; Chromium also gets it through the Credential Management API. Signing in as an Unraid user is a second, optional form (user + password, saved separately). The *Remember this key on the gateway* option is unchanged.
+
 ## v0.9.1 (2026-09-11)
 - **Devices: reinstalled apps no longer pile up.** When a *new* device id registers with the same name and Unraid user as an existing entry (the same phone/TV/Mac after a reinstall, or the same person's new device), the older entry is marked **superseded** (`supersededBy`, `supersededAt` in `/config/devices.json` and in `GET /api/v1/devices`). The web UI shows it greyed as *old* with its last seen date, `gw devices` prints `OLD`; it can be removed safely. An old installation that signs in or talks to the gateway again is not old any more. The app version/build prefix of the name is ignored, so an update never counts as a new device. Unraid Drive 1.3 build 30 also remembers its device id in iCloud per hardware, so most reinstalls come back as the *same* device.
 - Console `gw devices` explains the *old* flag.
