@@ -38,6 +38,7 @@ services:
       - /mnt/user/media:/data/media
       - /mnt/user/downloads:/data/downloads:ro
       - /etc/samba/smb-shares.conf:/unraid-shares/smb-shares.conf:ro
+      - /tmp/notifications:/unraid-notifications      # Unraid notifications with any key role (0.11+)
 ```
 
 ## docker run
@@ -49,6 +50,7 @@ docker run -d --name unraid-gateway --restart unless-stopped \
   -v /mnt/user/documents:/data/documents \
   -v /mnt/user/media:/data/media \
   -v /etc/samba/smb-shares.conf:/unraid-shares/smb-shares.conf:ro \
+  -v /tmp/notifications:/unraid-notifications \
   ghcr.io/sidimam/unraid-gateway:latest
 ```
 
