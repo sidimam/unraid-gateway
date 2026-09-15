@@ -11,6 +11,10 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     -o /out/unraid-gateway ./cmd/unraid-gateway
 
 FROM alpine:3.20
+# Links the GHCR package to this repository (the link is lost when the repository is recreated).
+LABEL org.opencontainers.image.source="https://github.com/sidimam/unraid-gateway" \
+      org.opencontainers.image.description="Single authenticated port for mobile apps: Unraid API-key auth, streaming file API over your shares" \
+      org.opencontainers.image.licenses="MIT"
 RUN apk add --no-cache ca-certificates tzdata curl su-exec
 COPY --from=build /out/unraid-gateway /usr/local/bin/unraid-gateway
 # Console walkthrough: `docker exec -it … sh` (Unraid's Console button) sources $ENV and gets the `gw` helper.
