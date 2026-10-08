@@ -152,7 +152,7 @@ Then send `Authorization: Bearer <token>` on every call. For scripts you may ins
 | `GET` | `/fs/changes?seq=<n>` | **Change journal** (0.5+): every item created, modified, moved or deleted after sequence `n`, with stable ids; instant. |
 | `GET` | `/fs/item?id=<id>` | Entry for a stable id (0.5+). |
 | `GET` | `/activity` | **Activity** (0.7+): connected devices, streams/transfers in progress with bytes and speed, recent transfers; drives the web UI's Activity panel. |
-| `GET` | `/health` | **Health** (0.12+): `level` ok / warning / error with `reasons` and `checks` — gateway facts plus a live look at Unraid (array, disks, notifications, load, the gateway container). The same dot the Unraid Drive apps show. |
+| `GET` | `/health` | **Health** (0.12+): `level` ok / warning / error with `reasons` and `checks` — gateway facts plus a live look at Unraid (array, disks, load, the gateway container). The same dot the Unraid Drive apps show. |
 | `GET` | `/system` | **System information** (0.12+): Unraid's OS, CPU, memory modules, mainboard, versions, GPU and network interfaces, as the Unraid API reports them. |
 | `POST` | `/fs/ticket` | **Media ticket** (0.6+): signed, expiring URL `/media/<ticket>` for one file, for players that cannot send headers (mpv on Apple TV, VLC, browsers); Range supported. |
 | `GET` | `/fs/changes?path=/&since=<unix ns>&after=&cursor=` | Legacy change feed (mtime walk), paginated, see below. |

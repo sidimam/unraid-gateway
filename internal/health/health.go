@@ -62,7 +62,6 @@ const (
 // unraidQuery mirrors the apps' dashboard query (validated on Unraid 7.3 / unraid-api 4.37).
 const unraidQuery = `{ array { state disks { name status temp } parityCheckStatus { status running } }
   docker { containers { names image state } }
-  notifications { overview { unread { total warning alert } } }
   metrics { cpu { percentTotal } memory { percentTotal } } }`
 
 type unraidData struct {
@@ -193,15 +192,7 @@ func assessUnraid(d unraidData, add func(string, Level, string)) {
 			}
 		}
 	}
-	if n := d.Notifications; n != nil && n.Overview != nil && n.Overview.Unread != nil {
-		u := n.Overview.Unread
-		if u.Alert > 0 {
-			add("notifications.unraid", Error, fmt.Sprintf("%d alert notification(s)", u.Alert))
-		}
-		if u.Warning > 0 {
-			add("notifications.unraid", Warning, fmt.Sprintf("%d warning notification(s)", u.Warning))
-		}
-	}
+	// Unraid's own notifications are the NAS's business (0.12.2): they are not part of this state.
 	if m := d.Metrics; m != nil {
 		if m.CPU != nil && m.CPU.PercentTotal > loadWarn {
 			add("cpu", Warning, fmt.Sprintf("CPU load %.0f %%", m.CPU.PercentTotal))

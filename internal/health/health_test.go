@@ -26,6 +26,11 @@ func TestAssessGreen(t *testing.T) {
 func TestAssessYellowAndRed(t *testing.T) {
 	gw := Gateway{Version: "test", MountedShares: []string{"a"}, UnwritableShares: []string{"a"}, ConfigWritable: false, UserAuth: "optional"}
 	s := Assess(context.Background(), gw, fakeQ{body: `{"array":{"state":"STARTED","disks":[{"name":"disk1","status":"DISK_OK","temp":55}]},"notifications":{"overview":{"unread":{"total":2,"warning":2,"alert":0}}}}`}, "k")
+	for _, r := range s.Reasons {
+		if r == "2 warning notification(s)" {
+			t.Fatalf("Unraid notifications must not count: %v", s.Reasons)
+		}
+	}
 	if s.Level != Warning || len(s.Reasons) < 3 {
 		t.Fatalf("expected warning with reasons, got %s %v", s.Level, s.Reasons)
 	}
