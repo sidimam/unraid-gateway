@@ -88,13 +88,18 @@ func hasRole(roles []string, want string) bool {
 func (s *Server) loopbackOr(private, authed http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err == nil {
+		if err == nil && bearer(r) == "" && strings.TrimSpace(r.Header.Get("x-api-key")) == "" {
 			if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
-				p := auth.Principal{Identity: auth.Identity{Name: "console", Roles: []string{"ADMIN"}}}
+				// The console has no key of its own: the key remembered for the web UI (WEBUI_API_KEY
+				// or /config/webui.key), when there is one, lets gw health and gw system ask Unraid.
+				key, _ := s.storedKey()
+				p := auth.Principal{APIKey: key, Identity: auth.Identity{Name: "console", Roles: []string{"ADMIN"}}}
 				private.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, p)))
 				return
 			}
 		}
+		// A loopback client that presents credentials (a browser on the same host, curl with a key)
+		// is authenticated like anyone else.
 		authed.ServeHTTP(w, r)
 	})
 }

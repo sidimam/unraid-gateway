@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.12.1 (2026-10-08)
+- Loopback requests that carry credentials (a browser on the gateway host, curl with a key) are authenticated normally instead of being treated as the container console; the console principal now uses the key remembered for the web UI (`WEBUI_API_KEY` / `/config/webui.key`) when present, so `gw health` includes the Unraid checks and `/api/v1/system` works from the console too.
+
 ## v0.12.0 (2026-10-08)
 - **Web UI reorganised like the apps** (Unraid Drive 1.4): three tabs — **Status**, **Files**, **Settings**. Status opens first with the **health** card (one dot, green / yellow / red, with the reasons and the full list of checks), the counters, **System information** (host, Unraid, kernel, boot time, processor, memory modules, mainboard, API version, GPU, network) and the activity tables. Settings gathers everything configurable in one place: appearance (language, theme — moved out of the header), devices, Unraid API keys, notifications, the URL for the apps and the GraphQL box. The last tab is remembered.
 - **`GET /api/v1/health`**: the one-glance state shared with the apps' status dot — gateway checks (shares mounted and writable, `/config` writable, user-auth prerequisites, notification channels, devices) plus a live look at Unraid with the caller's key (array, disks and temperatures, parity, notifications, load, the gateway container, API reachability). `/healthz` is unchanged.
