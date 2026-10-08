@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -80,14 +81,17 @@ func hasRole(roles []string, want string) bool {
 	return false
 }
 
-// loopbackOr serves the activity to the container's own console (loopback, no proxy headers
-// trusted here) and hands everything else to the authenticated handler.
-func (s *Server) loopbackOr(authed http.Handler) http.Handler {
+// loopbackOr lets the container's own console (loopback, no proxy headers trusted here) use a
+// route without a token, acting as an ADMIN "console" principal, and hands everything else to the
+// authenticated handler. Until 0.12 it always answered with the activity, whatever the path, so
+// `gw devices` and `gw notify-test` got the wrong payload.
+func (s *Server) loopbackOr(private, authed http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err == nil {
 			if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
-				s.handleActivity(w, r)
+				p := auth.Principal{Identity: auth.Identity{Name: "console", Roles: []string{"ADMIN"}}}
+				private.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, p)))
 				return
 			}
 		}

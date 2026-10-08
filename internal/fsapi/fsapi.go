@@ -1257,6 +1257,29 @@ func (a *API) permissionDetail(err error) string {
 // account cannot write to although the mount is read-write: typically a
 // folder created over SSH or by another container with a restrictive owner
 // or mode. Read-only mounts are legitimate and skipped.
+// UnwritableShares lists the mounted shares that are neither writable nor mounted read-only on
+// purpose: usually a host folder the container user (99:100) may not write to. Empty in READ_ONLY mode.
+func (a *API) UnwritableShares() []string {
+	if a.opts.ReadOnly {
+		return nil
+	}
+	var out []string
+	for _, share := range a.MountedShares() {
+		dir := filepath.Join(a.root.Path(), share)
+		f, err := os.CreateTemp(dir, ".gw-write-test-*")
+		if err == nil {
+			f.Close()
+			os.Remove(f.Name())
+			continue
+		}
+		if errors.Is(err, syscall.EROFS) {
+			continue
+		}
+		out = append(out, share)
+	}
+	return out
+}
+
 func (a *API) WarnUnwritableShares() {
 	if a.opts.ReadOnly {
 		return

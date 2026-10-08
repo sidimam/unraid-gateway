@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sidimam/unraid-gateway/internal/devices"
 	"net/http"
 	"strings"
 	"time"
@@ -19,7 +20,7 @@ func isAdmin(p auth.Principal) bool { return p.User == "" || hasRole(p.Identity.
 func (s *Server) handleDevicesList(w http.ResponseWriter, r *http.Request) {
 	p := principal(r)
 	all := s.devices.List()
-	out := all[:0:0]
+	out := make([]devices.Device, 0, len(all)) // never null in JSON, even with an empty registry
 	for _, d := range all {
 		if isAdmin(p) || d.User == p.User || d.ID == p.DeviceID {
 			out = append(out, d)

@@ -9,8 +9,6 @@ header h1{margin:0;font-size:20px;font-weight:600}
 .logo{border-radius:9px}
 .sub{color:var(--muted);font-size:13px}
 .spacer{flex:1}
-.prefs{display:flex;gap:8px}
-.prefs select{padding:6px 10px;font-size:13px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
 .card h2{margin:0 0 8px;font-size:17px}
@@ -70,4 +68,20 @@ tr.live td:first-child{border-left:3px solid var(--accent)}
 .bar div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 html[dir=rtl] th,html[dir=rtl] td{text-align:right}
 html[dir=rtl] .num{text-align:left}
-@media (max-width:640px){header{padding:12px 14px}.prefs{width:100%}}
+@media (max-width:640px){header{padding:12px 14px}}
+
+.health{display:flex;align-items:center;gap:8px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#8a8a8a;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);vertical-align:middle;flex:none}
+.dot.ok{background:#2fb344}.dot.warning{background:#f0b429}.dot.error{background:#e03131}
+.dot.big{width:22px;height:22px;margin-top:4px}
+.health-main{display:flex;gap:14px;align-items:flex-start;margin:6px 0 10px}
+.health-level{font-size:18px;font-weight:600}
+.reasons{margin:4px 0 0;padding-left:18px;color:var(--muted)}
+.reasons li{margin:2px 0}
+table.checks{min-width:0}
+table.checks td{white-space:normal}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;font-size:14px}
+.kv .k{color:var(--muted)}
+.tab{display:flex;flex-direction:column;gap:14px}
+.card.tab{display:block}
+.field select{background:var(--field);border:1px solid var(--line);color:var(--fg);border-radius:10px;padding:10px 12px;font:inherit;min-width:200px}

@@ -21,6 +21,7 @@ import (
 	"github.com/sidimam/unraid-gateway/internal/config"
 	"github.com/sidimam/unraid-gateway/internal/devices"
 	"github.com/sidimam/unraid-gateway/internal/fsapi"
+	"github.com/sidimam/unraid-gateway/internal/health"
 	"github.com/sidimam/unraid-gateway/internal/notify"
 	"github.com/sidimam/unraid-gateway/internal/proxy"
 	"github.com/sidimam/unraid-gateway/internal/smbauth"
@@ -175,6 +176,8 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("DELETE /api/v1/auth/remember", s.handleForget)
 	private.HandleFunc("GET /api/v1/auth/session", s.handleSession)
 	private.HandleFunc("GET /api/v1/info", s.handleInfo)
+	private.HandleFunc("GET /api/v1/health", s.handleHealth)
+	private.HandleFunc("GET /api/v1/system", s.handleSystem)
 	private.HandleFunc("GET /api/v1/activity", s.handleActivity)
 	private.HandleFunc("GET /api/v1/devices", s.handleDevicesList)
 	private.HandleFunc("DELETE /api/v1/devices/{id}", s.handleDeviceRemove)
@@ -187,12 +190,10 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("POST /api/v1/keys/rotate", s.handleKeyRotate)
 	// The container console (`gw activity`) reads it on loopback without a token; everyone else
 	// goes through the normal authentication. More specific pattern, so it wins over /api/v1/.
-	public.Handle("GET /api/v1/activity", s.loopbackOr(s.authenticate(private)))
-	public.Handle("GET /api/v1/devices", s.loopbackOr(s.authenticate(private)))
-	public.Handle("DELETE /api/v1/devices", s.loopbackOr(s.authenticate(private)))
-	public.Handle("DELETE /api/v1/devices/{id}", s.loopbackOr(s.authenticate(private)))
-	public.Handle("POST /api/v1/notify/test", s.loopbackOr(s.authenticate(private)))
-	public.Handle("GET /api/v1/notify/channels", s.loopbackOr(s.authenticate(private)))
+	for _, pattern := range []string{"GET /api/v1/activity", "GET /api/v1/devices", "DELETE /api/v1/devices", "DELETE /api/v1/devices/{id}",
+		"POST /api/v1/notify/test", "GET /api/v1/notify/channels", "GET /api/v1/health", "GET /api/v1/system"} {
+		public.Handle(pattern, s.loopbackOr(private, s.authenticate(private)))
+	}
 	private.HandleFunc("POST /api/v1/graphql", s.handleGraphQL)
 	s.files.Register(private, "/api/v1/fs")
 
@@ -408,6 +409,51 @@ func (s *Server) handleInfo(w http.ResponseWriter, r *http.Request) {
 		"user":     principal(r).User,
 		"features": []string{"fs.list", "fs.content", "fs.range", "fs.uploads", "fs.changes", "graphql", "users"},
 	})
+}
+
+// handleHealth is the one-glance state (0.12): gateway facts + a live look at Unraid with the caller's
+// key — the same green / yellow / red the Unraid Drive apps and the web UI show.
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+	_, sharesErr := s.shares.Shares()
+	gw := health.Gateway{
+		Version:              Version,
+		MountedShares:        s.files.MountedShares(),
+		UnwritableShares:     s.files.UnwritableShares(),
+		ConfigWritable:       writable(filepath.Dir(s.cfg.DevicesFile)),
+		UserAuth:             s.cfg.UserAuth,
+		SharesConfigReadable: sharesErr == nil,
+		NotifyChannels:       s.notifier.Channels(),
+		IndexEnabled:         s.index != nil,
+		Devices:              len(s.devices.List()),
+	}
+	writeJSON(w, http.StatusOK, health.Assess(ctx, gw, s.gql, principal(r).APIKey))
+}
+
+// systemQuery mirrors the apps' "System information" sheet (validated on Unraid 7.3 / unraid-api 4.37).
+const systemQuery = `{ info { os { hostname fqdn distro release kernel arch uptime uefi }
+  cpu { manufacturer brand cores threads processors speed speedmax socket }
+  memory { layout { size type clockSpeed manufacturer } }
+  baseboard { manufacturer model version memMax memSlots }
+  system { manufacturer model version virtual }
+  versions { core { unraid kernel api } }
+  devices { gpu { id type vendorname productid class } }
+  networkInterfaces { name macAddress mtu speed operstate type ipAddress } }
+  metrics { memory { used total } } }`
+
+// handleSystem returns Unraid's hardware and OS facts (the GraphQL "data" object) for the web UI.
+func (s *Server) handleSystem(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+	data, err := s.gql.Query(ctx, principal(r).APIKey, systemQuery, nil)
+	if err != nil {
+		writeErr(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
 }
 
 func (s *Server) handleGraphQL(w http.ResponseWriter, r *http.Request) {

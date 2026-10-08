@@ -6,6 +6,7 @@
   // The same seven languages as the Unraid Drive app. "system" follows the browser.
   const I18N = {
     en: {
+      tab_status: 'Status', tab_settings: 'Settings', health_title: 'Health', health_checks: 'All checks', health_ok: 'All fine', health_warning: 'Warnings', health_error: 'Problems', health_unknown: 'Checking…', health_unavailable: 'health unavailable: {err}', checked_at: 'checked {when}', sys_title: 'System information', sys_unavailable: 'system information unavailable: {err}', sys_host: 'Host', sys_os: 'Unraid', sys_kernel: 'Kernel', sys_uptime: 'Up since', sys_cpu: 'Processor', sys_cores: 'Cores / threads', sys_clock: 'Clock', sys_memory: 'Memory', sys_memory_use: 'In use', sys_board: 'Mainboard', sys_versions: 'Unraid API', sys_gpu: 'Graphics', sys_network: 'Network', appearance: 'Appearance', language: 'Language', theme: 'Theme',
       connecting: 'connecting…', online: 'gateway online', unreachable: 'gateway unreachable',
       system: 'System', theme_system: 'Theme: system', theme_light: 'Theme: light', theme_dark: 'Theme: dark',
       forget_key: 'Forget stored key', forget_key_title: 'Delete the key stored on the gateway', disconnect: 'Disconnect',
@@ -45,6 +46,7 @@
       key_label: 'api key', user_scope_note: 'per-user permissions',
     },
     it: {
+      tab_status: 'Stato', tab_settings: 'Impostazioni', health_title: 'Stato di salute', health_checks: 'Tutti i controlli', health_ok: 'Tutto regolare', health_warning: 'Avvisi', health_error: 'Problemi', health_unknown: 'Controllo…', health_unavailable: 'stato non disponibile: {err}', checked_at: 'controllato {when}', sys_title: 'Informazioni di sistema', sys_unavailable: 'informazioni di sistema non disponibili: {err}', sys_host: 'Host', sys_os: 'Unraid', sys_kernel: 'Kernel', sys_uptime: 'Acceso dal', sys_cpu: 'Processore', sys_cores: 'Core / thread', sys_clock: 'Frequenza', sys_memory: 'Memoria', sys_memory_use: 'In uso', sys_board: 'Scheda madre', sys_versions: 'API Unraid', sys_gpu: 'Grafica', sys_network: 'Rete', appearance: 'Aspetto', language: 'Lingua', theme: 'Tema',
       connecting: 'connessione…', online: 'gateway online', unreachable: 'gateway non raggiungibile',
       system: 'Sistema', theme_system: 'Tema: sistema', theme_light: 'Tema: chiaro', theme_dark: 'Tema: scuro',
       forget_key: 'Dimentica la chiave salvata', forget_key_title: 'Elimina la chiave salvata sul gateway', disconnect: 'Disconnetti',
@@ -84,6 +86,7 @@
       key_label: 'chiave api', user_scope_note: 'permessi per utente',
     },
     es: {
+      tab_status: 'Estado', tab_settings: 'Ajustes', health_title: 'Salud', health_checks: 'Todas las comprobaciones', health_ok: 'Todo correcto', health_warning: 'Avisos', health_error: 'Problemas', health_unknown: 'Comprobando…', health_unavailable: 'estado no disponible: {err}', checked_at: 'comprobado {when}', sys_title: 'Información del sistema', sys_unavailable: 'información del sistema no disponible: {err}', sys_host: 'Host', sys_os: 'Unraid', sys_kernel: 'Kernel', sys_uptime: 'Encendido desde', sys_cpu: 'Procesador', sys_cores: 'Núcleos / hilos', sys_clock: 'Frecuencia', sys_memory: 'Memoria', sys_memory_use: 'En uso', sys_board: 'Placa base', sys_versions: 'API de Unraid', sys_gpu: 'Gráficos', sys_network: 'Red', appearance: 'Apariencia', language: 'Idioma', theme: 'Tema',
       connecting: 'conectando…', online: 'gateway en línea', unreachable: 'gateway inalcanzable',
       system: 'Sistema', theme_system: 'Tema: sistema', theme_light: 'Tema: claro', theme_dark: 'Tema: oscuro',
       forget_key: 'Olvidar la clave guardada', forget_key_title: 'Eliminar la clave guardada en el gateway', disconnect: 'Desconectar',
@@ -123,6 +126,7 @@
       key_label: 'clave api', user_scope_note: 'permisos por usuario',
     },
     fr: {
+      tab_status: 'État', tab_settings: 'Réglages', health_title: 'État de santé', health_checks: 'Toutes les vérifications', health_ok: 'Tout va bien', health_warning: 'Avertissements', health_error: 'Problèmes', health_unknown: 'Vérification…', health_unavailable: 'état indisponible : {err}', checked_at: 'vérifié {when}', sys_title: 'Informations système', sys_unavailable: 'informations système indisponibles : {err}', sys_host: 'Hôte', sys_os: 'Unraid', sys_kernel: 'Noyau', sys_uptime: 'Allumé depuis', sys_cpu: 'Processeur', sys_cores: 'Cœurs / threads', sys_clock: 'Fréquence', sys_memory: 'Mémoire', sys_memory_use: 'Utilisée', sys_board: 'Carte mère', sys_versions: 'API Unraid', sys_gpu: 'Carte graphique', sys_network: 'Réseau', appearance: 'Apparence', language: 'Langue', theme: 'Thème',
       connecting: 'connexion…', online: 'passerelle en ligne', unreachable: 'passerelle injoignable',
       system: 'Système', theme_system: 'Thème : système', theme_light: 'Thème : clair', theme_dark: 'Thème : sombre',
       forget_key: 'Oublier la clé enregistrée', forget_key_title: 'Supprimer la clé enregistrée sur la passerelle', disconnect: 'Déconnecter',
@@ -162,6 +166,7 @@
       key_label: 'clé api', user_scope_note: 'permissions par utilisateur',
     },
     de: {
+      tab_status: 'Status', tab_settings: 'Einstellungen', health_title: 'Zustand', health_checks: 'Alle Prüfungen', health_ok: 'Alles in Ordnung', health_warning: 'Warnungen', health_error: 'Probleme', health_unknown: 'Prüfe …', health_unavailable: 'Zustand nicht verfügbar: {err}', checked_at: 'geprüft {when}', sys_title: 'Systeminformationen', sys_unavailable: 'Systeminformationen nicht verfügbar: {err}', sys_host: 'Host', sys_os: 'Unraid', sys_kernel: 'Kernel', sys_uptime: 'Läuft seit', sys_cpu: 'Prozessor', sys_cores: 'Kerne / Threads', sys_clock: 'Takt', sys_memory: 'Arbeitsspeicher', sys_memory_use: 'In Benutzung', sys_board: 'Mainboard', sys_versions: 'Unraid-API', sys_gpu: 'Grafik', sys_network: 'Netzwerk', appearance: 'Darstellung', language: 'Sprache', theme: 'Design',
       connecting: 'verbinde…', online: 'Gateway online', unreachable: 'Gateway nicht erreichbar',
       system: 'System', theme_system: 'Design: System', theme_light: 'Design: hell', theme_dark: 'Design: dunkel',
       forget_key: 'Gespeicherten Schlüssel vergessen', forget_key_title: 'Den auf dem Gateway gespeicherten Schlüssel löschen', disconnect: 'Trennen',
@@ -201,6 +206,7 @@
       key_label: 'API-Schlüssel', user_scope_note: 'Berechtigungen pro Benutzer',
     },
     'zh-Hans': {
+      tab_status: '状态', tab_settings: '设置', health_title: '健康状态', health_checks: '全部检查', health_ok: '一切正常', health_warning: '警告', health_error: '问题', health_unknown: '检查中…', health_unavailable: '状态不可用：{err}', checked_at: '检查于 {when}', sys_title: '系统信息', sys_unavailable: '系统信息不可用：{err}', sys_host: '主机', sys_os: 'Unraid', sys_kernel: '内核', sys_uptime: '开机时间', sys_cpu: '处理器', sys_cores: '核心 / 线程', sys_clock: '频率', sys_memory: '内存', sys_memory_use: '使用中', sys_board: '主板', sys_versions: 'Unraid API', sys_gpu: '显卡', sys_network: '网络', appearance: '外观', language: '语言', theme: '主题',
       connecting: '正在连接…', online: '网关在线', unreachable: '无法连接网关',
       system: '系统', theme_system: '主题：跟随系统', theme_light: '主题：浅色', theme_dark: '主题：深色',
       forget_key: '忘记已保存的密钥', forget_key_title: '删除保存在网关上的密钥', disconnect: '断开',
@@ -240,6 +246,7 @@
       key_label: 'API 密钥', user_scope_note: '按用户的权限',
     },
     ar: {
+      tab_status: 'الحالة', tab_settings: 'الإعدادات', health_title: 'الحالة الصحية', health_checks: 'كل الفحوصات', health_ok: 'كل شيء على ما يرام', health_warning: 'تحذيرات', health_error: 'مشاكل', health_unknown: 'جارٍ الفحص…', health_unavailable: 'الحالة غير متاحة: {err}', checked_at: 'فُحص {when}', sys_title: 'معلومات النظام', sys_unavailable: 'معلومات النظام غير متاحة: {err}', sys_host: 'المضيف', sys_os: 'Unraid', sys_kernel: 'النواة', sys_uptime: 'يعمل منذ', sys_cpu: 'المعالج', sys_cores: 'الأنوية / الخيوط', sys_clock: 'التردد', sys_memory: 'الذاكرة', sys_memory_use: 'قيد الاستخدام', sys_board: 'اللوحة الأم', sys_versions: 'واجهة Unraid API', sys_gpu: 'الرسوميات', sys_network: 'الشبكة', appearance: 'المظهر', language: 'اللغة', theme: 'السمة',
       connecting: 'جارٍ الاتصال…', online: 'البوابة متصلة', unreachable: 'تعذّر الوصول إلى البوابة',
       system: 'النظام', theme_system: 'المظهر: النظام', theme_light: 'المظهر: فاتح', theme_dark: 'المظهر: داكن',
       forget_key: 'نسيان المفتاح المحفوظ', forget_key_title: 'حذف المفتاح المحفوظ على البوابة', disconnect: 'قطع الاتصال',
@@ -308,7 +315,7 @@
   }
   $('lang').addEventListener('change', () => {
     localStorage.setItem('ugw.lang', $('lang').value); lang = pickLang(); applyLang();
-    loadStatus(); if (token && !$('app').hidden) { list(cwd); loadActivity(); loadDevices(); loadNotifyChannels(); }
+    loadStatus(); if (token && !$('app').hidden) { list(cwd); loadActivity(); loadDevices(); loadNotifyChannels(); loadHealth(); loadSystem(); }
   });
 
   // ---- theme ----------------------------------------------------------------
@@ -358,8 +365,8 @@
     document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.tab').forEach((c) => { c.hidden = c.id !== 'tab-' + name; });
     localStorage.setItem('ugw.tab', name);
-    if (name === 'devices') loadDevices();
-    if (name === 'keys' && !$('keys').hidden) loadKeys();
+    if (name === 'status') { loadHealth(); loadSystem(); }
+    if (name === 'settings') { loadDevices(); loadNotifyChannels(); if (!$('keys').hidden) loadKeys(); }
   }
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
 
@@ -368,9 +375,9 @@
     try {
       const s = await (await fetch('/healthz')).json();
       $('version').textContent = s.version || '';
-      $('status').textContent = t('online');
+      if (!token) { $('status').textContent = t('online'); $('health-dot').className = 'dot'; }
       $('st-gateway').textContent = (s.version || '') + ' · ' + location.host;
-    } catch { $('status').textContent = t('unreachable'); }
+    } catch { $('status').textContent = t('unreachable'); $('health-dot').className = 'dot error'; }
     $('origin').textContent = location.origin;
     $('tls-note').textContent = location.protocol === 'https:' ? t('tls_ok') : t('tls_no');
   }
@@ -381,16 +388,18 @@
     const key = identity ? `${identity.name || t('key_label')} · ${(identity.roles || []).join(', ')}` : '';
     $('who-name').textContent = user ? `${user} · ${key}` : key;
     window.ugwShares = shares || null; // share → 'rw' | 'ro' when a user is logged in
-    showTab(localStorage.getItem('ugw.tab') || 'files');
+    showTab(['status', 'files', 'settings'].includes(localStorage.getItem('ugw.tab')) ? localStorage.getItem('ugw.tab') : 'status');
     list(cwd);
     startActivity();
     loadDevices();
     loadNotifyChannels();
+    startHealth();
     $('forget').hidden = !(storedInfo.available && storedInfo.canForget);
   }
   function logout() {
     if (token) fetch(API + '/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
-    token = ''; sessionStorage.removeItem('ugw.token'); clearInterval(activityTimer);
+    token = ''; sessionStorage.removeItem('ugw.token'); clearInterval(activityTimer); clearInterval(healthTimer);
+    setHealth(null);
     $('login').hidden = false; $('app').hidden = true; $('who').hidden = true;
   }
   // A key kept on the gateway (WEBUI_API_KEY or /config/webui.key) logs the web UI in with one click.
@@ -544,6 +553,62 @@
     } catch (err) { $('gql-out').textContent = t('error', { err: err.message }); }
   });
 
+  // ---- health (0.12) ----------------------------------------------------------
+  // One dot for gateway and server: green, yellow for warnings, red for problems (GET /api/v1/health).
+  let healthTimer = null;
+  function setHealth(h) {
+    const lvl = h ? h.level : '';
+    const cls = 'dot' + (lvl ? ' ' + lvl : '');
+    $('health-dot').className = cls; $('health-dot-big').className = cls + ' big';
+    const label = h ? t(lvl === 'ok' ? 'health_ok' : lvl === 'warning' ? 'health_warning' : 'health_error') : t('health_unknown');
+    $('status').textContent = label; $('health-level').textContent = label;
+    $('health-pill').title = h && h.reasons.length ? h.reasons.join(' · ') : '';
+    const ul = $('health-reasons'); ul.innerHTML = '';
+    (h ? h.reasons : []).forEach((r) => { const li = document.createElement('li'); li.textContent = r; ul.appendChild(li); });
+    const tb = $('health-checks').querySelector('tbody'); tb.innerHTML = '';
+    (h ? h.checks : []).forEach((c) => {
+      const tr = document.createElement('tr');
+      const d = document.createElement('td'); d.className = 'num'; const dot = document.createElement('span'); dot.className = 'dot ' + c.level; d.appendChild(dot);
+      const n = document.createElement('td'); n.textContent = c.name;
+      const v = document.createElement('td'); v.className = 'wrap'; v.textContent = c.detail || '';
+      tr.append(d, n, v); tb.appendChild(tr);
+    });
+  }
+  async function loadHealth() {
+    if (!token || $('app').hidden) return;
+    try { const h = await api('/health'); setHealth(h); $('health-when').textContent = t('checked_at', { when: new Date().toLocaleTimeString(locale()) }); }
+    catch (err) { $('health-when').textContent = t('health_unavailable', { err: err.message }); }
+  }
+  function startHealth() { clearInterval(healthTimer); loadHealth(); healthTimer = setInterval(() => { if (!document.hidden) loadHealth(); }, 30000); }
+  $('health-refresh').addEventListener('click', loadHealth);
+
+  // ---- system information (0.12) ----------------------------------------------
+  async function loadSystem() {
+    if (!token || $('app').hidden) return;
+    const kv = $('sys-kv'); $('sys-note').textContent = '';
+    try {
+      const d = await api('/system'); const i = d.info || {}; kv.innerHTML = '';
+      const put = (k, v) => { if (!v) return; const a = document.createElement('div'); a.className = 'k'; a.textContent = t(k); const b = document.createElement('div'); b.textContent = v; kv.append(a, b); };
+      const os = i.os || {}, cpu = i.cpu || {}, mem = (i.memory && i.memory.layout) || [], mt = (d.metrics && d.metrics.memory) || {};
+      put('sys_host', os.fqdn || os.hostname);
+      put('sys_os', [os.distro, os.release].filter(Boolean).join(' ') + (os.uefi ? ' · UEFI' : ''));
+      put('sys_kernel', os.kernel);
+      if (os.uptime) { const b = new Date(os.uptime); if (!isNaN(b)) put('sys_uptime', b.toLocaleString(locale())); }
+      put('sys_cpu', [cpu.manufacturer, cpu.brand].filter(Boolean).join(' ') + (cpu.socket ? ' · ' + cpu.socket : ''));
+      if (cpu.cores) put('sys_cores', `${cpu.cores} / ${cpu.threads || '?'}`);
+      if (cpu.speed) put('sys_clock', cpu.speedmax ? `${cpu.speed.toFixed(2)} – ${cpu.speedmax.toFixed(2)} GHz` : `${cpu.speed.toFixed(2)} GHz`);
+      // unraid-api reports module sizes in KiB (33554432 = 32 GiB).
+      const installed = mem.reduce((s, m) => s + (m.size || 0), 0) * 1024;
+      if (installed) put('sys_memory', fmtSize(installed) + (mem.length ? ' · ' + mem.map((m) => [m.size ? fmtSize(m.size * 1024) : null, m.type, m.clockSpeed ? m.clockSpeed + ' MHz' : null].filter(Boolean).join(' ')).join(', ') : ''));
+      if (mt.used && mt.total) put('sys_memory_use', fmtSize(mt.used) + ' / ' + fmtSize(mt.total));
+      if (i.baseboard) put('sys_board', [i.baseboard.manufacturer, i.baseboard.model, i.baseboard.version].filter(Boolean).join(' '));
+      if (i.versions && i.versions.core) put('sys_versions', i.versions.core.api);
+      const gpus = (i.devices && i.devices.gpu) || []; if (gpus.length) put('sys_gpu', gpus.map((g) => [g.vendorname, g.productid].filter(Boolean).join(' ')).join(', '));
+      const nics = (i.networkInterfaces || []).filter((n) => n.ipAddress && n.name !== 'lo' && !/^(veth|docker|virbr)/.test(n.name));
+      if (nics.length) put('sys_network', nics.map((n) => `${n.name} ${n.ipAddress}${n.speed ? ' · ' + n.speed + ' Mb/s' : ''}`).join(', '));
+    } catch (err) { $('sys-note').textContent = t('sys_unavailable', { err: err.message }); }
+  }
+
   // ---- activity -------------------------------------------------------------
   const ago = (iso, now) => {
     const d = Math.max(0, (now - new Date(iso)) / 1000);
@@ -615,7 +680,7 @@
   // ---- devices --------------------------------------------------------------
   async function loadDevices() {
     try {
-      const d = await api('/devices');
+      const d = await api('/devices'); d.devices = d.devices || [];
       const now = new Date();
       $('devices-scope').textContent = d.registration === 'off' ? t('registration_off') : '';
       $('st-devices').textContent = String(d.devices.filter((x) => !x.supersededBy).length);

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.12.0 (2026-10-08)
+- **Web UI reorganised like the apps** (Unraid Drive 1.4): three tabs — **Status**, **Files**, **Settings**. Status opens first with the **health** card (one dot, green / yellow / red, with the reasons and the full list of checks), the counters, **System information** (host, Unraid, kernel, boot time, processor, memory modules, mainboard, API version, GPU, network) and the activity tables. Settings gathers everything configurable in one place: appearance (language, theme — moved out of the header), devices, Unraid API keys, notifications, the URL for the apps and the GraphQL box. The last tab is remembered.
+- **`GET /api/v1/health`**: the one-glance state shared with the apps' status dot — gateway checks (shares mounted and writable, `/config` writable, user-auth prerequisites, notification channels, devices) plus a live look at Unraid with the caller's key (array, disks and temperatures, parity, notifications, load, the gateway container, API reachability). `/healthz` is unchanged.
+- **`GET /api/v1/system`**: Unraid's hardware and OS facts for the System information card (same fields the apps show in *System information*).
+- Proxy: the server-side GraphQL helper is reused by the new endpoints; `fsapi` exposes the list of read/write shares the container cannot write to (it only logged a warning before).
+
 ## v0.11.0 (2026-09-12)
 - **Unraid notifications out of the box.** The template maps the host folder `/tmp/notifications` (Unraid's notification spool) to `/unraid-notifications`; when that folder is present the gateway writes the notification file itself — exactly what Unraid's own `notify` script does — so a new or removed device shows up in the Unraid bell with **any** API key role. No ADMIN key, nothing to configure. The GraphQL `createNotification` mutation stays as fallback when the folder is not mapped (there it still needs an ADMIN key, and the error says so). `UNRAID_NOTIFY_DIR` overrides the folder. Unraid's external agents (e-mail, Pushover…) are not triggered by a spool file: use the gateway's SMTP/Telegram channels for that.
 - The container entrypoint starts as root only to make the spool folder writable for user 99 (`chmod 1777 unread`), then drops to `nobody:users` with `su-exec` — file ownership on the shares is unchanged.

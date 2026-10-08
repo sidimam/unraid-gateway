@@ -13,21 +13,9 @@
   <img src="/ui/icon.png" alt="" width="40" height="40" class="logo">
   <div>
     <h1>unraid-gateway</h1>
-    <div class="sub" id="status" data-i18n="connecting">connecting…</div>
+    <div class="sub health" id="health-pill" title=""><span class="dot" id="health-dot"></span><span id="status" data-i18n="connecting">connecting…</span></div>
   </div>
   <div class="spacer"></div>
-  <div class="prefs">
-    <select id="lang" aria-label="Language" title="Language">
-      <option value="system" data-i18n="system">System</option>
-      <option value="en">English</option><option value="it">Italiano</option><option value="es">Español</option>
-      <option value="fr">Français</option><option value="de">Deutsch</option><option value="zh-Hans">简体中文</option><option value="ar">العربية</option>
-    </select>
-    <select id="theme" aria-label="Theme" title="Theme">
-      <option value="system" data-i18n="theme_system">System</option>
-      <option value="light" data-i18n="theme_light">Light</option>
-      <option value="dark" data-i18n="theme_dark">Dark</option>
-    </select>
-  </div>
   <div id="who" class="who" hidden>
     <span id="who-name" class="pill"></span>
     <button id="forget" class="ghost" hidden data-i18n="forget_key" data-i18n-title="forget_key_title">Forget stored key</button>
@@ -64,23 +52,59 @@
   </section>
 
   <section id="app" hidden>
-    <div class="stats">
-      <div class="stat"><span class="k" data-i18n="stat_connected">Connected now</span><span class="v" id="st-clients">–</span></div>
-      <div class="stat"><span class="k" data-i18n="stat_streams">Streams / transfers</span><span class="v" id="st-active">–</span></div>
-      <div class="stat"><span class="k" data-i18n="stat_devices">Registered devices</span><span class="v" id="st-devices">–</span></div>
-      <div class="stat"><span class="k" data-i18n="stat_gateway">Gateway</span><span class="v small" id="st-gateway">–</span></div>
-    </div>
-
     <nav class="tabs" id="tabs">
-      <button data-tab="files" class="active" data-i18n="tab_files">Files</button>
-      <button data-tab="activity" data-i18n="tab_activity">Activity</button>
-      <button data-tab="devices" data-i18n="tab_devices">Devices</button>
-      <button data-tab="notify" data-i18n="tab_notify">Notifications</button>
-      <button data-tab="keys" data-i18n="tab_keys">API keys</button>
-      <button data-tab="advanced" data-i18n="tab_advanced">Advanced</button>
+      <button data-tab="status" class="active" data-i18n="tab_status">Status</button>
+      <button data-tab="files" data-i18n="tab_files">Files</button>
+      <button data-tab="settings" data-i18n="tab_settings">Settings</button>
     </nav>
 
-    <div class="card tab" id="tab-files">
+    <!-- Status: the health of gateway and server, counters, the machine, who is connected. -->
+    <div class="tab" id="tab-status" hidden>
+      <div class="card">
+        <div class="toolbar"><h2 data-i18n="health_title">Health</h2><span class="muted small" id="health-when"></span><div class="spacer"></div><button id="health-refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button></div>
+        <div class="health-main"><span class="dot big" id="health-dot-big"></span><div><div class="health-level" id="health-level">…</div><ul class="reasons" id="health-reasons"></ul></div></div>
+        <details><summary class="muted" data-i18n="health_checks">All checks</summary><div class="table-wrap"><table id="health-checks" class="checks"><tbody></tbody></table></div></details>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="k" data-i18n="stat_connected">Connected now</span><span class="v" id="st-clients">–</span></div>
+        <div class="stat"><span class="k" data-i18n="stat_streams">Streams / transfers</span><span class="v" id="st-active">–</span></div>
+        <div class="stat"><span class="k" data-i18n="stat_devices">Registered devices</span><span class="v" id="st-devices">–</span></div>
+        <div class="stat"><span class="k" data-i18n="stat_gateway">Gateway</span><span class="v small" id="st-gateway">–</span></div>
+      </div>
+      <div class="card">
+        <div class="toolbar"><h2 data-i18n="sys_title">System information</h2><span class="muted small" id="sys-note"></span></div>
+        <div class="kv" id="sys-kv"></div>
+      </div>
+      <div class="card">
+        <div class="toolbar">
+          <h2 data-i18n="tab_activity">Activity</h2>
+          <span id="activity-scope" class="muted small"></span>
+          <div class="spacer"></div>
+          <label class="muted small check"><input type="checkbox" id="activity-live" checked> <span data-i18n="live">live</span></label>
+        </div>
+        <h3 data-i18n="connected_devices">Connected devices</h3>
+        <div class="table-wrap"><table id="act-clients">
+          <thead><tr><th data-i18n="col_device">Device</th><th data-i18n="col_user">User</th><th data-i18n="col_from">From</th><th data-i18n="col_since">Since</th><th data-i18n="col_last_seen">Last seen</th><th class="num" data-i18n="col_requests">Requests</th><th data-i18n="col_last_file">Last file</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <p id="act-clients-empty" class="muted" hidden data-i18n="nobody_connected">Nobody connected right now (sessions disappear 30 minutes after their last request).</p>
+        <h3 data-i18n="streams_title">Streams and transfers in progress</h3>
+        <div class="table-wrap"><table id="act-active">
+          <thead><tr><th data-i18n="col_what">What</th><th data-i18n="col_file">File</th><th data-i18n="col_who">Who</th><th data-i18n="col_progress">Progress</th><th class="num" data-i18n="col_speed">Speed</th><th class="num" data-i18n="col_elapsed">Elapsed</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <p id="act-active-empty" class="muted" hidden data-i18n="nothing_active">Nothing playing or transferring.</p>
+        <details>
+          <summary class="muted" data-i18n="recent_transfers">Recent transfers</summary>
+          <div class="table-wrap"><table id="act-recent">
+            <thead><tr><th data-i18n="col_what">What</th><th data-i18n="col_file">File</th><th data-i18n="col_who">Who</th><th class="num" data-i18n="col_bytes">Bytes</th><th data-i18n="col_ended">Ended</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </details>
+      </div>
+    </div>
+
+    <div class="card tab" id="tab-files" hidden>
       <div class="toolbar">
         <nav id="crumbs" class="crumbs"></nav>
         <div class="spacer"></div>
@@ -97,86 +121,81 @@
       <p id="empty" class="muted" hidden data-i18n="empty_folder">Empty folder.</p>
     </div>
 
-    <div class="card tab" id="tab-activity" hidden>
-      <div class="toolbar">
-        <h2 data-i18n="tab_activity">Activity</h2>
-        <span id="activity-scope" class="muted small"></span>
-        <div class="spacer"></div>
-        <label class="muted small check"><input type="checkbox" id="activity-live" checked> <span data-i18n="live">live</span></label>
+    <!-- Settings: everything configurable, in one place (0.12). -->
+    <div class="tab" id="tab-settings" hidden>
+      <div class="card">
+        <h2 data-i18n="appearance">Appearance</h2>
+        <div class="row">
+          <label class="field"><span data-i18n="language">Language</span>
+            <select id="lang" aria-label="Language">
+              <option value="system" data-i18n="system">System</option>
+              <option value="en">English</option><option value="it">Italiano</option><option value="es">Español</option>
+              <option value="fr">Français</option><option value="de">Deutsch</option><option value="zh-Hans">简体中文</option><option value="ar">العربية</option>
+            </select></label>
+          <label class="field"><span data-i18n="theme">Theme</span>
+            <select id="theme" aria-label="Theme">
+              <option value="system" data-i18n="theme_system">System</option>
+              <option value="light" data-i18n="theme_light">Light</option>
+              <option value="dark" data-i18n="theme_dark">Dark</option>
+            </select></label>
+        </div>
       </div>
-      <h3 data-i18n="connected_devices">Connected devices</h3>
-      <div class="table-wrap"><table id="act-clients">
-        <thead><tr><th data-i18n="col_device">Device</th><th data-i18n="col_user">User</th><th data-i18n="col_from">From</th><th data-i18n="col_since">Since</th><th data-i18n="col_last_seen">Last seen</th><th class="num" data-i18n="col_requests">Requests</th><th data-i18n="col_last_file">Last file</th></tr></thead>
-        <tbody></tbody>
-      </table></div>
-      <p id="act-clients-empty" class="muted" hidden data-i18n="nobody_connected">Nobody connected right now (sessions disappear 30 minutes after their last request).</p>
-      <h3 data-i18n="streams_title">Streams and transfers in progress</h3>
-      <div class="table-wrap"><table id="act-active">
-        <thead><tr><th data-i18n="col_what">What</th><th data-i18n="col_file">File</th><th data-i18n="col_who">Who</th><th data-i18n="col_progress">Progress</th><th class="num" data-i18n="col_speed">Speed</th><th class="num" data-i18n="col_elapsed">Elapsed</th></tr></thead>
-        <tbody></tbody>
-      </table></div>
-      <p id="act-active-empty" class="muted" hidden data-i18n="nothing_active">Nothing playing or transferring.</p>
-      <details>
-        <summary class="muted" data-i18n="recent_transfers">Recent transfers</summary>
-        <div class="table-wrap"><table id="act-recent">
-          <thead><tr><th data-i18n="col_what">What</th><th data-i18n="col_file">File</th><th data-i18n="col_who">Who</th><th class="num" data-i18n="col_bytes">Bytes</th><th data-i18n="col_ended">Ended</th></tr></thead>
+
+      <div class="card">
+        <div class="toolbar">
+          <h2 data-i18n="tab_devices">Devices</h2>
+          <span id="devices-scope" class="muted small"></span>
+          <div class="spacer"></div>
+          <button id="devices-refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button>
+          <button id="devices-remove-all" class="ghost" hidden data-i18n="remove_all">Remove all</button>
+        </div>
+        <p class="muted small" data-i18n="devices_intro">Every Unraid Drive installation registers itself when you add the server. Removing a device closes its sessions and the app asks to sign in again (which registers it anew and sends a notification). A reinstalled app supersedes its previous entry, shown greyed as "old".</p>
+        <div class="table-wrap"><table id="devices" class="devices">
+          <thead><tr><th data-i18n="col_device">Device</th><th data-i18n="col_user">User</th><th data-i18n="col_key">Key</th><th data-i18n="col_registered">Registered</th><th data-i18n="col_last_seen">Last seen</th><th data-i18n="col_from">From</th><th class="num" data-i18n="col_logins">Logins</th><th></th></tr></thead>
           <tbody></tbody>
         </table></div>
-      </details>
-    </div>
-
-    <div class="card tab" id="tab-devices" hidden>
-      <div class="toolbar">
-        <h2 data-i18n="tab_devices">Devices</h2>
-        <span id="devices-scope" class="muted small"></span>
-        <div class="spacer"></div>
-        <button id="devices-refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button>
-        <button id="devices-remove-all" class="ghost" hidden data-i18n="remove_all">Remove all</button>
+        <p id="devices-empty" class="muted" hidden data-i18n="no_devices">No device registered yet (older app builds do not register; update to 1.3 build 29 or later).</p>
       </div>
-      <p class="muted small" data-i18n="devices_intro">Every Unraid Drive installation registers itself when you add the server. Removing a device closes its sessions and the app asks to sign in again (which registers it anew and sends a notification). A reinstalled app supersedes its previous entry, shown greyed as "old".</p>
-      <div class="table-wrap"><table id="devices" class="devices">
-        <thead><tr><th data-i18n="col_device">Device</th><th data-i18n="col_user">User</th><th data-i18n="col_key">Key</th><th data-i18n="col_registered">Registered</th><th data-i18n="col_last_seen">Last seen</th><th data-i18n="col_from">From</th><th class="num" data-i18n="col_logins">Logins</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table></div>
-      <p id="devices-empty" class="muted" hidden data-i18n="no_devices">No device registered yet (older app builds do not register; update to 1.3 build 29 or later).</p>
-    </div>
 
-    <div class="card tab" id="tab-notify" hidden>
-      <div class="toolbar">
-        <h2 data-i18n="tab_notify">Notifications</h2>
-        <span id="notify-channels" class="muted small"></span>
-        <div class="spacer"></div>
-        <button id="notify-test" class="ghost" data-i18n="send_test">Send a test</button>
+      <div class="card">
+        <div class="toolbar"><h2 data-i18n="tab_keys">Unraid API keys</h2><span class="muted small" data-i18n="needs_admin">(needs an ADMIN key)</span></div>
+        <p class="muted small" data-i18n="keys_intro">List, create, delete and rotate the API keys of your Unraid server. A new key is shown once: copy it into the apps (Edit server or credentials). Rotate = create a replacement, optionally remember it for this web UI and delete the old one.</p>
+        <div class="row">
+          <button id="keys-refresh" class="ghost" data-i18n="list_keys">List keys</button>
+          <input id="key-name" type="text" data-i18n-placeholder="key_name_ph" placeholder="new key name (letters, digits, spaces)">
+          <select id="key-role"><option value="VIEWER">VIEWER</option><option value="ADMIN">ADMIN</option></select>
+          <button id="key-create" class="ghost" data-i18n="create">Create</button>
+        </div>
+        <div class="table-wrap"><table id="keys" hidden>
+          <thead><tr><th data-i18n="col_name">Name</th><th data-i18n="col_roles">Roles</th><th data-i18n="col_created">Created</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <p id="keys-error" class="error" hidden></p>
+        <div id="key-new" class="out" hidden></div>
       </div>
-      <p class="muted small" data-i18n="notify_intro">A new or removed device raises a notification on every configured channel: Unraid's notifications (NOTIFY_UNRAID — set NOTIFY_UNRAID_API_KEY to an ADMIN key if yours is VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) and Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Set them in the container settings.</p>
-      <p id="notify-result" class="muted small" hidden></p>
-    </div>
 
-    <div class="card tab" id="tab-keys" hidden>
-      <div class="toolbar"><h2 data-i18n="tab_keys">Unraid API keys</h2><span class="muted small" data-i18n="needs_admin">(needs an ADMIN key)</span></div>
-      <p class="muted small" data-i18n="keys_intro">List, create, delete and rotate the API keys of your Unraid server. A new key is shown once: copy it into the apps (Edit server or credentials). Rotate = create a replacement, optionally remember it for this web UI and delete the old one.</p>
-      <div class="row">
-        <button id="keys-refresh" class="ghost" data-i18n="list_keys">List keys</button>
-        <input id="key-name" type="text" data-i18n-placeholder="key_name_ph" placeholder="new key name (letters, digits, spaces)">
-        <select id="key-role"><option value="VIEWER">VIEWER</option><option value="ADMIN">ADMIN</option></select>
-        <button id="key-create" class="ghost" data-i18n="create">Create</button>
+      <div class="card">
+        <div class="toolbar">
+          <h2 data-i18n="tab_notify">Notifications</h2>
+          <span id="notify-channels" class="muted small"></span>
+          <div class="spacer"></div>
+          <button id="notify-test" class="ghost" data-i18n="send_test">Send a test</button>
+        </div>
+        <p class="muted small" data-i18n="notify_intro">A new or removed device raises a notification on every configured channel: Unraid's notifications (NOTIFY_UNRAID — set NOTIFY_UNRAID_API_KEY to an ADMIN key if yours is VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) and Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Set them in the container settings.</p>
+        <p id="notify-result" class="muted small" hidden></p>
       </div>
-      <div class="table-wrap"><table id="keys" hidden>
-        <thead><tr><th data-i18n="col_name">Name</th><th data-i18n="col_roles">Roles</th><th data-i18n="col_created">Created</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table></div>
-      <p id="keys-error" class="error" hidden></p>
-      <div id="key-new" class="out" hidden></div>
-    </div>
 
-    <div class="card tab" id="tab-advanced" hidden>
-      <h2 data-i18n="for_the_app">For the apps</h2>
-      <p><span data-i18n="server_url">Server URL to enter in Unraid Drive:</span> <code id="origin"></code></p>
-      <p class="muted small" id="tls-note"></p>
-      <h2 data-i18n="graphql">GraphQL proxy</h2>
-      <textarea id="gql" rows="4" spellcheck="false">{ array { state } info { os { hostname } } }</textarea>
-      <div class="row"><button id="gql-run" data-i18n="run">Run</button></div>
-      <pre id="gql-out" class="out"></pre>
+      <div class="card">
+        <h2 data-i18n="for_the_app">For the apps</h2>
+        <p><span data-i18n="server_url">Server URL to enter in Unraid Drive:</span> <code id="origin"></code></p>
+        <p class="muted small" id="tls-note"></p>
+        <details>
+          <summary class="muted" data-i18n="graphql">GraphQL proxy</summary>
+          <textarea id="gql" rows="4" spellcheck="false">{ array { state } info { os { hostname } } }</textarea>
+          <div class="row"><button id="gql-run" data-i18n="run">Run</button></div>
+          <pre id="gql-out" class="out"></pre>
+        </details>
+      </div>
     </div>
   </section>
 </main>

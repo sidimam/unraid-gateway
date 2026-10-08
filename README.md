@@ -10,7 +10,7 @@
 
 - a **file API** over the shares you choose: listing, streaming download with `Range`, atomic and *resumable* uploads, move/copy/delete, and a **change feed** designed for the iOS/iPadOS File Provider framework (the thing that makes a provider show up in the Files app next to iCloud Drive);
 - a **proxy to the Unraid GraphQL API**, so a companion app can also read array status, shares, Docker containers and notifications without exposing the Unraid WebGUI itself;
-- a **small web UI** at `/` to log in with a key, browse and transfer files and try GraphQL queries from any browser.
+- a **small web UI** at `/` — Status (health dot, counters, system information, activity), Files, Settings — to log in with a key, browse and transfer files, manage devices and keys and try GraphQL queries from any browser.
 
 Everything is authenticated with a regular **Unraid API key** (*Settings → Management Access → API Keys*). The gateway validates the key against Unraid on the LAN, hands the client a short-lived session token, and never stores your Unraid password.
 
@@ -152,6 +152,8 @@ Then send `Authorization: Bearer <token>` on every call. For scripts you may ins
 | `GET` | `/fs/changes?seq=<n>` | **Change journal** (0.5+): every item created, modified, moved or deleted after sequence `n`, with stable ids; instant. |
 | `GET` | `/fs/item?id=<id>` | Entry for a stable id (0.5+). |
 | `GET` | `/activity` | **Activity** (0.7+): connected devices, streams/transfers in progress with bytes and speed, recent transfers; drives the web UI's Activity panel. |
+| `GET` | `/health` | **Health** (0.12+): `level` ok / warning / error with `reasons` and `checks` — gateway facts plus a live look at Unraid (array, disks, notifications, load, the gateway container). The same dot the Unraid Drive apps show. |
+| `GET` | `/system` | **System information** (0.12+): Unraid's OS, CPU, memory modules, mainboard, versions, GPU and network interfaces, as the Unraid API reports them. |
 | `POST` | `/fs/ticket` | **Media ticket** (0.6+): signed, expiring URL `/media/<ticket>` for one file, for players that cannot send headers (mpv on Apple TV, VLC, browsers); Range supported. |
 | `GET` | `/fs/changes?path=/&since=<unix ns>&after=&cursor=` | Legacy change feed (mtime walk), paginated, see below. |
 
@@ -240,7 +242,7 @@ Logs (*Docker → unraid-gateway → Logs*) start with a banner summarising the 
 
 Health-check probes are hidden unless `LOG_HEALTHCHECKS=true`; `LOG_FORMAT=json` switches to machine-readable output.
 
-**Console walkthrough**: the *Console* button of the container (or `docker exec -it unraid-gateway sh`) opens a shell that greets you with a guided status check. The `gw` helper offers: `gw status` (API, Unraid API, mounted shares rw/ro, user-auth prerequisites), `gw shares` (each share's Unraid security and user lists), `gw users`, `gw login <user>` (interactive test login showing the resulting permissions), `gw key`, `gw env`, `gw activity` (who is connected, what is streaming; `-w` live), `gw devices` (registered installations, `rm <id>|all` revokes), `gw notify-test`. The gateway keeps a **device registry** (revoke a lost phone from the web UI), sends **notifications** for new/removed devices (Unraid's own notifications with no key needed once `/tmp/notifications` is mapped, plus SMTP and Telegram) and can **manage Unraid API keys** (list/create/delete/rotate with an ADMIN key). See the wiki page *Devices, notifications and API keys*. The web UI (0.10: dashboard with tabs, light/dark/system theme, seven languages, a login that password managers save and fill) can also remember the API key on the gateway (`WEBUI_API_KEY` or the *Remember* checkbox → `/config/webui.key`) for one-click login.
+**Console walkthrough**: the *Console* button of the container (or `docker exec -it unraid-gateway sh`) opens a shell that greets you with a guided status check. The `gw` helper offers: `gw status` (API, Unraid API, mounted shares rw/ro, user-auth prerequisites), `gw shares` (each share's Unraid security and user lists), `gw users`, `gw login <user>` (interactive test login showing the resulting permissions), `gw key`, `gw env`, `gw activity` (who is connected, what is streaming; `-w` live), `gw devices` (registered installations, `rm <id>|all` revokes), `gw notify-test`, `gw health` (0.12: the green / yellow / red state with its reasons). The gateway keeps a **device registry** (revoke a lost phone from the web UI), sends **notifications** for new/removed devices (Unraid's own notifications with no key needed once `/tmp/notifications` is mapped, plus SMTP and Telegram) and can **manage Unraid API keys** (list/create/delete/rotate with an ADMIN key). See the wiki page *Devices, notifications and API keys*. The web UI (0.12: Status / Files / Settings tabs with a health dot and system information, light/dark/system theme, seven languages, a login that password managers save and fill) can also remember the API key on the gateway (`WEBUI_API_KEY` or the *Remember* checkbox → `/config/webui.key`) for one-click login.
 
 ## Development
 

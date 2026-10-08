@@ -50,6 +50,12 @@ case "${1:-help}" in
     printf 'Unraid API key: '; stty -echo 2>/dev/null; read K; stty echo 2>/dev/null; echo
     curl -s -m 20 -X POST "$API/api/v1/auth/login" -H 'Content-Type: application/json' -d "{\"apiKey\":\"$K\"}" | sed 's/"token":"[^"]*"/"token":"…"/'; echo
     ;;
+  health)
+    # One-glance state, the same green / yellow / red the apps and the web UI show (0.12).
+    bold "Gateway and server health"
+    curl -s -m 15 "$API/api/v1/health" | tr -d '\n' | sed -E 's/.*"level":"([a-z]+)".*"reasons":\[([^]]*)\].*/  level: \1\n  reasons: \2/; s/","/\n           /g; s/"//g' || bad "API not answering on $API"
+    echo; note "gw health  — ok = all fine · warning = look at the reasons · error = something is broken (array, disks, Unraid API, shares). Details per check: curl -s $API/api/v1/health"
+    ;;
   activity)
     # Who is connected and what is streaming, straight from the gateway (loopback needs no token).
     if [ "$2" = "-w" ] || [ "$2" = "--watch" ]; then
@@ -115,6 +121,7 @@ case "${1:-help}" in
   7. gw activity     who is connected (device, user, IP), streams/uploads in progress, recent transfers (-w = live)
   8. gw devices      registered app installations; gw devices rm <id> | rm all revokes them
   9. gw notify-test  send a test notification through every configured channel
+ 10. gw health       one-glance state of gateway and server (green / yellow / red with the reasons)
 
   WHERE THINGS LIVE
   /data/<share>              the mounted shares            /config/index.db      file index (safe to delete)
