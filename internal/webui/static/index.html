@@ -141,20 +141,50 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="devices-card">
         <div class="toolbar">
           <h2 data-i18n="tab_devices">Devices</h2>
           <span id="devices-scope" class="muted small"></span>
           <div class="spacer"></div>
           <button id="devices-refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button>
-          <button id="devices-remove-all" class="ghost" hidden data-i18n="remove_all">Remove all</button>
         </div>
         <p class="muted small" data-i18n="devices_intro">Every Unraid Drive installation registers itself when you add the server. Removing a device closes its sessions and the app asks to sign in again (which registers it anew and sends a notification). A reinstalled app supersedes its previous entry, shown greyed as "old".</p>
-        <div class="table-wrap"><table id="devices" class="devices">
-          <thead><tr><th data-i18n="col_device">Device</th><th data-i18n="col_user">User</th><th data-i18n="col_key">Key</th><th data-i18n="col_registered">Registered</th><th data-i18n="col_last_seen">Last seen</th><th data-i18n="col_from">From</th><th class="num" data-i18n="col_logins">Logins</th><th></th></tr></thead>
+        <div id="devices-cards" class="devices-cards"></div>
+        <p id="devices-empty" class="muted" hidden data-i18n="no_devices">No device registered yet (older app builds do not register; update to 1.3 build 29 or later).</p>
+        <div id="devices-prune" class="row small" hidden>
+          <span class="muted" data-i18n="prune_label">Remove the devices not seen for</span>
+          <select id="prune-days"><option value="30">30</option><option value="90" selected>90</option><option value="180">180</option><option value="365">365</option></select>
+          <span class="muted" data-i18n="prune_days">days</span>
+          <button id="prune-run" class="ghost" data-i18n="prune_run">Remove stale devices</button>
+          <div class="spacer"></div>
+          <button id="devices-remove-all" class="ghost" hidden data-i18n="remove_all">Remove all</button>
+        </div>
+      </div>
+
+      <div class="card" id="device-detail" hidden>
+        <div class="toolbar">
+          <button id="device-back" class="ghost">‹ <span data-i18n="back">Back</span></button>
+          <span id="device-icon" class="dev-icon"></span>
+          <h2 id="device-title">Device</h2>
+          <span id="device-dot" class="dot"></span>
+          <div class="spacer"></div>
+          <button id="device-remove" class="ghost" data-i18n="remove">Remove</button>
+        </div>
+        <dl class="kv" id="device-facts"></dl>
+        <div class="toolbar">
+          <h3 data-i18n="charts_title">Data moved</h3>
+          <div class="spacer"></div>
+          <select id="device-range"><option value="24h" data-i18n="range_24h">Last 24 hours</option><option value="7d" data-i18n="range_7d">Last 7 days</option><option value="30d" selected data-i18n="range_30d">Last 30 days</option><option value="90d" data-i18n="range_90d">Last 90 days</option></select>
+        </div>
+        <div class="stats" id="device-totals"></div>
+        <canvas id="device-chart" height="200"></canvas>
+        <p id="device-chart-empty" class="muted small" hidden data-i18n="chart_empty">Nothing moved in this period.</p>
+        <div class="toolbar"><h3 data-i18n="log_title">Log</h3><span class="muted small" data-i18n="log_intro">sign-ins, registrations, removals and interrupted transfers</span></div>
+        <div class="table-wrap"><table id="device-log">
+          <thead><tr><th data-i18n="col_when">When</th><th data-i18n="col_event">Event</th><th data-i18n="col_detail">Detail</th></tr></thead>
           <tbody></tbody>
         </table></div>
-        <p id="devices-empty" class="muted" hidden data-i18n="no_devices">No device registered yet (older app builds do not register; update to 1.3 build 29 or later).</p>
+        <p id="device-log-empty" class="muted small" hidden data-i18n="log_empty">No events recorded yet.</p>
       </div>
 
       <div class="card">

@@ -31,12 +31,17 @@ func TestAssessYellowAndRed(t *testing.T) {
 			t.Fatalf("Unraid notifications must not count: %v", s.Reasons)
 		}
 	}
-	if s.Level != Warning || len(s.Reasons) < 3 {
-		t.Fatalf("expected warning with reasons, got %s %v", s.Level, s.Reasons)
+	if s.Level != Warning || len(s.Reasons) != 3 {
+		t.Fatalf("expected warning with the three gateway reasons, got %s %v", s.Level, s.Reasons)
 	}
-	s = Assess(context.Background(), gw, fakeQ{body: `{"array":{"state":"STOPPED","disks":[]}}`}, "k")
-	if s.Level != Error || s.Reasons[0] != "array stopped" {
-		t.Fatalf("expected error array stopped, got %s %v", s.Level, s.Reasons)
+	// Unraid's own state never colours the dot (array stopped, hot disk): still the same two gateway warnings.
+	s = Assess(context.Background(), gw, fakeQ{body: `{"array":{"state":"STOPPED","disks":[{"name":"disk1","status":"DISK_DSBL","temp":70}]}}`}, "k")
+	if s.Level != Warning || len(s.Reasons) != 3 {
+		t.Fatalf("Unraid state must not count, got %s %v", s.Level, s.Reasons)
+	}
+	s = Assess(context.Background(), Gateway{MountedShares: []string{"a"}, ConfigWritable: true, UserAuth: "off"}, fakeQ{body: `{"docker":{"containers":[{"names":["unraid-gateway"],"image":"ghcr.io/sidimam/unraid-gateway:latest","state":"EXITED"}]}}`}, "k")
+	if s.Level != Warning || s.Reasons[0] != "unraid-gateway container exited" {
+		t.Fatalf("expected container warning, got %s %v", s.Level, s.Reasons)
 	}
 	s = Assess(context.Background(), Gateway{MountedShares: []string{"a"}, ConfigWritable: true, UserAuth: "off"}, fakeQ{err: context.DeadlineExceeded}, "k")
 	if s.Level != Error {

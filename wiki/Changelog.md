@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.13.0 (2026-10-14)
+- **Health is about the gateway only.** `GET /api/v1/health` (and `gw health`) now reports the gateway's own checks — shares mounted (none → error) and writable, `/config` writable, user-auth prerequisites, notification channels, devices — plus two things the gateway depends on: the Unraid API answering (error) and the unraid-gateway container running (warning). Array state, disks and temperatures, parity, CPU/memory load and notifications are Unraid's business: they stay visible as information in the apps' dashboard and never colour the dot (rule shared with Unraid Drive 1.4.2).
+- **Devices, redesigned** (web UI › Settings › Devices). One card per installation with an icon by kind (iPhone, iPad, Mac, Apple TV, Vision Pro, browser), the device name, OS and app build, the Unraid user, the last sync and a state dot (green: active today; grey: older or *old*; yellow: not seen for more than 30 days). Open a card for the **detail page**: facts (user, key, registered, last sync, IP, logins, state, id), **Data moved** — totals for today, the last 7 and 30 days (bytes down/up, requests, downloads/streams, uploads) and a bar chart per hour (24 h) or per day (7/30/90 days) — and the **Log** of the device: sign-ins (also refused ones), registration, revocation, removals it performed, interrupted uploads. **Remove** is on the detail page.
+- **Per-device metrics**: the gateway counts, per registered device, requests and bytes uploaded/downloaded/streamed in hourly buckets kept for 90 days, plus the last 200 events, in `/config/metrics.json` (flushed every minute and at shutdown). New endpoints `GET /api/v1/devices/{id}/metrics?range=24h|7d|30d|90d` and `GET /api/v1/devices/{id}/log?limit=N` (a user sees its own devices; API-key-only and ADMIN sessions see all).
+- **Remove stale devices**: `POST /api/v1/devices/prune {"days": N}` removes the devices not seen for N days (never the caller's own), closes their sessions and sends a notification listing them; in the web UI *Remove the devices not seen for 30/90/180/365 days*, in the console `gw devices prune <days>`. Removing a device also drops its metrics.
+- Metrics are recorded by the authentication middleware (requests) and by the transfer tracker (bytes at the end of each stream, download or upload), with no extra work for the apps.
+
 ## v0.12.2 (2026-10-08)
 - Health: Unraid's own notifications (unread warnings and alerts) no longer count — they concern the NAS, not the gateway or the apps. The dot stays green when only notifications are pending.
 

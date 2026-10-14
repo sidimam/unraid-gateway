@@ -32,6 +32,7 @@
       remove_all: 'Remove all', devices_intro: 'Every Unraid Drive installation registers itself when you add the server. Removing a device closes its sessions and the app asks to sign in again (which registers it anew and sends a notification). A reinstalled app supersedes its previous entry, shown greyed as "old".',
       col_key: 'Key', col_registered: 'Registered', col_logins: 'Logins', no_devices: 'No device registered yet (older app builds do not register; update to 1.3 build 29 or later).',
       this_browser: '(this browser)', old: 'old', last_seen_prefix: 'last seen', replaced_title: 'Replaced by a new installation on {date}. Safe to remove.', registration_off: 'registration is off (DEVICE_REGISTRATION=off)', devices_unavailable: 'devices unavailable: {err}',
+      active_today: 'active today', stale: 'not seen for {n} days', last_sync: 'Last sync', prune_label: 'Remove the devices not seen for', prune_days: 'days', prune_run: 'Remove stale devices', confirm_prune: 'Remove every device not seen for {n} days? Their apps will ask to sign in again if they come back.', pruned: '{n} device(s) removed:\n{list}', pruned_none: 'No device was that old.', back: 'Back', charts_title: 'Data moved', range_24h: 'Last 24 hours', range_7d: 'Last 7 days', range_30d: 'Last 30 days', range_90d: 'Last 90 days', chart_empty: 'Nothing moved in this period.', log_title: 'Log', log_intro: 'sign-ins, registrations, removals and interrupted transfers', col_when: 'When', col_event: 'Event', col_detail: 'Detail', log_empty: 'No events recorded yet.', state: 'State', tot_today: 'Today', tot_week: 'Last 7 days', tot_month: 'Last 30 days', tot_detail: '{req} requests · {dl} downloads/streams · {ul} uploads', metrics_unavailable: 'metrics unavailable: {err}', legend_down: 'downloaded / streamed', legend_up: 'uploaded', ev_login: 'Sign-in', ev_register: 'Registration', ev_revoked: 'Revoked', ev_transfer: 'Transfer', ev_admin: 'Administration', log_unavailable: 'log unavailable: {err}',
       remove: 'Remove', confirm_remove_device: 'Remove "{name}"?\nIts sessions are closed and the app will ask to sign in again.', confirm_remove_this: '\n\nThis is the browser you are using: you will be signed out.', confirm_remove_all: 'Remove ALL devices? Every app (and this browser) will have to sign in again.',
       send_test: 'Send a test', notify_intro: 'A new or removed device raises a notification on every configured channel: Unraid\'s notifications (NOTIFY_UNRAID — set NOTIFY_UNRAID_API_KEY to an ADMIN key if yours is VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) and Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Set them in the container settings.',
       channels: 'channels: {list}', no_channel: 'no channel configured', sending: 'sending…', no_channel_long: 'No channel configured: set NOTIFY_UNRAID / SMTP_* / TELEGRAM_* in the container.', errors: 'Errors: {list}', sent_to: 'Sent to {list}.', error: 'error: {err}',
@@ -72,6 +73,7 @@
       remove_all: 'Rimuovi tutti', devices_intro: 'Ogni installazione di Unraid Drive si registra quando aggiungi il server. Rimuovere un dispositivo chiude le sue sessioni e l\'app chiede di accedere di nuovo (si registra da capo e parte una notifica). Un\'app reinstallata sostituisce la voce precedente, mostrata in grigio come "old".',
       col_key: 'Chiave', col_registered: 'Registrato', col_logins: 'Accessi', no_devices: 'Nessun dispositivo registrato (le build vecchie dell\'app non si registrano: aggiorna alla 1.3 build 29 o successiva).',
       this_browser: '(questo browser)', old: 'vecchio', last_seen_prefix: 'ultimo accesso', replaced_title: 'Sostituito da una nuova installazione il {date}. Si può rimuovere.', registration_off: 'registrazione disattivata (DEVICE_REGISTRATION=off)', devices_unavailable: 'dispositivi non disponibili: {err}',
+      active_today: 'attivo oggi', stale: 'non visto da {n} giorni', last_sync: 'Ultima sincronizzazione', prune_label: 'Rimuovi i dispositivi non visti da', prune_days: 'giorni', prune_run: 'Rimuovi i dispositivi inattivi', confirm_prune: 'Rimuovere tutti i dispositivi non visti da {n} giorni? Le loro app chiederanno di accedere di nuovo se tornano.', pruned: '{n} dispositivo/i rimosso/i:\n{list}', pruned_none: 'Nessun dispositivo così vecchio.', back: 'Indietro', charts_title: 'Dati movimentati', range_24h: 'Ultime 24 ore', range_7d: 'Ultimi 7 giorni', range_30d: 'Ultimi 30 giorni', range_90d: 'Ultimi 90 giorni', chart_empty: 'Nessun dato movimentato nel periodo.', log_title: 'Registro', log_intro: 'accessi, registrazioni, rimozioni e trasferimenti interrotti', col_when: 'Quando', col_event: 'Evento', col_detail: 'Dettaglio', log_empty: 'Nessun evento registrato.', state: 'Stato', tot_today: 'Oggi', tot_week: 'Ultimi 7 giorni', tot_month: 'Ultimi 30 giorni', tot_detail: '{req} richieste · {dl} download/stream · {ul} upload', metrics_unavailable: 'metriche non disponibili: {err}', legend_down: 'scaricato / in streaming', legend_up: 'caricato', ev_login: 'Accesso', ev_register: 'Registrazione', ev_revoked: 'Revocato', ev_transfer: 'Trasferimento', ev_admin: 'Amministrazione', log_unavailable: 'registro non disponibile: {err}',
       remove: 'Rimuovi', confirm_remove_device: 'Rimuovere "{name}"?\nLe sue sessioni vengono chiuse e l\'app chiederà di accedere di nuovo.', confirm_remove_this: '\n\nÈ il browser che stai usando: verrai disconnesso.', confirm_remove_all: 'Rimuovere TUTTI i dispositivi? Ogni app (e questo browser) dovrà accedere di nuovo.',
       send_test: 'Invia una prova', notify_intro: 'Un dispositivo nuovo o rimosso genera una notifica su ogni canale configurato: notifiche di Unraid (NOTIFY_UNRAID — imposta NOTIFY_UNRAID_API_KEY a una chiave ADMIN se la tua è VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) e Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Si impostano nelle impostazioni del container.',
       channels: 'canali: {list}', no_channel: 'nessun canale configurato', sending: 'invio…', no_channel_long: 'Nessun canale configurato: imposta NOTIFY_UNRAID / SMTP_* / TELEGRAM_* nel container.', errors: 'Errori: {list}', sent_to: 'Inviata a {list}.', error: 'errore: {err}',
@@ -112,6 +114,7 @@
       remove_all: 'Eliminar todos', devices_intro: 'Cada instalación de Unraid Drive se registra al añadir el servidor. Eliminar un dispositivo cierra sus sesiones y la app pide iniciar sesión de nuevo (se registra otra vez y envía una notificación). Una app reinstalada sustituye su entrada anterior, mostrada en gris como "old".',
       col_key: 'Clave', col_registered: 'Registrado', col_logins: 'Accesos', no_devices: 'Ningún dispositivo registrado aún (las builds antiguas no se registran; actualiza a 1.3 build 29 o posterior).',
       this_browser: '(este navegador)', old: 'antiguo', last_seen_prefix: 'última vez', replaced_title: 'Sustituido por una nueva instalación el {date}. Se puede eliminar.', registration_off: 'registro desactivado (DEVICE_REGISTRATION=off)', devices_unavailable: 'dispositivos no disponibles: {err}',
+      active_today: 'activo hoy', stale: 'sin actividad desde hace {n} días', last_sync: 'Última sincronización', prune_label: 'Eliminar los dispositivos sin actividad desde hace', prune_days: 'días', prune_run: 'Eliminar dispositivos inactivos', confirm_prune: '¿Eliminar todos los dispositivos sin actividad desde hace {n} días? Sus apps pedirán iniciar sesión de nuevo si vuelven.', pruned: '{n} dispositivo(s) eliminado(s):\n{list}', pruned_none: 'Ningún dispositivo era tan antiguo.', back: 'Atrás', charts_title: 'Datos movidos', range_24h: 'Últimas 24 horas', range_7d: 'Últimos 7 días', range_30d: 'Últimos 30 días', range_90d: 'Últimos 90 días', chart_empty: 'Nada movido en este periodo.', log_title: 'Registro', log_intro: 'accesos, registros, eliminaciones y transferencias interrumpidas', col_when: 'Cuándo', col_event: 'Evento', col_detail: 'Detalle', log_empty: 'Ningún evento registrado aún.', state: 'Estado', tot_today: 'Hoy', tot_week: 'Últimos 7 días', tot_month: 'Últimos 30 días', tot_detail: '{req} peticiones · {dl} descargas/streams · {ul} subidas', metrics_unavailable: 'métricas no disponibles: {err}', legend_down: 'descargado / en streaming', legend_up: 'subido', ev_login: 'Acceso', ev_register: 'Registro', ev_revoked: 'Revocado', ev_transfer: 'Transferencia', ev_admin: 'Administración', log_unavailable: 'registro no disponible: {err}',
       remove: 'Eliminar', confirm_remove_device: '¿Eliminar "{name}"?\nSus sesiones se cierran y la app pedirá iniciar sesión de nuevo.', confirm_remove_this: '\n\nEs el navegador que estás usando: se cerrará tu sesión.', confirm_remove_all: '¿Eliminar TODOS los dispositivos? Cada app (y este navegador) tendrá que iniciar sesión de nuevo.',
       send_test: 'Enviar una prueba', notify_intro: 'Un dispositivo nuevo o eliminado genera una notificación en cada canal configurado: notificaciones de Unraid (NOTIFY_UNRAID — pon NOTIFY_UNRAID_API_KEY con una clave ADMIN si la tuya es VIEWER), correo (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) y Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Se configuran en los ajustes del contenedor.',
       channels: 'canales: {list}', no_channel: 'ningún canal configurado', sending: 'enviando…', no_channel_long: 'Ningún canal configurado: define NOTIFY_UNRAID / SMTP_* / TELEGRAM_* en el contenedor.', errors: 'Errores: {list}', sent_to: 'Enviada a {list}.', error: 'error: {err}',
@@ -152,6 +155,7 @@
       remove_all: 'Tout supprimer', devices_intro: 'Chaque installation d\'Unraid Drive s\'enregistre quand vous ajoutez le serveur. Supprimer un appareil ferme ses sessions et l\'app demande de se reconnecter (elle se réenregistre et une notification part). Une app réinstallée remplace son ancienne entrée, grisée « old ».',
       col_key: 'Clé', col_registered: 'Enregistré', col_logins: 'Connexions', no_devices: 'Aucun appareil enregistré (les anciennes builds ne s\'enregistrent pas ; mettez à jour vers 1.3 build 29 ou plus).',
       this_browser: '(ce navigateur)', old: 'ancien', last_seen_prefix: 'vu', replaced_title: 'Remplacé par une nouvelle installation le {date}. Peut être supprimé.', registration_off: 'enregistrement désactivé (DEVICE_REGISTRATION=off)', devices_unavailable: 'appareils indisponibles : {err}',
+      active_today: 'actif aujourd’hui', stale: 'pas vu depuis {n} jours', last_sync: 'Dernière synchronisation', prune_label: 'Supprimer les appareils pas vus depuis', prune_days: 'jours', prune_run: 'Supprimer les appareils inactifs', confirm_prune: 'Supprimer tous les appareils pas vus depuis {n} jours ? Leurs apps redemanderont de se connecter si elles reviennent.', pruned: '{n} appareil(s) supprimé(s) :\n{list}', pruned_none: 'Aucun appareil aussi ancien.', back: 'Retour', charts_title: 'Données transférées', range_24h: 'Dernières 24 heures', range_7d: '7 derniers jours', range_30d: '30 derniers jours', range_90d: '90 derniers jours', chart_empty: 'Rien transféré sur cette période.', log_title: 'Journal', log_intro: 'connexions, enregistrements, suppressions et transferts interrompus', col_when: 'Quand', col_event: 'Événement', col_detail: 'Détail', log_empty: 'Aucun événement enregistré.', state: 'État', tot_today: 'Aujourd’hui', tot_week: '7 derniers jours', tot_month: '30 derniers jours', tot_detail: '{req} requêtes · {dl} téléchargements/flux · {ul} envois', metrics_unavailable: 'métriques indisponibles : {err}', legend_down: 'téléchargé / diffusé', legend_up: 'envoyé', ev_login: 'Connexion', ev_register: 'Enregistrement', ev_revoked: 'Révoqué', ev_transfer: 'Transfert', ev_admin: 'Administration', log_unavailable: 'journal indisponible : {err}',
       remove: 'Supprimer', confirm_remove_device: 'Supprimer « {name} » ?\nSes sessions sont fermées et l\'app demandera de se reconnecter.', confirm_remove_this: '\n\nC\'est le navigateur que vous utilisez : vous serez déconnecté.', confirm_remove_all: 'Supprimer TOUS les appareils ? Chaque app (et ce navigateur) devra se reconnecter.',
       send_test: 'Envoyer un test', notify_intro: 'Un appareil nouveau ou supprimé déclenche une notification sur chaque canal configuré : notifications Unraid (NOTIFY_UNRAID — mettez NOTIFY_UNRAID_API_KEY à une clé ADMIN si la vôtre est VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) et Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). À régler dans les paramètres du conteneur.',
       channels: 'canaux : {list}', no_channel: 'aucun canal configuré', sending: 'envoi…', no_channel_long: 'Aucun canal configuré : définissez NOTIFY_UNRAID / SMTP_* / TELEGRAM_* dans le conteneur.', errors: 'Erreurs : {list}', sent_to: 'Envoyé à {list}.', error: 'erreur : {err}',
@@ -192,6 +196,7 @@
       remove_all: 'Alle entfernen', devices_intro: 'Jede Unraid-Drive-Installation registriert sich beim Hinzufügen des Servers. Entfernen schließt die Sitzungen des Geräts und die App fragt erneut nach der Anmeldung (registriert sich neu und löst eine Mitteilung aus). Eine neu installierte App ersetzt ihren alten Eintrag, grau als „old“ gezeigt.',
       col_key: 'Schlüssel', col_registered: 'Registriert', col_logins: 'Anmeldungen', no_devices: 'Noch kein Gerät registriert (ältere App-Builds registrieren sich nicht; auf 1.3 Build 29 oder neuer aktualisieren).',
       this_browser: '(dieser Browser)', old: 'alt', last_seen_prefix: 'zuletzt', replaced_title: 'Am {date} durch eine neue Installation ersetzt. Kann entfernt werden.', registration_off: 'Registrierung aus (DEVICE_REGISTRATION=off)', devices_unavailable: 'Geräte nicht verfügbar: {err}',
+      active_today: 'heute aktiv', stale: 'seit {n} Tagen nicht gesehen', last_sync: 'Letzte Synchronisierung', prune_label: 'Geräte entfernen, die nicht gesehen wurden seit', prune_days: 'Tagen', prune_run: 'Inaktive Geräte entfernen', confirm_prune: 'Alle Geräte entfernen, die seit {n} Tagen nicht gesehen wurden? Ihre Apps fragen bei der Rückkehr erneut nach der Anmeldung.', pruned: '{n} Gerät(e) entfernt:\n{list}', pruned_none: 'Kein Gerät war so alt.', back: 'Zurück', charts_title: 'Übertragene Daten', range_24h: 'Letzte 24 Stunden', range_7d: 'Letzte 7 Tage', range_30d: 'Letzte 30 Tage', range_90d: 'Letzte 90 Tage', chart_empty: 'In diesem Zeitraum nichts übertragen.', log_title: 'Protokoll', log_intro: 'Anmeldungen, Registrierungen, Entfernungen und abgebrochene Übertragungen', col_when: 'Wann', col_event: 'Ereignis', col_detail: 'Details', log_empty: 'Noch keine Ereignisse.', state: 'Zustand', tot_today: 'Heute', tot_week: 'Letzte 7 Tage', tot_month: 'Letzte 30 Tage', tot_detail: '{req} Anfragen · {dl} Downloads/Streams · {ul} Uploads', metrics_unavailable: 'Messwerte nicht verfügbar: {err}', legend_down: 'heruntergeladen / gestreamt', legend_up: 'hochgeladen', ev_login: 'Anmeldung', ev_register: 'Registrierung', ev_revoked: 'Widerrufen', ev_transfer: 'Übertragung', ev_admin: 'Verwaltung', log_unavailable: 'Protokoll nicht verfügbar: {err}',
       remove: 'Entfernen', confirm_remove_device: '„{name}“ entfernen?\nSeine Sitzungen werden geschlossen und die App fragt erneut nach der Anmeldung.', confirm_remove_this: '\n\nDas ist der Browser, den du gerade benutzt: du wirst abgemeldet.', confirm_remove_all: 'ALLE Geräte entfernen? Jede App (und dieser Browser) muss sich neu anmelden.',
       send_test: 'Test senden', notify_intro: 'Ein neues oder entferntes Gerät löst auf jedem konfigurierten Kanal eine Mitteilung aus: Unraid-Benachrichtigungen (NOTIFY_UNRAID — NOTIFY_UNRAID_API_KEY auf einen ADMIN-Schlüssel setzen, wenn deiner VIEWER ist), E-Mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) und Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). In den Container-Einstellungen setzen.',
       channels: 'Kanäle: {list}', no_channel: 'kein Kanal konfiguriert', sending: 'sende…', no_channel_long: 'Kein Kanal konfiguriert: NOTIFY_UNRAID / SMTP_* / TELEGRAM_* im Container setzen.', errors: 'Fehler: {list}', sent_to: 'Gesendet an {list}.', error: 'Fehler: {err}',
@@ -232,6 +237,7 @@
       remove_all: '全部移除', devices_intro: '每个 Unraid Drive 安装在添加服务器时都会自行注册。移除设备会关闭其会话，应用会要求重新登录（重新注册并发送通知）。重装的应用会取代旧条目，旧条目以灰色“old”显示。',
       col_key: '密钥', col_registered: '注册时间', col_logins: '登录次数', no_devices: '尚无已注册设备（旧版应用不会注册；请更新到 1.3 build 29 或更高）。',
       this_browser: '（此浏览器）', old: '旧', last_seen_prefix: '最近活动', replaced_title: '已于 {date} 被新安装取代。可以安全移除。', registration_off: '注册已关闭（DEVICE_REGISTRATION=off）', devices_unavailable: '设备不可用：{err}',
+      active_today: '今天活跃', stale: '已 {n} 天未出现', last_sync: '上次同步', prune_label: '移除以下天数内未出现的设备：', prune_days: '天', prune_run: '移除不活跃设备', confirm_prune: '移除所有 {n} 天未出现的设备？它们的应用回来时需要重新登录。', pruned: '已移除 {n} 台设备：\n{list}', pruned_none: '没有这么久未出现的设备。', back: '返回', charts_title: '传输的数据', range_24h: '最近 24 小时', range_7d: '最近 7 天', range_30d: '最近 30 天', range_90d: '最近 90 天', chart_empty: '此期间没有传输。', log_title: '日志', log_intro: '登录、注册、移除和中断的传输', col_when: '时间', col_event: '事件', col_detail: '详情', log_empty: '尚无事件。', state: '状态', tot_today: '今天', tot_week: '最近 7 天', tot_month: '最近 30 天', tot_detail: '{req} 次请求 · {dl} 次下载/流 · {ul} 次上传', metrics_unavailable: '指标不可用：{err}', legend_down: '下载 / 流', legend_up: '上传', ev_login: '登录', ev_register: '注册', ev_revoked: '已撤销', ev_transfer: '传输', ev_admin: '管理', log_unavailable: '日志不可用：{err}',
       remove: '移除', confirm_remove_device: '移除“{name}”？\n其会话将被关闭，应用会要求重新登录。', confirm_remove_this: '\n\n这是你正在使用的浏览器：你将被登出。', confirm_remove_all: '移除所有设备？每个应用（以及此浏览器）都必须重新登录。',
       send_test: '发送测试', notify_intro: '新设备或被移除的设备会在每个已配置的渠道上发出通知：Unraid 通知（NOTIFY_UNRAID——若你的密钥是 VIEWER，请将 NOTIFY_UNRAID_API_KEY 设为 ADMIN 密钥）、电子邮件（SMTP_HOST、SMTP_PORT、SMTP_USER、SMTP_PASSWORD、SMTP_FROM、SMTP_TO、SMTP_TLS）和 Telegram（TELEGRAM_BOT_TOKEN、TELEGRAM_CHAT_ID）。在容器设置中配置。',
       channels: '渠道：{list}', no_channel: '未配置渠道', sending: '发送中…', no_channel_long: '未配置渠道：请在容器中设置 NOTIFY_UNRAID / SMTP_* / TELEGRAM_*。', errors: '错误：{list}', sent_to: '已发送至 {list}。', error: '错误：{err}',
@@ -272,6 +278,7 @@
       remove_all: 'إزالة الكل', devices_intro: 'يسجّل كل تثبيت لـ Unraid Drive نفسه عند إضافة الخادم. إزالة جهاز تُغلق جلساته ويطلب التطبيق تسجيل الدخول مجددًا (فيسجّل من جديد ويُرسل إشعار). التطبيق المعاد تثبيته يحلّ محل إدخاله السابق الذي يظهر رماديًا بعلامة "old".',
       col_key: 'المفتاح', col_registered: 'تاريخ التسجيل', col_logins: 'مرات الدخول', no_devices: 'لا يوجد جهاز مسجّل بعد (إصدارات التطبيق القديمة لا تسجّل؛ حدّث إلى 1.3 build 29 أو أحدث).',
       this_browser: '(هذا المتصفح)', old: 'قديم', last_seen_prefix: 'آخر ظهور', replaced_title: 'استُبدل بتثبيت جديد في {date}. يمكن إزالته بأمان.', registration_off: 'التسجيل متوقف (DEVICE_REGISTRATION=off)', devices_unavailable: 'الأجهزة غير متاحة: {err}',
+      active_today: 'نشط اليوم', stale: 'لم يُر منذ {n} يومًا', last_sync: 'آخر مزامنة', prune_label: 'إزالة الأجهزة التي لم تُر منذ', prune_days: 'يومًا', prune_run: 'إزالة الأجهزة الخاملة', confirm_prune: 'إزالة كل الأجهزة التي لم تُر منذ {n} يومًا؟ ستطلب تطبيقاتها تسجيل الدخول مجددًا عند عودتها.', pruned: 'تمت إزالة {n} جهاز:\n{list}', pruned_none: 'لا يوجد جهاز بهذا القِدم.', back: 'رجوع', charts_title: 'البيانات المنقولة', range_24h: 'آخر 24 ساعة', range_7d: 'آخر 7 أيام', range_30d: 'آخر 30 يومًا', range_90d: 'آخر 90 يومًا', chart_empty: 'لم يُنقل شيء في هذه الفترة.', log_title: 'السجل', log_intro: 'تسجيلات الدخول والتسجيلات والإزالات والنقل المتوقف', col_when: 'متى', col_event: 'الحدث', col_detail: 'التفاصيل', log_empty: 'لا أحداث بعد.', state: 'الحالة', tot_today: 'اليوم', tot_week: 'آخر 7 أيام', tot_month: 'آخر 30 يومًا', tot_detail: '{req} طلبات · {dl} تنزيلات/بث · {ul} رفع', metrics_unavailable: 'المقاييس غير متاحة: {err}', legend_down: 'تم تنزيله / بثه', legend_up: 'تم رفعه', ev_login: 'تسجيل دخول', ev_register: 'تسجيل', ev_revoked: 'مُلغى', ev_transfer: 'نقل', ev_admin: 'إدارة', log_unavailable: 'السجل غير متاح: {err}',
       remove: 'إزالة', confirm_remove_device: 'إزالة "{name}"؟\nستُغلق جلساته وسيطلب التطبيق تسجيل الدخول مجددًا.', confirm_remove_this: '\n\nهذا هو المتصفح الذي تستخدمه: سيتم تسجيل خروجك.', confirm_remove_all: 'إزالة كل الأجهزة؟ سيتعين على كل تطبيق (وهذا المتصفح) تسجيل الدخول مجددًا.',
       send_test: 'إرسال اختبار', notify_intro: 'يُطلق الجهاز الجديد أو المُزال إشعارًا على كل قناة مضبوطة: إشعارات Unraid (NOTIFY_UNRAID — اضبط NOTIFY_UNRAID_API_KEY على مفتاح ADMIN إذا كان مفتاحك VIEWER)، البريد الإلكتروني (SMTP_HOST وSMTP_PORT وSMTP_USER وSMTP_PASSWORD وSMTP_FROM وSMTP_TO وSMTP_TLS) وTelegram (TELEGRAM_BOT_TOKEN وTELEGRAM_CHAT_ID). تُضبط في إعدادات الحاوية.',
       channels: 'القنوات: {list}', no_channel: 'لا توجد قناة مضبوطة', sending: 'جارٍ الإرسال…', no_channel_long: 'لا توجد قناة مضبوطة: اضبط NOTIFY_UNRAID / SMTP_* / TELEGRAM_* في الحاوية.', errors: 'أخطاء: {list}', sent_to: 'أُرسل إلى {list}.', error: 'خطأ: {err}',
@@ -678,34 +685,67 @@
   $('activity-live').addEventListener('change', () => { if ($('activity-live').checked) loadActivity(); });
 
   // ---- devices --------------------------------------------------------------
+  // Icon by device kind, read from the registration name ("Unraid Drive 1.4 (44) · iPhone · iOS 27.1 · App").
+  const DEV_ICONS = {
+    phone: '<svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><circle cx="12" cy="18.5" r="1" fill="currentColor" stroke="none"/></svg>',
+    tablet: '<svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="18.5" r="1" fill="currentColor" stroke="none"/></svg>',
+    mac: '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+    tv: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="13" rx="2"/><path d="M7 22h10"/></svg>',
+    vision: '<svg viewBox="0 0 24 24"><path d="M3 12c0-3 2-5 5-5h8c3 0 5 2 5 5s-2 5-5 5c-2 0-3-1-4-2-1 1-2 2-4 2-3 0-5-2-5-5z"/></svg>',
+    web: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>',
+    other: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>',
+  };
+  const deviceKind = (name) => {
+    const n = (name || '').toLowerCase();
+    if (n.startsWith('web ui')) return 'web';
+    if (n.includes('ipad')) return 'tablet';
+    if (n.includes('iphone')) return 'phone';
+    if (n.includes('macos') || n.includes('mac ')) return 'mac';
+    if (n.includes('tvos') || n.includes('apple tv')) return 'tv';
+    if (n.includes('visionos') || n.includes('vision pro')) return 'vision';
+    return 'other';
+  };
+  // "Unraid Drive 1.4 (44) · Simone's iPhone · iOS 27.1 · App" → ["Simone's iPhone", "iOS 27.1 · App", "Unraid Drive 1.4 (44)"]
+  const splitName = (name) => {
+    const parts = (name || '').split(' · ');
+    if (parts.length >= 3 && parts[0].startsWith('Unraid Drive')) return [parts[1], parts.slice(2).join(' · '), parts[0]];
+    return [name || '—', '', ''];
+  };
+  const deviceState = (x, now) => {
+    if (x.supersededBy) return ['', t('old')];
+    const days = (now - new Date(x.lastSeen)) / 86400000;
+    if (days < 1) return ['ok', t('active_today')];
+    if (days > 30) return ['warning', t('stale', { n: Math.floor(days) })];
+    return ['', t('last_seen_prefix') + ' ' + ago(x.lastSeen, now)];
+  };
+  let devicesCache = { devices: [], thisDevice: '' };
   async function loadDevices() {
     try {
       const d = await api('/devices'); d.devices = d.devices || [];
+      devicesCache = d;
       const now = new Date();
       $('devices-scope').textContent = d.registration === 'off' ? t('registration_off') : '';
       $('st-devices').textContent = String(d.devices.filter((x) => !x.supersededBy).length);
-      const tb = $('devices').querySelector('tbody'); tb.innerHTML = '';
+      const wrap = $('devices-cards'); wrap.innerHTML = '';
       $('devices-empty').hidden = d.devices.length > 0;
+      $('devices-prune').hidden = d.devices.length === 0;
       $('devices-remove-all').hidden = d.devices.length === 0;
       for (const x of d.devices) {
-        const tr = document.createElement('tr');
         const mine = x.id === d.thisDevice;
-        const old = !!x.supersededBy;
-        if (old) tr.className = 'old';
-        const label = x.name + (mine ? ' ' + t('this_browser') : '') + (old ? ' — ' + t('old') : '');
-        [label, x.user || '—', x.key || '—', ago(x.firstSeen, now), (old ? t('last_seen_prefix') + ' ' : '') + ago(x.lastSeen, now), x.lastIp || '', String(x.logins)].forEach((v, i) => {
-          const td = document.createElement('td'); td.textContent = v; if (i === 0) td.className = 'wrap'; if (i === 6) td.className = 'num';
-          if (i === 0 && old) td.title = t('replaced_title', { date: new Date(x.supersededAt).toLocaleString(locale()) });
-          tr.appendChild(td);
-        });
-        const act = document.createElement('td'); act.className = 'actions';
-        const b = document.createElement('button'); b.className = 'ghost'; b.textContent = t('remove');
-        b.onclick = async () => {
-          if (!confirm(t('confirm_remove_device', { name: x.name }) + (mine ? t('confirm_remove_this') : ''))) return;
-          try { await api('/devices/' + encodeURIComponent(x.id), { method: 'DELETE' }); if (mine) logout(); else loadDevices(); } catch (err) { alert(err.message); }
-        };
-        act.appendChild(b); tr.appendChild(act); tb.appendChild(tr);
+        const [title, sub, app] = splitName(x.name);
+        const [cls, state] = deviceState(x, now);
+        const card = document.createElement('button'); card.className = 'dev-card' + (x.supersededBy ? ' old' : ''); card.type = 'button';
+        card.innerHTML = `<span class="dev-icon">${DEV_ICONS[deviceKind(x.name)]}</span>
+          <span class="dev-main"><span class="dev-title"></span><span class="dev-sub muted small"></span><span class="dev-meta muted small"></span></span>
+          <span class="dot ${cls}"></span>`;
+        card.querySelector('.dev-title').textContent = title + (mine ? ' ' + t('this_browser') : '');
+        card.querySelector('.dev-sub').textContent = [sub, app].filter(Boolean).join(' · ');
+        card.querySelector('.dev-meta').textContent = [x.user ? t('col_user') + ': ' + x.user : null, t('last_sync') + ': ' + ago(x.lastSeen, now), state].filter(Boolean).join(' · ');
+        if (x.supersededBy) card.title = t('replaced_title', { date: new Date(x.supersededAt).toLocaleString(locale()) });
+        card.onclick = () => openDevice(x.id);
+        wrap.appendChild(card);
       }
+      if (!$('device-detail').hidden && !d.devices.some((x) => x.id === currentDevice)) closeDevice();
     } catch (err) { $('devices-scope').textContent = t('devices_unavailable', { err: err.message }); }
   }
   $('devices-refresh').addEventListener('click', loadDevices);
@@ -713,6 +753,102 @@
     if (!confirm(t('confirm_remove_all'))) return;
     try { await api('/devices', { method: 'DELETE' }); logout(); } catch (err) { alert(err.message); }
   });
+  $('prune-run').addEventListener('click', async () => {
+    const days = Number($('prune-days').value);
+    if (!confirm(t('confirm_prune', { n: days }))) return;
+    try {
+      const r = await api('/devices/prune', { method: 'POST', body: JSON.stringify({ days }) });
+      alert(r.removed.length ? t('pruned', { n: r.removed.length, list: r.removed.join('\n') }) : t('pruned_none'));
+      loadDevices();
+    } catch (err) { alert(err.message); }
+  });
+
+  // ---- device detail: facts, charts, log ------------------------------------
+  let currentDevice = '';
+  function closeDevice() { currentDevice = ''; $('device-detail').hidden = true; $('devices-card').hidden = false; }
+  $('device-back').addEventListener('click', closeDevice);
+  $('device-range').addEventListener('change', () => { if (currentDevice) loadDeviceMetrics(currentDevice); });
+  $('device-remove').addEventListener('click', async () => {
+    const x = devicesCache.devices.find((y) => y.id === currentDevice); if (!x) return;
+    const mine = x.id === devicesCache.thisDevice;
+    if (!confirm(t('confirm_remove_device', { name: x.name }) + (mine ? t('confirm_remove_this') : ''))) return;
+    try { await api('/devices/' + encodeURIComponent(x.id), { method: 'DELETE' }); if (mine) logout(); else { closeDevice(); loadDevices(); } } catch (err) { alert(err.message); }
+  });
+  async function openDevice(id) {
+    const x = devicesCache.devices.find((y) => y.id === id); if (!x) return;
+    currentDevice = id;
+    const now = new Date();
+    const [title, sub, app] = splitName(x.name);
+    const [cls, state] = deviceState(x, now);
+    $('device-icon').innerHTML = DEV_ICONS[deviceKind(x.name)];
+    $('device-title').textContent = title;
+    $('device-dot').className = 'dot ' + cls; $('device-dot').title = state;
+    const facts = [[t('col_device'), [sub, app].filter(Boolean).join(' · ')], [t('col_user'), x.user || '—'], [t('col_key'), x.key || '—'],
+      [t('col_registered'), fmtDate(x.firstSeen)], [t('last_sync'), ago(x.lastSeen, now)], [t('col_from'), x.lastIp || '—'], [t('col_logins'), String(x.logins)], [t('state'), state], ['ID', x.id]];
+    const dl = $('device-facts'); dl.innerHTML = '';
+    for (const [k, v] of facts) { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); }
+    $('devices-card').hidden = true; $('device-detail').hidden = false;
+    await Promise.all([loadDeviceMetrics(id), loadDeviceLog(id)]);
+  }
+  async function loadDeviceMetrics(id) {
+    try {
+      const m = await api('/devices/' + encodeURIComponent(id) + '/metrics?range=' + $('device-range').value);
+      const tot = $('device-totals'); tot.innerHTML = '';
+      for (const [k, v] of [['today', m.today], ['week', m.week], ['month', m.month]]) {
+        const s = document.createElement('div'); s.className = 'stat';
+        s.innerHTML = `<span class="k"></span><span class="v"></span><span class="muted small"></span>`;
+        s.querySelector('.k').textContent = t('tot_' + k);
+        s.querySelector('.v').textContent = '↓ ' + fmtSize(v.down) + '  ↑ ' + fmtSize(v.up);
+        s.querySelector('.muted').textContent = t('tot_detail', { req: v.requests, dl: v.downloads + v.streams, ul: v.uploads });
+        tot.appendChild(s);
+      }
+      drawChart($('device-chart'), m.series || [], m.step);
+    } catch (err) { $('device-chart-empty').hidden = false; $('device-chart-empty').textContent = t('metrics_unavailable', { err: err.message }); }
+  }
+  function drawChart(canvas, series, step) {
+    const empty = !series.some((p) => p.up || p.down);
+    $('device-chart-empty').hidden = !empty; if (!empty) $('device-chart-empty').textContent = t('chart_empty');
+    canvas.hidden = empty; if (empty) return;
+    const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth || 600, H = 200;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, W, H);
+    const css = getComputedStyle(document.documentElement);
+    const fg = css.getPropertyValue('--muted').trim(), line = css.getPropertyValue('--line').trim(), down = css.getPropertyValue('--accent').trim(), up = '#3b8bd9';
+    const padL = 56, padR = 8, padT = 8, padB = 46, iw = W - padL - padR, ih = H - padT - padB;
+    const max = Math.max(1, ...series.map((p) => p.up + p.down));
+    ctx.strokeStyle = line; ctx.fillStyle = fg; ctx.font = '11px -apple-system, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) { const y = padT + ih - (ih * i) / 4; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke(); ctx.fillText(fmtSize((max * i) / 4), padL - 6, y); }
+    const n = series.length, bw = Math.max(1, iw / n - 2);
+    series.forEach((p, i) => {
+      const x = padL + (iw * i) / n + 1;
+      const hd = (ih * p.down) / max, hu = (ih * p.up) / max;
+      ctx.fillStyle = down; ctx.fillRect(x, padT + ih - hd, bw, hd);
+      ctx.fillStyle = up; ctx.fillRect(x, padT + ih - hd - hu, bw, hu);
+    });
+    ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const every = Math.max(1, Math.ceil(n / Math.floor(iw / 64)));
+    series.forEach((p, i) => {
+      if (i % every) return;
+      const d = new Date(p.t);
+      const label = step === '1h0m0s' ? d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
+      ctx.fillText(label, padL + (iw * (i + 0.5)) / n, padT + ih + 6);
+    });
+    ctx.textAlign = 'left'; ctx.fillStyle = down; ctx.fillRect(padL, H - 12, 10, 10); ctx.fillStyle = fg; ctx.fillText(t('legend_down'), padL + 14, H - 12);
+    ctx.fillStyle = up; ctx.fillRect(padL + 110, H - 12, 10, 10); ctx.fillStyle = fg; ctx.fillText(t('legend_up'), padL + 124, H - 12);
+  }
+  async function loadDeviceLog(id) {
+    try {
+      const r = await api('/devices/' + encodeURIComponent(id) + '/log?limit=200');
+      const tb = $('device-log').querySelector('tbody'); tb.innerHTML = '';
+      const ev = r.events || [];
+      $('device-log-empty').hidden = ev.length > 0; $('device-log').hidden = ev.length === 0;
+      for (const e of ev) {
+        const tr = document.createElement('tr'); if (e.level !== 'info') tr.className = e.level;
+        [fmtDate(e.time), t('ev_' + e.kind) || e.kind, e.detail].forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 2) td.className = 'wrap'; tr.appendChild(td); });
+        tb.appendChild(tr);
+      }
+    } catch (err) { $('device-log-empty').hidden = false; $('device-log-empty').textContent = t('log_unavailable', { err: err.message }); }
+  }
 
   // ---- notifications --------------------------------------------------------
   async function loadNotifyChannels() {

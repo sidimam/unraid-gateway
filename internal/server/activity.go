@@ -13,6 +13,7 @@ import (
 	"github.com/sidimam/unraid-gateway/internal/activity"
 	"github.com/sidimam/unraid-gateway/internal/auth"
 	"github.com/sidimam/unraid-gateway/internal/fsapi"
+	"github.com/sidimam/unraid-gateway/internal/metrics"
 )
 
 // shortHash identifies a session or key without exposing it.
@@ -38,15 +39,36 @@ func whoFor(r *http.Request, p auth.Principal, ip string) activity.Who {
 	return activity.Who{ClientID: id, User: p.User, Key: p.Identity.Name, IP: ip, Agent: agent}
 }
 
-// activityHook adapts the tracker to the file API.
+// activityHook adapts the tracker to the file API and, per device, counts the bytes moved (0.13).
 type activityHook struct {
 	t          *activity.Tracker
 	trustProxy bool
+	metrics    *metrics.Store
 }
 
 func (h *activityHook) Begin(r *http.Request, kind, path string, size int64) fsapi.TransferHandle {
-	return h.t.Begin(whoFor(r, principal(r), auth.ClientIP(r, h.trustProxy)), kind, path, size, r.Header.Get("Range"))
+	inner := h.t.Begin(whoFor(r, principal(r), auth.ClientIP(r, h.trustProxy)), kind, path, size, r.Header.Get("Range"))
+	if h.metrics == nil {
+		return inner
+	}
+	id := principal(r).DeviceID
+	return &meteredTransfer{inner: inner, done: func(n int64) {
+		h.metrics.Transfer(id, kind, n)
+		if kind == "upload" && size > 0 && n < size {
+			h.metrics.Log(id, "transfer", "warning", fmt.Sprintf("upload of %s stopped at %d of %d bytes", path, n, size))
+		}
+	}}
 }
+
+// meteredTransfer forwards to the tracker's transfer and reports the total to the metrics at the end.
+type meteredTransfer struct {
+	inner fsapi.TransferHandle
+	n     int64
+	done  func(int64)
+}
+
+func (m *meteredTransfer) Add(n int64) { m.n += n; m.inner.Add(n) }
+func (m *meteredTransfer) End()        { m.inner.End(); m.done(m.n) }
 
 // handleActivity: GET /api/v1/activity. API-key-only sessions and ADMIN keys see everyone;
 // a session opened with an Unraid user sees only that user's devices and transfers.

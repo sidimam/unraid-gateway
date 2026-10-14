@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/sidimam/unraid-gateway/internal/devices"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,7 +47,11 @@ func (s *Server) handleDeviceRemove(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	s.metrics.Forget(id)
 	n := s.sessions.LogoutDevice(id)
+	if p.DeviceID != "" && p.DeviceID != id {
+		s.metrics.Log(p.DeviceID, "admin", "info", fmt.Sprintf("removed device %q", d.Name))
+	}
 	s.log.Info("device removed", "device", id, "name", d.Name, "sessions", n, "by", who(p), "ip", auth.ClientIP(r, s.cfg.TrustProxy))
 	go s.notifier.Send(context.Background(), p.APIKey, "Device removed from unraid-gateway", fmt.Sprintf("%s\nUser: %s\nRemoved by: %s", d.Name, d.User, who(p)), notify.Info)
 	w.WriteHeader(http.StatusNoContent)
@@ -209,4 +214,96 @@ func (s *Server) handleKeyRotate(w http.ResponseWriter, r *http.Request) {
 	}
 	s.log.Info("api key rotated via gateway", "name", req.Name, "deletedOld", req.DeleteOldID != "", "by", who(p))
 	writeJSON(w, http.StatusOK, out)
+}
+
+// GET /api/v1/devices/{id}/metrics?range=24h|7d|30d|90d — what the device moved over time (0.13).
+func (s *Server) handleDeviceMetrics(w http.ResponseWriter, r *http.Request) {
+	p := principal(r)
+	id := r.PathValue("id")
+	d, ok := s.devices.Get(id)
+	if !ok {
+		writeErr(w, http.StatusNotFound, "unknown device")
+		return
+	}
+	if !isAdmin(p) && d.User != p.User && d.ID != p.DeviceID {
+		writeErr(w, http.StatusForbidden, "you may only see your own devices")
+		return
+	}
+	now := time.Now()
+	var since time.Time
+	step := 24 * time.Hour
+	switch r.URL.Query().Get("range") {
+	case "24h":
+		since, step = now.Add(-24*time.Hour), time.Hour
+	case "7d":
+		since = now.Add(-7 * 24 * time.Hour)
+	case "90d":
+		since = now.Add(-90 * 24 * time.Hour)
+	default:
+		since = now.Add(-30 * 24 * time.Hour)
+	}
+	y, m, dd := now.Date()
+	today := time.Date(y, m, dd, 0, 0, 0, 0, now.Location())
+	writeJSON(w, http.StatusOK, map[string]any{
+		"series":       s.metrics.Series(id, since, step),
+		"step":         step.String(),
+		"today":        s.metrics.Sum(id, today),
+		"week":         s.metrics.Sum(id, now.Add(-7*24*time.Hour)),
+		"month":        s.metrics.Sum(id, now.Add(-30*24*time.Hour)),
+		"lastActivity": s.metrics.LastActivity(id),
+	})
+}
+
+// GET /api/v1/devices/{id}/log?limit=N — the device's recent events, newest first (0.13).
+func (s *Server) handleDeviceLog(w http.ResponseWriter, r *http.Request) {
+	p := principal(r)
+	id := r.PathValue("id")
+	d, ok := s.devices.Get(id)
+	if !ok {
+		writeErr(w, http.StatusNotFound, "unknown device")
+		return
+	}
+	if !isAdmin(p) && d.User != p.User && d.ID != p.DeviceID {
+		writeErr(w, http.StatusForbidden, "you may only see your own devices")
+		return
+	}
+	limit := 100
+	if v, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && v > 0 && v <= 1000 {
+		limit = v
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"events": s.metrics.Events(id, limit)})
+}
+
+// POST /api/v1/devices/prune {"days": N} — removes the devices not seen for N days (admins only;
+// never the caller's own device). The apps on those devices will ask to sign in again if they come back.
+func (s *Server) handleDevicesPrune(w http.ResponseWriter, r *http.Request) {
+	p := principal(r)
+	if !isAdmin(p) {
+		writeErr(w, http.StatusForbidden, "only an API-key or ADMIN session may prune devices")
+		return
+	}
+	var req struct {
+		Days int `json:"days"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req); err != nil || req.Days < 1 {
+		writeErr(w, http.StatusBadRequest, "body must be {\"days\": N} with N ≥ 1")
+		return
+	}
+	cut := time.Now().Add(-time.Duration(req.Days) * 24 * time.Hour)
+	removed := []string{}
+	for _, d := range s.devices.List() {
+		if d.ID == p.DeviceID || !d.LastSeen.Before(cut) {
+			continue
+		}
+		if _, err := s.devices.Remove(d.ID); err == nil {
+			s.metrics.Forget(d.ID)
+			s.sessions.LogoutDevice(d.ID)
+			removed = append(removed, d.Name)
+		}
+	}
+	s.log.Info("devices pruned", "days", req.Days, "removed", len(removed), "by", who(p))
+	if len(removed) > 0 {
+		go s.notifier.Send(context.Background(), p.APIKey, "Devices pruned from unraid-gateway", fmt.Sprintf("%d device(s) not seen for %d days removed by %s:\n%s", len(removed), req.Days, who(p), strings.Join(removed, "\n")), notify.Info)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"removed": removed})
 }

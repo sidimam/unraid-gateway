@@ -22,6 +22,7 @@ import (
 	"github.com/sidimam/unraid-gateway/internal/devices"
 	"github.com/sidimam/unraid-gateway/internal/fsapi"
 	"github.com/sidimam/unraid-gateway/internal/health"
+	"github.com/sidimam/unraid-gateway/internal/metrics"
 	"github.com/sidimam/unraid-gateway/internal/notify"
 	"github.com/sidimam/unraid-gateway/internal/proxy"
 	"github.com/sidimam/unraid-gateway/internal/smbauth"
@@ -49,6 +50,8 @@ type Server struct {
 	activity *activity.Tracker
 	devices  *devices.Store
 	notifier *notify.Notifier
+	metrics  *metrics.Store
+	stop     chan struct{}
 }
 
 // StartIndexer runs the background scanner until ctx is cancelled (no-op without index).
@@ -59,8 +62,13 @@ func (s *Server) StartIndexer(ctx context.Context) {
 	go s.scanner.Run(ctx)
 }
 
-// Close releases the index database.
+// Close flushes the metrics and releases the index database.
 func (s *Server) Close() error {
+	if s.stop != nil {
+		close(s.stop)
+		s.stop = nil
+		_ = s.metrics.Flush()
+	}
 	if s.index != nil {
 		return s.index.Close()
 	}
@@ -81,8 +89,15 @@ func writable(dir string) bool {
 func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	validator := auth.NewUnraidValidator(cfg.UnraidURL, cfg.ValidateQuery, cfg.UnraidInsecureTLS)
 	tracker := activity.New()
+	metricsPath := ""
+	if cfg.DevicesFile != "" {
+		metricsPath = filepath.Join(filepath.Dir(cfg.DevicesFile), "metrics.json")
+	}
+	metricsStore := metrics.Open(metricsPath)
+	stop := make(chan struct{})
+	go metricsStore.Run(stop, time.Minute)
 	files, err := fsapi.New(cfg.DataRoot, fsapi.Options{
-		Activity:         &activityHook{t: tracker, trustProxy: cfg.TrustProxy},
+		Activity:         &activityHook{t: tracker, trustProxy: cfg.TrustProxy, metrics: metricsStore},
 		ReadOnly:         cfg.ReadOnly,
 		MaxJSONBody:      cfg.MaxJSONBody,
 		ChangesWalkLimit: cfg.ChangesWalkLimit,
@@ -126,6 +141,8 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	s := &Server{
 		cfg:     cfg,
 		devices: devStore,
+		metrics: metricsStore,
+		stop:    stop,
 		notifier: notify.New(notify.Config{
 			UnraidEnabled: cfg.NotifyUnraid, UnraidAPIKey: cfg.NotifyUnraidAPIKey, UnraidDir: cfg.NotifyUnraidDir,
 			SMTPHost: cfg.SMTPHost, SMTPPort: cfg.SMTPPort, SMTPUser: cfg.SMTPUser, SMTPPassword: cfg.SMTPPassword, SMTPFrom: cfg.SMTPFrom, SMTPTo: cfg.SMTPTo, SMTPTLS: cfg.SMTPTLS,
@@ -182,6 +199,9 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("GET /api/v1/devices", s.handleDevicesList)
 	private.HandleFunc("DELETE /api/v1/devices/{id}", s.handleDeviceRemove)
 	private.HandleFunc("DELETE /api/v1/devices", s.handleDevicesRemoveAll)
+	private.HandleFunc("GET /api/v1/devices/{id}/metrics", s.handleDeviceMetrics)
+	private.HandleFunc("GET /api/v1/devices/{id}/log", s.handleDeviceLog)
+	private.HandleFunc("POST /api/v1/devices/prune", s.handleDevicesPrune)
 	private.HandleFunc("POST /api/v1/notify/test", s.handleNotifyTest)
 	private.HandleFunc("GET /api/v1/notify/channels", s.handleNotifyChannels)
 	private.HandleFunc("GET /api/v1/keys", s.handleKeysList)
@@ -191,7 +211,8 @@ func (s *Server) routes() http.Handler {
 	// The container console (`gw activity`) reads it on loopback without a token; everyone else
 	// goes through the normal authentication. More specific pattern, so it wins over /api/v1/.
 	for _, pattern := range []string{"GET /api/v1/activity", "GET /api/v1/devices", "DELETE /api/v1/devices", "DELETE /api/v1/devices/{id}",
-		"POST /api/v1/notify/test", "GET /api/v1/notify/channels", "GET /api/v1/health", "GET /api/v1/system"} {
+		"POST /api/v1/notify/test", "GET /api/v1/notify/channels", "GET /api/v1/health", "GET /api/v1/system",
+		"GET /api/v1/devices/{id}/metrics", "GET /api/v1/devices/{id}/log", "POST /api/v1/devices/prune"} {
 		public.Handle(pattern, s.loopbackOr(private, s.authenticate(private)))
 	}
 	private.HandleFunc("POST /api/v1/graphql", s.handleGraphQL)
@@ -241,6 +262,9 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	// 1. The API key, validated by Unraid (also enforces the per-IP lockout).
 	sess, err := s.sessions.Login(r.Context(), ip, req.APIKey)
 	if err != nil {
+		if req.DeviceID != "" && s.devices.Known(req.DeviceID) {
+			s.metrics.Log(req.DeviceID, "login", "warning", "sign-in refused from "+ip+": "+err.Error())
+		}
 		s.authError(w, ip, err)
 		return
 	}
@@ -298,6 +322,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		if !s.devices.Known(req.DeviceID) && !req.RegisterDevice {
 			s.sessions.Logout(sess.Token)
 			s.log.Warn("login refused: device not registered", "device", req.DeviceID, "name", name, "user", sess.User, "ip", ip)
+			s.metrics.Log(req.DeviceID, "login", "warning", "sign-in refused: device not registered (from "+ip+")")
 			writeJSON(w, http.StatusForbidden, map[string]string{"error": "this device is not registered on the gateway: sign in again to register it", "code": "device_not_registered"})
 			return
 		}
@@ -306,8 +331,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			s.log.Warn("devices: cannot save the registry", "err", err, "file", s.cfg.DevicesFile)
 		}
 		sess.DeviceID = req.DeviceID
+		s.metrics.Log(req.DeviceID, "login", "info", fmt.Sprintf("signed in as %s from %s", whoOf(sess.User, sess.Identity.Name), ip))
 		if isNew {
 			s.log.Info("device registered", "device", req.DeviceID, "name", name, "user", sess.User, "key", sess.Identity.Name, "ip", ip)
+			s.metrics.Log(req.DeviceID, "register", "info", fmt.Sprintf("registered as %q by %s from %s", name, whoOf(sess.User, sess.Identity.Name), ip))
 			who := sess.User
 			if who == "" {
 				who = "key " + sess.Identity.Name
@@ -473,6 +500,7 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 			}
 			if sess.DeviceID != "" && s.cfg.DeviceRegistration != "off" && !s.devices.Known(sess.DeviceID) {
 				s.sessions.Logout(tok)
+				s.metrics.Log(sess.DeviceID, "revoked", "warning", "session closed: the device was removed from the gateway")
 				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "this device was removed from the gateway: sign in again to register it", "code": "device_revoked"})
 				return
 			}
@@ -504,6 +532,7 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 			ctx = access.WithPolicy(ctx, p.Policy)
 		}
 		s.activity.Touch(whoFor(r, p, ip), r.URL.Query().Get("path"))
+		s.metrics.Request(p.DeviceID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -603,4 +632,12 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeErr(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
+}
+
+// whoOf names a session's principal for the device log: the Unraid user, or the API key.
+func whoOf(user, key string) string {
+	if user != "" {
+		return user
+	}
+	return "key " + key
 }

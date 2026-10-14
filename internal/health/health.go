@@ -52,31 +52,10 @@ type Gateway struct {
 	Devices              int
 }
 
-// Thresholds for disk temperatures (°C) and load (%).
-const (
-	warnTemp     = 50
-	criticalTemp = 60
-	loadWarn     = 90
-)
-
 // unraidQuery mirrors the apps' dashboard query (validated on Unraid 7.3 / unraid-api 4.37).
-const unraidQuery = `{ array { state disks { name status temp } parityCheckStatus { status running } }
-  docker { containers { names image state } }
-  metrics { cpu { percentTotal } memory { percentTotal } } }`
+const unraidQuery = `{ docker { containers { names image state } } }`
 
 type unraidData struct {
-	Array *struct {
-		State string `json:"state"`
-		Disks []struct {
-			Name   string `json:"name"`
-			Status string `json:"status"`
-			Temp   *int   `json:"temp"`
-		} `json:"disks"`
-		Parity *struct {
-			Status  string `json:"status"`
-			Running bool   `json:"running"`
-		} `json:"parityCheckStatus"`
-	} `json:"array"`
 	Docker *struct {
 		Containers []struct {
 			Names []string `json:"names"`
@@ -93,14 +72,6 @@ type unraidData struct {
 			} `json:"unread"`
 		} `json:"overview"`
 	} `json:"notifications"`
-	Metrics *struct {
-		CPU *struct {
-			PercentTotal float64 `json:"percentTotal"`
-		} `json:"cpu"`
-		Memory *struct {
-			PercentTotal float64 `json:"percentTotal"`
-		} `json:"memory"`
-	} `json:"metrics"`
 }
 
 // Assess combines the gateway facts with a live look at Unraid (skipped when apiKey is empty).
@@ -167,40 +138,8 @@ func Assess(ctx context.Context, gw Gateway, q Querier, apiKey string) Summary {
 }
 
 func assessUnraid(d unraidData, add func(string, Level, string)) {
-	if a := d.Array; a != nil {
-		if a.State != "STARTED" {
-			add("array", Error, "array "+strings.ToLower(a.State))
-		} else {
-			add("array", OK, "started")
-		}
-		for _, disk := range a.Disks {
-			if disk.Status != "" && disk.Status != "DISK_OK" && disk.Status != "DISK_NP" && disk.Status != "DISK_NP_DSBL" {
-				add("disk."+disk.Name, Error, fmt.Sprintf("%s: %s", disk.Name, disk.Status))
-			}
-			if disk.Temp != nil {
-				if *disk.Temp >= criticalTemp {
-					add("disk."+disk.Name, Error, fmt.Sprintf("%s at %d °C", disk.Name, *disk.Temp))
-				} else if *disk.Temp >= warnTemp {
-					add("disk."+disk.Name, Warning, fmt.Sprintf("%s at %d °C", disk.Name, *disk.Temp))
-				}
-			}
-		}
-		if p := a.Parity; p != nil {
-			s := strings.ToUpper(p.Status)
-			if strings.Contains(s, "ERROR") || strings.Contains(s, "FAIL") {
-				add("parity", Warning, "parity check: "+strings.ToLower(p.Status))
-			}
-		}
-	}
-	// Unraid's own notifications are the NAS's business (0.12.2): they are not part of this state.
-	if m := d.Metrics; m != nil {
-		if m.CPU != nil && m.CPU.PercentTotal > loadWarn {
-			add("cpu", Warning, fmt.Sprintf("CPU load %.0f %%", m.CPU.PercentTotal))
-		}
-		if m.Memory != nil && m.Memory.PercentTotal > loadWarn {
-			add("memory", Warning, fmt.Sprintf("memory load %.0f %%", m.Memory.PercentTotal))
-		}
-	}
+	// Only what concerns the gateway (rule of 13/10/2026): Unraid's own state — array, disks,
+	// parity, load, notifications — stays in the dashboard as information and never colours the dot.
 	if dk := d.Docker; dk != nil {
 		for _, c := range dk.Containers {
 			hay := strings.ToLower(c.Image + " " + strings.Join(c.Names, " "))

@@ -132,5 +132,15 @@ Tickets are HMAC-SHA256 signed tokens (`base64url(payload).base64url(signature)`
 
 | Method | Path | Notes |
 |---|---|---|
-| `GET` | `/api/v1/health` | One-glance state, the same the apps' dot shows: `{status, version, level: "ok"|"warning"|"error", reasons: [...], checks: [{name, level, detail}]}`. Gateway side: shares mounted (none → error), read/write shares the container cannot write to (warning), `/config` writable, user auth prerequisites, notification channels, registered devices. Unraid side, with the caller's key: array state (not STARTED → error), disk status (≠ DISK_OK → error) and temperature (≥ 50 °C warning, ≥ 60 °C error), parity check errors (warning), CPU or memory load above 90 % (warning), the unraid-gateway container not running (warning), Unraid API unreachable (error). Authenticated; `/healthz` stays the public liveness probe with `status` and `version` only. |
+| `GET` | `/api/v1/health` | One-glance state, the same the apps' dot shows: `{status, version, level: "ok"|"warning"|"error", reasons: [...], checks: [{name, level, detail}]}`. Only what concerns the gateway (0.13): shares mounted (none → error), read/write shares the container cannot write to (warning), `/config` writable, user auth prerequisites, notification channels, registered devices; with the caller's key, the Unraid API answering (unreachable → error) and the unraid-gateway container running (not running → warning). Unraid's own state (array, disks, parity, load, notifications) is never part of it. Authenticated; `/healthz` stays the public liveness probe with `status` and `version` only. |
 | `GET` | `/api/v1/system` | Unraid's hardware and OS facts as returned by its API (`info { os cpu memory.layout baseboard system versions devices.gpu networkInterfaces }` plus `metrics.memory`): drives the web UI's *System information* card; the apps query the same fields through the GraphQL proxy. 502 with Unraid's message when the API cannot be reached. |
+
+## Devices: metrics, log, prune (0.13+)
+
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/api/v1/devices/{id}/metrics?range=24h\|7d\|30d\|90d` | What the device moved over time: `{series: [{t, requests, up, down, streams, uploads, downloads}], step ("1h0m0s" for 24h, "24h0m0s" otherwise), today, week, month (totals), lastActivity}`. Hourly buckets, 90 days kept. A user session sees only its own devices; API-key-only and ADMIN sessions see all. |
+| `GET` | `/api/v1/devices/{id}/log?limit=N` | The device's last events, newest first (≤ 200 kept): `{events: [{time, kind: login\|register\|revoked\|transfer\|admin, detail, level: info\|warning\|error}]}`. Same visibility rule. |
+| `POST` | `/api/v1/devices/prune` | `{"days": N}` → `{"removed": [names]}`: removes the devices not seen for N days (never the caller's), closes their sessions, drops their metrics and sends a notification. API-key-only or ADMIN sessions. |
+
+The registry itself (`GET /api/v1/devices`, `DELETE /api/v1/devices/{id}`, `DELETE /api/v1/devices`) is described in [Devices, notifications and API keys](Devices-Notifications-and-API-Keys).

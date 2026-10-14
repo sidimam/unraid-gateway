@@ -69,6 +69,10 @@ case "${1:-help}" in
   devices)
     # Registered app installations. `gw devices rm <id>` revokes one, `gw devices rm all` every one.
     case "$2" in
+      prune)
+        [ -z "$3" ] && { echo "usage: gw devices prune <days>   (removes the devices not seen for that many days)"; exit 1; }
+        curl -s -m 10 -X POST "$API/api/v1/devices/prune" -H 'Content-Type: application/json' -d "{\"days\":$3}"; echo
+        note "Removed devices will have to sign in again if they come back (that re-registers them)." ;;
       rm|remove|delete)
         [ -z "$3" ] && { echo "usage: gw devices rm <device-id|all>"; exit 1; }
         if [ "$3" = all ]; then curl -s -m 5 -X DELETE "$API/api/v1/devices"; echo; else curl -s -m 5 -o /dev/null -w 'HTTP %{http_code}\n' -X DELETE "$API/api/v1/devices/$3"; fi
@@ -119,7 +123,7 @@ case "${1:-help}" in
   5. gw key          try a login with the API key only
   6. gw env          the effective configuration variables (secrets shown as "(set)")
   7. gw activity     who is connected (device, user, IP), streams/uploads in progress, recent transfers (-w = live)
-  8. gw devices      registered app installations; gw devices rm <id> | rm all revokes them
+  8. gw devices      registered app installations; gw devices rm <id> | rm all revokes them; gw devices prune <days> drops the stale ones
   9. gw notify-test  send a test notification through every configured channel
  10. gw health       one-glance state of gateway and server (green / yellow / red with the reasons)
 
