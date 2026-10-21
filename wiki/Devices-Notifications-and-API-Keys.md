@@ -23,6 +23,35 @@ The gateway records these in `/config/metrics.json`: per device, hourly buckets 
 
 API: `GET /api/v1/devices/{id}/metrics?range=24h|7d|30d|90d` → `{series: [{t, requests, up, down, streams, uploads, downloads}], step, today, week, month, lastActivity}`; `GET /api/v1/devices/{id}/log?limit=N` → `{events: [{time, kind, detail, level}]}` (kinds: login, register, revoked, transfer, admin; levels info/warning/error). A user session sees only its own devices.
 
+### Users and syncs (0.14)
+
+Unraid Drive 1.5 can keep folders in sync and back Photos up through the gateway. Every pair the app defines is registered here, so the administrator sees — per user — what each device syncs and can stop it.
+
+**Web UI → Settings → Users** lists the Unraid users (or API keys) that have registered devices, with the number of devices and syncs, when last seen, what moved today and a dot that turns yellow when a device has not been seen for 30 days or a sync is paused / had problems. Opening a user shows:
+
+- **Devices**: the same cards as the Devices section, with **Remove** (closes sessions, drops the device's syncs and metrics; the app asks to sign in again).
+- **Folder syncs and backups**: one row per pair — kind (folder sync, Photos backup, Downloads), direction (device → Unraid, Unraid → device, two-way), the device, the last run (when, files, bytes) and its state — with a **switch**: off pauses the pair *on the gateway*: the app's next report is refused (`409 sync_disabled`, with who paused it) and the app shows the pair as paused until it is switched on again here or from the console. The app cannot re-enable a pair paused on the gateway. **Files (N)** opens the list of the last 100 files the pair moved: time, path, direction (uploaded, downloaded, deleted, conflict), bytes, outcome (ok, conflict, failed, skipped) and detail.
+- **Data moved**: totals for today, 7 and 30 days and a chart over 24 h / 7 / 30 / 90 days, all the user's devices summed.
+- **Log**: the events of every device of the user, merged, newest first; sync events (added, paused, resumed, removed, each run with files / bytes / conflicts / errors) are among them.
+
+Console: `gw profile` (every user), `gw profile <user>`, `gw syncs`, `gw syncs pause|resume|rm <id>`.
+
+Storage: `/config/syncs.json` (pairs with counters, last run and recent files). The registry is owned by the apps: a pair deleted in the app disappears here too; a device removed here takes its pairs with it.
+
+API (0.14):
+
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/api/v1/syncs` | The caller device's pairs; `?all=1`, `?device=ID`, `?user=NAME` for the web UI / console (what the caller may see). `?format=text`. |
+| `PUT` | `/api/v1/syncs/{id}` | `{kind, localLabel, remotePath, mode, enabled}` — the owning device creates or updates its pair (the id is the app's UUID). `enabled` is kept when the pair was paused on the gateway. |
+| `PATCH` | `/api/v1/syncs/{id}` | `{"enabled": bool}` — pause / resume (web UI, console, or the owning app). |
+| `DELETE` | `/api/v1/syncs/{id}` | Removes the pair. |
+| `POST` | `/api/v1/syncs/{id}/runs` | `{run: {at, durationMs, files, bytes, conflicts, errors, status: ok|partial|failed|skipped, error, trigger}, files: [{time, path, direction, bytes, outcome, detail}]}` → the stored pair; `409 {"code": "sync_disabled", "disabledBy"}` when paused. |
+| `GET` | `/api/v1/users` | `{users: [{user, devices, syncs, pausedSyncs, lastSeen, today, warnings}]}`; `?format=text`. |
+| `GET` | `/api/v1/users/{name}` | `{user, devices: [...], syncs: [...], today, week, month}`; `?format=text`. |
+| `GET` | `/api/v1/users/{name}/metrics?range=24h\|7d\|30d\|90d` | The user's devices summed: `{series, step, today, week, month}`. |
+| `GET` | `/api/v1/users/{name}/log?limit=N` | `{events: [{time, kind, detail, level, deviceId, deviceName}]}` merged, newest first. |
+
 ### Reinstalled or replaced devices (0.9.1+)
 
 A reinstalled app usually comes back with the **same** id (Unraid Drive 1.3 build 30 keeps it in iCloud per hardware) and simply refreshes its entry. When it cannot (all the developer's apps were removed, a new phone with the same name), it registers a new id: the gateway then marks the older entry with the same name and Unraid user as **old** — greyed in the web UI with *last seen …*, `OLD` in `gw devices`, `supersededBy`/`supersededAt` in the JSON. Remove it when you like; if that old installation ever signs in again, the flag is cleared.

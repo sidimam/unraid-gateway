@@ -135,6 +135,22 @@ Tickets are HMAC-SHA256 signed tokens (`base64url(payload).base64url(signature)`
 | `GET` | `/api/v1/health` | One-glance state, the same the apps' dot shows: `{status, version, level: "ok"|"warning"|"error", reasons: [...], checks: [{name, level, detail}]}`. Only what concerns the gateway (0.13): shares mounted (none → error), read/write shares the container cannot write to (warning), `/config` writable, user auth prerequisites, notification channels, registered devices; with the caller's key, the Unraid API answering (unreachable → error) and the unraid-gateway container running (not running → warning). Unraid's own state (array, disks, parity, load, notifications) is never part of it. Authenticated; `/healthz` stays the public liveness probe with `status` and `version` only. |
 | `GET` | `/api/v1/system` | Unraid's hardware and OS facts as returned by its API (`info { os cpu memory.layout baseboard system versions devices.gpu networkInterfaces }` plus `metrics.memory`): drives the web UI's *System information* card; the apps query the same fields through the GraphQL proxy. 502 with Unraid's message when the API cannot be reached. |
 
+## Syncs and users (0.14+)
+
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/api/v1/syncs` | The pairs the caller may see: its own device's by default; `?all=1`, `?device=ID`, `?user=NAME`; `?format=text`. |
+| `PUT` | `/api/v1/syncs/{id}` | Creates/updates a pair of the calling device: `{kind: folder\|photos\|downloads, localLabel, remotePath, mode: up\|down\|both, enabled}`. |
+| `PATCH` | `/api/v1/syncs/{id}` | `{"enabled": true\|false}` — pause/resume on the gateway (web UI / console / owning app). |
+| `DELETE` | `/api/v1/syncs/{id}` | Removes the pair. |
+| `POST` | `/api/v1/syncs/{id}/runs` | The owning device reports a run: `{run: {...}, files: [...]}` → stored pair; `409 sync_disabled` when the pair is paused on the gateway. |
+| `GET` | `/api/v1/users` | Users (or API keys) with registered devices: devices, syncs, pausedSyncs, lastSeen, today totals, warnings. Admins see all, a user itself. `?format=text`. |
+| `GET` | `/api/v1/users/{name}` | Devices, syncs (with recent files) and today/week/month totals of one user. `?format=text`. |
+| `GET` | `/api/v1/users/{name}/metrics?range=` | The user's devices summed over time (same shape as the device metrics). |
+| `GET` | `/api/v1/users/{name}/log?limit=` | Merged events of the user's devices with `deviceId`/`deviceName`. |
+
+See [Devices, notifications and API keys › Users and syncs](Devices-Notifications-and-API-Keys#users-and-syncs-014).
+
 ## Devices: metrics, log, prune (0.13+)
 
 | Method | Path | Notes |

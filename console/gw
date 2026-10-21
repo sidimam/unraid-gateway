@@ -83,6 +83,34 @@ case "${1:-help}" in
         note "gw devices rm <id> removes one (its app will ask to sign in again), gw devices rm all removes every device." ;;
     esac
     ;;
+  syncs|sync)
+    # 0.14: the folder syncs and backups the apps defined on this gateway. pause/resume <id> flips the switch.
+    case "$2" in
+      pause|resume)
+        [ -z "$3" ] && { echo "usage: gw syncs pause|resume <sync-id>"; exit 1; }
+        en=false; [ "$2" = resume ] && en=true
+        curl -s -m 5 -X PATCH "$API/api/v1/syncs/$3" -H 'Content-Type: application/json' -d "{\"enabled\":$en}" | tr ',' '\n' | grep -E '"(id|enabled|localLabel|remotePath)"' | sed 's/^/  /'
+        note "A paused sync is refused by the gateway until resumed here or in the web UI; the app shows it as paused." ;;
+      rm|remove|delete)
+        [ -z "$3" ] && { echo "usage: gw syncs rm <sync-id>"; exit 1; }
+        curl -s -m 5 -o /dev/null -w 'HTTP %{http_code}\n' -X DELETE "$API/api/v1/syncs/$3" ;;
+      *)
+        bold "Folder syncs and backups defined by the apps"
+        curl -s -m 5 "$API/api/v1/syncs?all=1&format=text" || bad "API not answering on $API"
+        note "gw syncs pause <id> / resume <id> / rm <id>. Per-user view: gw profile <user>." ;;
+    esac
+    ;;
+  profile|profiles)
+    # 0.14: per-user view — devices, syncs, data moved.
+    if [ -n "$2" ]; then
+      bold "Profile $2"
+      curl -s -m 5 "$API/api/v1/users/$2?format=text" || bad "API not answering on $API"
+    else
+      bold "Users with registered devices"
+      curl -s -m 5 "$API/api/v1/users?format=text" || bad "API not answering on $API"
+      note "gw profile <user> shows that user's devices, syncs and totals; gw syncs lists every sync."
+    fi
+    ;;
   notify-test|notify)
     bold "Sending a test notification on every configured channel"
     curl -s -m 20 -X POST "$API/api/v1/notify/test"; echo
@@ -125,6 +153,8 @@ case "${1:-help}" in
   7. gw activity     who is connected (device, user, IP), streams/uploads in progress, recent transfers (-w = live)
   8. gw devices      registered app installations; gw devices rm <id> | rm all revokes them; gw devices prune <days> drops the stale ones
   9. gw notify-test  send a test notification through every configured channel
+ 10. gw syncs        folder syncs / backups defined by the apps (0.14); gw syncs pause|resume|rm <id>
+ 11. gw profile [U]  per-user view: devices, syncs and data moved of user U (0.14)
  10. gw health       one-glance state of gateway and server (green / yellow / red with the reasons)
 
   WHERE THINGS LIVE

@@ -48,6 +48,9 @@ func (s *Server) handleDeviceRemove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.metrics.Forget(id)
+	if k, _ := s.syncs.RemoveForDevice(id); k > 0 {
+		s.log.Info("syncs dropped with the device", "device", id, "syncs", k)
+	}
 	n := s.sessions.LogoutDevice(id)
 	if p.DeviceID != "" && p.DeviceID != id {
 		s.metrics.Log(p.DeviceID, "admin", "info", fmt.Sprintf("removed device %q", d.Name))
@@ -68,6 +71,9 @@ func (s *Server) handleDevicesRemoveAll(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	for _, x := range s.syncs.List() {
+		s.syncs.Remove(x.ID)
 	}
 	k := s.sessions.LogoutDevice("")
 	s.log.Info("all devices removed", "devices", n, "sessions", k, "by", who(p))
@@ -297,6 +303,7 @@ func (s *Server) handleDevicesPrune(w http.ResponseWriter, r *http.Request) {
 		}
 		if _, err := s.devices.Remove(d.ID); err == nil {
 			s.metrics.Forget(d.ID)
+			s.syncs.RemoveForDevice(d.ID)
 			s.sessions.LogoutDevice(d.ID)
 			removed = append(removed, d.Name)
 		}

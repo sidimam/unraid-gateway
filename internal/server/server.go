@@ -26,6 +26,7 @@ import (
 	"github.com/sidimam/unraid-gateway/internal/notify"
 	"github.com/sidimam/unraid-gateway/internal/proxy"
 	"github.com/sidimam/unraid-gateway/internal/smbauth"
+	"github.com/sidimam/unraid-gateway/internal/syncs"
 	"github.com/sidimam/unraid-gateway/internal/unraidshares"
 	"github.com/sidimam/unraid-gateway/internal/webui"
 )
@@ -51,6 +52,7 @@ type Server struct {
 	devices  *devices.Store
 	notifier *notify.Notifier
 	metrics  *metrics.Store
+	syncs    *syncs.Store
 	stop     chan struct{}
 }
 
@@ -138,10 +140,20 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		devStore, _ = devices.Open("")
 	}
 	gqlProxy := proxy.New(cfg.UnraidURL, cfg.UnraidInsecureTLS)
+	syncsPath := ""
+	if cfg.DevicesFile != "" {
+		syncsPath = filepath.Join(filepath.Dir(cfg.DevicesFile), "syncs.json")
+	}
+	syncStore, err := syncs.Open(syncsPath)
+	if err != nil {
+		log.Warn("syncs: registry unreadable, starting empty", "file", syncsPath, "err", err)
+		syncStore, _ = syncs.Open("")
+	}
 	s := &Server{
 		cfg:     cfg,
 		devices: devStore,
 		metrics: metricsStore,
+		syncs:   syncStore,
 		stop:    stop,
 		notifier: notify.New(notify.Config{
 			UnraidEnabled: cfg.NotifyUnraid, UnraidAPIKey: cfg.NotifyUnraidAPIKey, UnraidDir: cfg.NotifyUnraidDir,
@@ -202,6 +214,16 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("GET /api/v1/devices/{id}/metrics", s.handleDeviceMetrics)
 	private.HandleFunc("GET /api/v1/devices/{id}/log", s.handleDeviceLog)
 	private.HandleFunc("POST /api/v1/devices/prune", s.handleDevicesPrune)
+	// 0.14: folder syncs / backups registry and the per-user view.
+	private.HandleFunc("GET /api/v1/syncs", s.handleSyncsList)
+	private.HandleFunc("PUT /api/v1/syncs/{id}", s.handleSyncPut)
+	private.HandleFunc("PATCH /api/v1/syncs/{id}", s.handleSyncPatch)
+	private.HandleFunc("DELETE /api/v1/syncs/{id}", s.handleSyncDelete)
+	private.HandleFunc("POST /api/v1/syncs/{id}/runs", s.handleSyncReport)
+	private.HandleFunc("GET /api/v1/users", s.handleUsersList)
+	private.HandleFunc("GET /api/v1/users/{name}", s.handleUserGet)
+	private.HandleFunc("GET /api/v1/users/{name}/metrics", s.handleUserMetrics)
+	private.HandleFunc("GET /api/v1/users/{name}/log", s.handleUserLog)
 	private.HandleFunc("POST /api/v1/notify/test", s.handleNotifyTest)
 	private.HandleFunc("GET /api/v1/notify/channels", s.handleNotifyChannels)
 	private.HandleFunc("GET /api/v1/keys", s.handleKeysList)
@@ -212,7 +234,9 @@ func (s *Server) routes() http.Handler {
 	// goes through the normal authentication. More specific pattern, so it wins over /api/v1/.
 	for _, pattern := range []string{"GET /api/v1/activity", "GET /api/v1/devices", "DELETE /api/v1/devices", "DELETE /api/v1/devices/{id}",
 		"POST /api/v1/notify/test", "GET /api/v1/notify/channels", "GET /api/v1/health", "GET /api/v1/system",
-		"GET /api/v1/devices/{id}/metrics", "GET /api/v1/devices/{id}/log", "POST /api/v1/devices/prune"} {
+		"GET /api/v1/devices/{id}/metrics", "GET /api/v1/devices/{id}/log", "POST /api/v1/devices/prune",
+		"GET /api/v1/syncs", "PATCH /api/v1/syncs/{id}", "DELETE /api/v1/syncs/{id}",
+		"GET /api/v1/users", "GET /api/v1/users/{name}", "GET /api/v1/users/{name}/metrics", "GET /api/v1/users/{name}/log"} {
 		public.Handle(pattern, s.loopbackOr(private, s.authenticate(private)))
 	}
 	private.HandleFunc("POST /api/v1/graphql", s.handleGraphQL)

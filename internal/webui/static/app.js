@@ -32,6 +32,7 @@
       remove_all: 'Remove all', devices_intro: 'Every Unraid Drive installation registers itself when you add the server. Removing a device closes its sessions and the app asks to sign in again (which registers it anew and sends a notification). A reinstalled app supersedes its previous entry, shown greyed as "old".',
       col_key: 'Key', col_registered: 'Registered', col_logins: 'Logins', no_devices: 'No device registered yet (older app builds do not register; update to 1.3 build 29 or later).',
       this_browser: '(this browser)', old: 'old', last_seen_prefix: 'last seen', replaced_title: 'Replaced by a new installation on {date}. Safe to remove.', registration_off: 'registration is off (DEVICE_REGISTRATION=off)', devices_unavailable: 'devices unavailable: {err}',
+      users_title: 'Users', users_intro: 'One row per Unraid user (or API key) with registered devices: how many devices and syncs, when last seen, what moved today. Open a user for its devices, the folder syncs and backups each device runs (pause or resume them), the files they moved and the user\'s activity over time.', col_user: 'User', col_devices: 'Devices', col_syncs: 'Syncs', col_today: 'Today', no_users: 'No user yet: users appear when their devices register.', users_unavailable: 'users unavailable: {err}', open: 'Open', n_paused: '{n} paused', n_warnings: '{n} warning(s)', all_fine: 'All fine', user_devices: 'Devices', user_syncs: 'Folder syncs and backups', user_syncs_intro: 'Defined by the apps on each device. Pausing a sync here stops it on the device at its next run (the app shows it as paused) until you resume it.', no_syncs: 'No sync defined on this user\'s devices.', no_syncs_device: 'No sync defined on this device.', user_log_intro: 'every device of this user, newest first', kind_folder: 'Folder sync', kind_photos: 'Photos backup', kind_downloads: 'Downloads', mode_up: 'device → Unraid', mode_down: 'Unraid → device', mode_both: 'two-way', sync_paused: 'paused', sync_paused_by: 'paused by {who}', sync_never: 'never run yet', sync_failed: 'last run failed', sync_partial: 'last run with {c} conflicts, {e} errors', sync_ok: 'last run fine', sync_last: 'last run {when}: {n} files, {bytes}', sync_files_btn: 'Files ({n})', sync_no_files: 'No file moved yet.', col_file: 'File', col_direction: 'Direction', col_outcome: 'Outcome', dir_up: 'uploaded', dir_down: 'downloaded', dir_delete: 'deleted', dir_conflict: 'conflict', out_ok: 'ok', out_conflict: 'conflict', out_failed: 'failed', out_skipped: 'skipped', syncs_unavailable: 'syncs unavailable: {err}', ev_sync: 'Sync',
       active_today: 'active today', stale: 'not seen for {n} days', last_sync: 'Last sync', prune_label: 'Remove the devices not seen for', prune_days: 'days', prune_run: 'Remove stale devices', confirm_prune: 'Remove every device not seen for {n} days? Their apps will ask to sign in again if they come back.', pruned: '{n} device(s) removed:\n{list}', pruned_none: 'No device was that old.', back: 'Back', charts_title: 'Data moved', range_24h: 'Last 24 hours', range_7d: 'Last 7 days', range_30d: 'Last 30 days', range_90d: 'Last 90 days', chart_empty: 'Nothing moved in this period.', log_title: 'Log', log_intro: 'sign-ins, registrations, removals and interrupted transfers', col_when: 'When', col_event: 'Event', col_detail: 'Detail', log_empty: 'No events recorded yet.', state: 'State', tot_today: 'Today', tot_week: 'Last 7 days', tot_month: 'Last 30 days', tot_detail: '{req} requests · {dl} downloads/streams · {ul} uploads', metrics_unavailable: 'metrics unavailable: {err}', legend_down: 'downloaded / streamed', legend_up: 'uploaded', ev_login: 'Sign-in', ev_register: 'Registration', ev_revoked: 'Revoked', ev_transfer: 'Transfer', ev_admin: 'Administration', log_unavailable: 'log unavailable: {err}',
       remove: 'Remove', confirm_remove_device: 'Remove "{name}"?\nIts sessions are closed and the app will ask to sign in again.', confirm_remove_this: '\n\nThis is the browser you are using: you will be signed out.', confirm_remove_all: 'Remove ALL devices? Every app (and this browser) will have to sign in again.',
       send_test: 'Send a test', notify_intro: 'A new or removed device raises a notification on every configured channel: Unraid\'s notifications (NOTIFY_UNRAID — set NOTIFY_UNRAID_API_KEY to an ADMIN key if yours is VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) and Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Set them in the container settings.',
@@ -73,6 +74,7 @@
       remove_all: 'Rimuovi tutti', devices_intro: 'Ogni installazione di Unraid Drive si registra quando aggiungi il server. Rimuovere un dispositivo chiude le sue sessioni e l\'app chiede di accedere di nuovo (si registra da capo e parte una notifica). Un\'app reinstallata sostituisce la voce precedente, mostrata in grigio come "old".',
       col_key: 'Chiave', col_registered: 'Registrato', col_logins: 'Accessi', no_devices: 'Nessun dispositivo registrato (le build vecchie dell\'app non si registrano: aggiorna alla 1.3 build 29 o successiva).',
       this_browser: '(questo browser)', old: 'vecchio', last_seen_prefix: 'ultimo accesso', replaced_title: 'Sostituito da una nuova installazione il {date}. Si può rimuovere.', registration_off: 'registrazione disattivata (DEVICE_REGISTRATION=off)', devices_unavailable: 'dispositivi non disponibili: {err}',
+      users_title: 'Utenti', users_intro: 'Una riga per utente Unraid (o chiave API) con dispositivi registrati: quanti dispositivi e sincronizzazioni, ultimo accesso, dati movimentati oggi. Apri un utente per i suoi dispositivi, le sincronizzazioni di cartelle e i backup di ogni dispositivo (da mettere in pausa o riprendere), i file movimentati e l\'attività nel tempo.', col_user: 'Utente', col_devices: 'Dispositivi', col_syncs: 'Sync', col_today: 'Oggi', no_users: 'Nessun utente: compaiono quando i loro dispositivi si registrano.', users_unavailable: 'utenti non disponibili: {err}', open: 'Apri', n_paused: '{n} in pausa', n_warnings: '{n} avvisi', all_fine: 'Tutto regolare', user_devices: 'Dispositivi', user_syncs: 'Sincronizzazioni di cartelle e backup', user_syncs_intro: 'Definite dalle app su ogni dispositivo. Mettere in pausa una sincronizzazione qui la ferma sul dispositivo alla prossima esecuzione (l\'app la mostra in pausa) finché non la riprendi.', no_syncs: 'Nessuna sincronizzazione sui dispositivi di questo utente.', no_syncs_device: 'Nessuna sincronizzazione su questo dispositivo.', user_log_intro: 'tutti i dispositivi di questo utente, dal più recente', kind_folder: 'Sync cartella', kind_photos: 'Backup Foto', kind_downloads: 'Download', mode_up: 'dispositivo → Unraid', mode_down: 'Unraid → dispositivo', mode_both: 'bidirezionale', sync_paused: 'in pausa', sync_paused_by: 'in pausa da {who}', sync_never: 'mai eseguita', sync_failed: 'ultima esecuzione fallita', sync_partial: 'ultima esecuzione con {c} conflitti, {e} errori', sync_ok: 'ultima esecuzione regolare', sync_last: 'ultima esecuzione {when}: {n} file, {bytes}', sync_files_btn: 'File ({n})', sync_no_files: 'Nessun file movimentato.', col_file: 'File', col_direction: 'Direzione', col_outcome: 'Esito', dir_up: 'caricato', dir_down: 'scaricato', dir_delete: 'eliminato', dir_conflict: 'conflitto', out_ok: 'ok', out_conflict: 'conflitto', out_failed: 'fallito', out_skipped: 'saltato', syncs_unavailable: 'sincronizzazioni non disponibili: {err}', ev_sync: 'Sincronizzazione',
       active_today: 'attivo oggi', stale: 'non visto da {n} giorni', last_sync: 'Ultima sincronizzazione', prune_label: 'Rimuovi i dispositivi non visti da', prune_days: 'giorni', prune_run: 'Rimuovi i dispositivi inattivi', confirm_prune: 'Rimuovere tutti i dispositivi non visti da {n} giorni? Le loro app chiederanno di accedere di nuovo se tornano.', pruned: '{n} dispositivo/i rimosso/i:\n{list}', pruned_none: 'Nessun dispositivo così vecchio.', back: 'Indietro', charts_title: 'Dati movimentati', range_24h: 'Ultime 24 ore', range_7d: 'Ultimi 7 giorni', range_30d: 'Ultimi 30 giorni', range_90d: 'Ultimi 90 giorni', chart_empty: 'Nessun dato movimentato nel periodo.', log_title: 'Registro', log_intro: 'accessi, registrazioni, rimozioni e trasferimenti interrotti', col_when: 'Quando', col_event: 'Evento', col_detail: 'Dettaglio', log_empty: 'Nessun evento registrato.', state: 'Stato', tot_today: 'Oggi', tot_week: 'Ultimi 7 giorni', tot_month: 'Ultimi 30 giorni', tot_detail: '{req} richieste · {dl} download/stream · {ul} upload', metrics_unavailable: 'metriche non disponibili: {err}', legend_down: 'scaricato / in streaming', legend_up: 'caricato', ev_login: 'Accesso', ev_register: 'Registrazione', ev_revoked: 'Revocato', ev_transfer: 'Trasferimento', ev_admin: 'Amministrazione', log_unavailable: 'registro non disponibile: {err}',
       remove: 'Rimuovi', confirm_remove_device: 'Rimuovere "{name}"?\nLe sue sessioni vengono chiuse e l\'app chiederà di accedere di nuovo.', confirm_remove_this: '\n\nÈ il browser che stai usando: verrai disconnesso.', confirm_remove_all: 'Rimuovere TUTTI i dispositivi? Ogni app (e questo browser) dovrà accedere di nuovo.',
       send_test: 'Invia una prova', notify_intro: 'Un dispositivo nuovo o rimosso genera una notifica su ogni canale configurato: notifiche di Unraid (NOTIFY_UNRAID — imposta NOTIFY_UNRAID_API_KEY a una chiave ADMIN se la tua è VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) e Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Si impostano nelle impostazioni del container.',
@@ -114,6 +116,7 @@
       remove_all: 'Eliminar todos', devices_intro: 'Cada instalación de Unraid Drive se registra al añadir el servidor. Eliminar un dispositivo cierra sus sesiones y la app pide iniciar sesión de nuevo (se registra otra vez y envía una notificación). Una app reinstalada sustituye su entrada anterior, mostrada en gris como "old".',
       col_key: 'Clave', col_registered: 'Registrado', col_logins: 'Accesos', no_devices: 'Ningún dispositivo registrado aún (las builds antiguas no se registran; actualiza a 1.3 build 29 o posterior).',
       this_browser: '(este navegador)', old: 'antiguo', last_seen_prefix: 'última vez', replaced_title: 'Sustituido por una nueva instalación el {date}. Se puede eliminar.', registration_off: 'registro desactivado (DEVICE_REGISTRATION=off)', devices_unavailable: 'dispositivos no disponibles: {err}',
+      users_title: 'Usuarios', users_intro: 'Una fila por usuario de Unraid (o clave API) con dispositivos registrados: cuántos dispositivos y sincronizaciones, última vez visto, datos movidos hoy. Abre un usuario para ver sus dispositivos, las sincronizaciones de carpetas y copias de cada dispositivo (pausarlas o reanudarlas), los archivos movidos y su actividad en el tiempo.', col_user: 'Usuario', col_devices: 'Dispositivos', col_syncs: 'Sincr.', col_today: 'Hoy', no_users: 'Ningún usuario aún: aparecen cuando sus dispositivos se registran.', users_unavailable: 'usuarios no disponibles: {err}', open: 'Abrir', n_paused: '{n} en pausa', n_warnings: '{n} aviso(s)', all_fine: 'Todo correcto', user_devices: 'Dispositivos', user_syncs: 'Sincronizaciones de carpetas y copias', user_syncs_intro: 'Definidas por las apps en cada dispositivo. Pausar una aquí la detiene en el dispositivo en su siguiente ejecución (la app la muestra en pausa) hasta que la reanudes.', no_syncs: 'Ninguna sincronización en los dispositivos de este usuario.', no_syncs_device: 'Ninguna sincronización en este dispositivo.', user_log_intro: 'todos los dispositivos de este usuario, más recientes primero', kind_folder: 'Sincronización de carpeta', kind_photos: 'Copia de Fotos', kind_downloads: 'Descargas', mode_up: 'dispositivo → Unraid', mode_down: 'Unraid → dispositivo', mode_both: 'bidireccional', sync_paused: 'en pausa', sync_paused_by: 'en pausa por {who}', sync_never: 'nunca ejecutada', sync_failed: 'última ejecución fallida', sync_partial: 'última ejecución con {c} conflictos, {e} errores', sync_ok: 'última ejecución correcta', sync_last: 'última ejecución {when}: {n} archivos, {bytes}', sync_files_btn: 'Archivos ({n})', sync_no_files: 'Ningún archivo movido aún.', col_file: 'Archivo', col_direction: 'Dirección', col_outcome: 'Resultado', dir_up: 'subido', dir_down: 'descargado', dir_delete: 'eliminado', dir_conflict: 'conflicto', out_ok: 'ok', out_conflict: 'conflicto', out_failed: 'fallido', out_skipped: 'omitido', syncs_unavailable: 'sincronizaciones no disponibles: {err}', ev_sync: 'Sincronización',
       active_today: 'activo hoy', stale: 'sin actividad desde hace {n} días', last_sync: 'Última sincronización', prune_label: 'Eliminar los dispositivos sin actividad desde hace', prune_days: 'días', prune_run: 'Eliminar dispositivos inactivos', confirm_prune: '¿Eliminar todos los dispositivos sin actividad desde hace {n} días? Sus apps pedirán iniciar sesión de nuevo si vuelven.', pruned: '{n} dispositivo(s) eliminado(s):\n{list}', pruned_none: 'Ningún dispositivo era tan antiguo.', back: 'Atrás', charts_title: 'Datos movidos', range_24h: 'Últimas 24 horas', range_7d: 'Últimos 7 días', range_30d: 'Últimos 30 días', range_90d: 'Últimos 90 días', chart_empty: 'Nada movido en este periodo.', log_title: 'Registro', log_intro: 'accesos, registros, eliminaciones y transferencias interrumpidas', col_when: 'Cuándo', col_event: 'Evento', col_detail: 'Detalle', log_empty: 'Ningún evento registrado aún.', state: 'Estado', tot_today: 'Hoy', tot_week: 'Últimos 7 días', tot_month: 'Últimos 30 días', tot_detail: '{req} peticiones · {dl} descargas/streams · {ul} subidas', metrics_unavailable: 'métricas no disponibles: {err}', legend_down: 'descargado / en streaming', legend_up: 'subido', ev_login: 'Acceso', ev_register: 'Registro', ev_revoked: 'Revocado', ev_transfer: 'Transferencia', ev_admin: 'Administración', log_unavailable: 'registro no disponible: {err}',
       remove: 'Eliminar', confirm_remove_device: '¿Eliminar "{name}"?\nSus sesiones se cierran y la app pedirá iniciar sesión de nuevo.', confirm_remove_this: '\n\nEs el navegador que estás usando: se cerrará tu sesión.', confirm_remove_all: '¿Eliminar TODOS los dispositivos? Cada app (y este navegador) tendrá que iniciar sesión de nuevo.',
       send_test: 'Enviar una prueba', notify_intro: 'Un dispositivo nuevo o eliminado genera una notificación en cada canal configurado: notificaciones de Unraid (NOTIFY_UNRAID — pon NOTIFY_UNRAID_API_KEY con una clave ADMIN si la tuya es VIEWER), correo (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) y Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Se configuran en los ajustes del contenedor.',
@@ -155,6 +158,7 @@
       remove_all: 'Tout supprimer', devices_intro: 'Chaque installation d\'Unraid Drive s\'enregistre quand vous ajoutez le serveur. Supprimer un appareil ferme ses sessions et l\'app demande de se reconnecter (elle se réenregistre et une notification part). Une app réinstallée remplace son ancienne entrée, grisée « old ».',
       col_key: 'Clé', col_registered: 'Enregistré', col_logins: 'Connexions', no_devices: 'Aucun appareil enregistré (les anciennes builds ne s\'enregistrent pas ; mettez à jour vers 1.3 build 29 ou plus).',
       this_browser: '(ce navigateur)', old: 'ancien', last_seen_prefix: 'vu', replaced_title: 'Remplacé par une nouvelle installation le {date}. Peut être supprimé.', registration_off: 'enregistrement désactivé (DEVICE_REGISTRATION=off)', devices_unavailable: 'appareils indisponibles : {err}',
+      users_title: 'Utilisateurs', users_intro: 'Une ligne par utilisateur Unraid (ou clé API) ayant des appareils enregistrés : nombre d’appareils et de synchronisations, dernière activité, données transférées aujourd’hui. Ouvrez un utilisateur pour ses appareils, les synchronisations de dossiers et sauvegardes de chaque appareil (à suspendre ou reprendre), les fichiers transférés et son activité dans le temps.', col_user: 'Utilisateur', col_devices: 'Appareils', col_syncs: 'Synchros', col_today: 'Aujourd’hui', no_users: 'Aucun utilisateur : ils apparaissent quand leurs appareils s’enregistrent.', users_unavailable: 'utilisateurs indisponibles : {err}', open: 'Ouvrir', n_paused: '{n} en pause', n_warnings: '{n} avertissement(s)', all_fine: 'Tout va bien', user_devices: 'Appareils', user_syncs: 'Synchronisations de dossiers et sauvegardes', user_syncs_intro: 'Définies par les apps sur chaque appareil. Suspendre une synchronisation ici l’arrête sur l’appareil à sa prochaine exécution (l’app l’affiche en pause) jusqu’à sa reprise.', no_syncs: 'Aucune synchronisation sur les appareils de cet utilisateur.', no_syncs_device: 'Aucune synchronisation sur cet appareil.', user_log_intro: 'tous les appareils de cet utilisateur, du plus récent', kind_folder: 'Synchro de dossier', kind_photos: 'Sauvegarde Photos', kind_downloads: 'Téléchargements', mode_up: 'appareil → Unraid', mode_down: 'Unraid → appareil', mode_both: 'bidirectionnelle', sync_paused: 'en pause', sync_paused_by: 'en pause par {who}', sync_never: 'jamais exécutée', sync_failed: 'dernière exécution échouée', sync_partial: 'dernière exécution avec {c} conflits, {e} erreurs', sync_ok: 'dernière exécution réussie', sync_last: 'dernière exécution {when} : {n} fichiers, {bytes}', sync_files_btn: 'Fichiers ({n})', sync_no_files: 'Aucun fichier transféré.', col_file: 'Fichier', col_direction: 'Sens', col_outcome: 'Résultat', dir_up: 'envoyé', dir_down: 'téléchargé', dir_delete: 'supprimé', dir_conflict: 'conflit', out_ok: 'ok', out_conflict: 'conflit', out_failed: 'échec', out_skipped: 'ignoré', syncs_unavailable: 'synchronisations indisponibles : {err}', ev_sync: 'Synchronisation',
       active_today: 'actif aujourd’hui', stale: 'pas vu depuis {n} jours', last_sync: 'Dernière synchronisation', prune_label: 'Supprimer les appareils pas vus depuis', prune_days: 'jours', prune_run: 'Supprimer les appareils inactifs', confirm_prune: 'Supprimer tous les appareils pas vus depuis {n} jours ? Leurs apps redemanderont de se connecter si elles reviennent.', pruned: '{n} appareil(s) supprimé(s) :\n{list}', pruned_none: 'Aucun appareil aussi ancien.', back: 'Retour', charts_title: 'Données transférées', range_24h: 'Dernières 24 heures', range_7d: '7 derniers jours', range_30d: '30 derniers jours', range_90d: '90 derniers jours', chart_empty: 'Rien transféré sur cette période.', log_title: 'Journal', log_intro: 'connexions, enregistrements, suppressions et transferts interrompus', col_when: 'Quand', col_event: 'Événement', col_detail: 'Détail', log_empty: 'Aucun événement enregistré.', state: 'État', tot_today: 'Aujourd’hui', tot_week: '7 derniers jours', tot_month: '30 derniers jours', tot_detail: '{req} requêtes · {dl} téléchargements/flux · {ul} envois', metrics_unavailable: 'métriques indisponibles : {err}', legend_down: 'téléchargé / diffusé', legend_up: 'envoyé', ev_login: 'Connexion', ev_register: 'Enregistrement', ev_revoked: 'Révoqué', ev_transfer: 'Transfert', ev_admin: 'Administration', log_unavailable: 'journal indisponible : {err}',
       remove: 'Supprimer', confirm_remove_device: 'Supprimer « {name} » ?\nSes sessions sont fermées et l\'app demandera de se reconnecter.', confirm_remove_this: '\n\nC\'est le navigateur que vous utilisez : vous serez déconnecté.', confirm_remove_all: 'Supprimer TOUS les appareils ? Chaque app (et ce navigateur) devra se reconnecter.',
       send_test: 'Envoyer un test', notify_intro: 'Un appareil nouveau ou supprimé déclenche une notification sur chaque canal configuré : notifications Unraid (NOTIFY_UNRAID — mettez NOTIFY_UNRAID_API_KEY à une clé ADMIN si la vôtre est VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) et Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). À régler dans les paramètres du conteneur.',
@@ -196,6 +200,7 @@
       remove_all: 'Alle entfernen', devices_intro: 'Jede Unraid-Drive-Installation registriert sich beim Hinzufügen des Servers. Entfernen schließt die Sitzungen des Geräts und die App fragt erneut nach der Anmeldung (registriert sich neu und löst eine Mitteilung aus). Eine neu installierte App ersetzt ihren alten Eintrag, grau als „old“ gezeigt.',
       col_key: 'Schlüssel', col_registered: 'Registriert', col_logins: 'Anmeldungen', no_devices: 'Noch kein Gerät registriert (ältere App-Builds registrieren sich nicht; auf 1.3 Build 29 oder neuer aktualisieren).',
       this_browser: '(dieser Browser)', old: 'alt', last_seen_prefix: 'zuletzt', replaced_title: 'Am {date} durch eine neue Installation ersetzt. Kann entfernt werden.', registration_off: 'Registrierung aus (DEVICE_REGISTRATION=off)', devices_unavailable: 'Geräte nicht verfügbar: {err}',
+      users_title: 'Benutzer', users_intro: 'Eine Zeile pro Unraid-Benutzer (oder API-Schlüssel) mit registrierten Geräten: Anzahl Geräte und Synchronisierungen, zuletzt gesehen, heute übertragene Daten. Öffne einen Benutzer für seine Geräte, die Ordner-Synchronisierungen und Backups jedes Geräts (pausieren oder fortsetzen), die übertragenen Dateien und seine Aktivität im Zeitverlauf.', col_user: 'Benutzer', col_devices: 'Geräte', col_syncs: 'Syncs', col_today: 'Heute', no_users: 'Noch kein Benutzer: sie erscheinen, sobald ihre Geräte sich registrieren.', users_unavailable: 'Benutzer nicht verfügbar: {err}', open: 'Öffnen', n_paused: '{n} pausiert', n_warnings: '{n} Warnung(en)', all_fine: 'Alles in Ordnung', user_devices: 'Geräte', user_syncs: 'Ordner-Synchronisierungen und Backups', user_syncs_intro: 'Von den Apps auf jedem Gerät definiert. Hier pausiert, stoppt eine Synchronisierung beim nächsten Lauf auf dem Gerät (die App zeigt sie pausiert), bis du sie fortsetzt.', no_syncs: 'Keine Synchronisierung auf den Geräten dieses Benutzers.', no_syncs_device: 'Keine Synchronisierung auf diesem Gerät.', user_log_intro: 'alle Geräte dieses Benutzers, neueste zuerst', kind_folder: 'Ordner-Sync', kind_photos: 'Fotos-Backup', kind_downloads: 'Downloads', mode_up: 'Gerät → Unraid', mode_down: 'Unraid → Gerät', mode_both: 'beidseitig', sync_paused: 'pausiert', sync_paused_by: 'pausiert von {who}', sync_never: 'noch nie gelaufen', sync_failed: 'letzter Lauf fehlgeschlagen', sync_partial: 'letzter Lauf mit {c} Konflikten, {e} Fehlern', sync_ok: 'letzter Lauf in Ordnung', sync_last: 'letzter Lauf {when}: {n} Dateien, {bytes}', sync_files_btn: 'Dateien ({n})', sync_no_files: 'Noch keine Datei übertragen.', col_file: 'Datei', col_direction: 'Richtung', col_outcome: 'Ergebnis', dir_up: 'hochgeladen', dir_down: 'heruntergeladen', dir_delete: 'gelöscht', dir_conflict: 'Konflikt', out_ok: 'ok', out_conflict: 'Konflikt', out_failed: 'fehlgeschlagen', out_skipped: 'übersprungen', syncs_unavailable: 'Synchronisierungen nicht verfügbar: {err}', ev_sync: 'Synchronisierung',
       active_today: 'heute aktiv', stale: 'seit {n} Tagen nicht gesehen', last_sync: 'Letzte Synchronisierung', prune_label: 'Geräte entfernen, die nicht gesehen wurden seit', prune_days: 'Tagen', prune_run: 'Inaktive Geräte entfernen', confirm_prune: 'Alle Geräte entfernen, die seit {n} Tagen nicht gesehen wurden? Ihre Apps fragen bei der Rückkehr erneut nach der Anmeldung.', pruned: '{n} Gerät(e) entfernt:\n{list}', pruned_none: 'Kein Gerät war so alt.', back: 'Zurück', charts_title: 'Übertragene Daten', range_24h: 'Letzte 24 Stunden', range_7d: 'Letzte 7 Tage', range_30d: 'Letzte 30 Tage', range_90d: 'Letzte 90 Tage', chart_empty: 'In diesem Zeitraum nichts übertragen.', log_title: 'Protokoll', log_intro: 'Anmeldungen, Registrierungen, Entfernungen und abgebrochene Übertragungen', col_when: 'Wann', col_event: 'Ereignis', col_detail: 'Details', log_empty: 'Noch keine Ereignisse.', state: 'Zustand', tot_today: 'Heute', tot_week: 'Letzte 7 Tage', tot_month: 'Letzte 30 Tage', tot_detail: '{req} Anfragen · {dl} Downloads/Streams · {ul} Uploads', metrics_unavailable: 'Messwerte nicht verfügbar: {err}', legend_down: 'heruntergeladen / gestreamt', legend_up: 'hochgeladen', ev_login: 'Anmeldung', ev_register: 'Registrierung', ev_revoked: 'Widerrufen', ev_transfer: 'Übertragung', ev_admin: 'Verwaltung', log_unavailable: 'Protokoll nicht verfügbar: {err}',
       remove: 'Entfernen', confirm_remove_device: '„{name}“ entfernen?\nSeine Sitzungen werden geschlossen und die App fragt erneut nach der Anmeldung.', confirm_remove_this: '\n\nDas ist der Browser, den du gerade benutzt: du wirst abgemeldet.', confirm_remove_all: 'ALLE Geräte entfernen? Jede App (und dieser Browser) muss sich neu anmelden.',
       send_test: 'Test senden', notify_intro: 'Ein neues oder entferntes Gerät löst auf jedem konfigurierten Kanal eine Mitteilung aus: Unraid-Benachrichtigungen (NOTIFY_UNRAID — NOTIFY_UNRAID_API_KEY auf einen ADMIN-Schlüssel setzen, wenn deiner VIEWER ist), E-Mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) und Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). In den Container-Einstellungen setzen.',
@@ -237,6 +242,7 @@
       remove_all: '全部移除', devices_intro: '每个 Unraid Drive 安装在添加服务器时都会自行注册。移除设备会关闭其会话，应用会要求重新登录（重新注册并发送通知）。重装的应用会取代旧条目，旧条目以灰色“old”显示。',
       col_key: '密钥', col_registered: '注册时间', col_logins: '登录次数', no_devices: '尚无已注册设备（旧版应用不会注册；请更新到 1.3 build 29 或更高）。',
       this_browser: '（此浏览器）', old: '旧', last_seen_prefix: '最近活动', replaced_title: '已于 {date} 被新安装取代。可以安全移除。', registration_off: '注册已关闭（DEVICE_REGISTRATION=off）', devices_unavailable: '设备不可用：{err}',
+      users_title: '用户', users_intro: '每个拥有已注册设备的 Unraid 用户（或 API 密钥）一行：设备和同步数量、最近出现时间、今天传输的数据。打开用户可查看其设备、每台设备运行的文件夹同步和备份（可暂停或恢复）、传输的文件以及该用户随时间的活动。', col_user: '用户', col_devices: '设备', col_syncs: '同步', col_today: '今天', no_users: '尚无用户：设备注册后会出现。', users_unavailable: '用户不可用：{err}', open: '打开', n_paused: '{n} 个已暂停', n_warnings: '{n} 条警告', all_fine: '一切正常', user_devices: '设备', user_syncs: '文件夹同步与备份', user_syncs_intro: '由每台设备上的 App 定义。在此暂停同步后，设备会在下次运行时停止（App 显示为已暂停），直到你恢复。', no_syncs: '该用户的设备上没有定义同步。', no_syncs_device: '此设备上没有定义同步。', user_log_intro: '该用户的所有设备，最新在前', kind_folder: '文件夹同步', kind_photos: '照片备份', kind_downloads: '下载', mode_up: '设备 → Unraid', mode_down: 'Unraid → 设备', mode_both: '双向', sync_paused: '已暂停', sync_paused_by: '由 {who} 暂停', sync_never: '尚未运行', sync_failed: '上次运行失败', sync_partial: '上次运行有 {c} 个冲突、{e} 个错误', sync_ok: '上次运行正常', sync_last: '上次运行 {when}：{n} 个文件，{bytes}', sync_files_btn: '文件（{n}）', sync_no_files: '尚未传输文件。', col_file: '文件', col_direction: '方向', col_outcome: '结果', dir_up: '已上传', dir_down: '已下载', dir_delete: '已删除', dir_conflict: '冲突', out_ok: '成功', out_conflict: '冲突', out_failed: '失败', out_skipped: '已跳过', syncs_unavailable: '同步不可用：{err}', ev_sync: '同步',
       active_today: '今天活跃', stale: '已 {n} 天未出现', last_sync: '上次同步', prune_label: '移除以下天数内未出现的设备：', prune_days: '天', prune_run: '移除不活跃设备', confirm_prune: '移除所有 {n} 天未出现的设备？它们的应用回来时需要重新登录。', pruned: '已移除 {n} 台设备：\n{list}', pruned_none: '没有这么久未出现的设备。', back: '返回', charts_title: '传输的数据', range_24h: '最近 24 小时', range_7d: '最近 7 天', range_30d: '最近 30 天', range_90d: '最近 90 天', chart_empty: '此期间没有传输。', log_title: '日志', log_intro: '登录、注册、移除和中断的传输', col_when: '时间', col_event: '事件', col_detail: '详情', log_empty: '尚无事件。', state: '状态', tot_today: '今天', tot_week: '最近 7 天', tot_month: '最近 30 天', tot_detail: '{req} 次请求 · {dl} 次下载/流 · {ul} 次上传', metrics_unavailable: '指标不可用：{err}', legend_down: '下载 / 流', legend_up: '上传', ev_login: '登录', ev_register: '注册', ev_revoked: '已撤销', ev_transfer: '传输', ev_admin: '管理', log_unavailable: '日志不可用：{err}',
       remove: '移除', confirm_remove_device: '移除“{name}”？\n其会话将被关闭，应用会要求重新登录。', confirm_remove_this: '\n\n这是你正在使用的浏览器：你将被登出。', confirm_remove_all: '移除所有设备？每个应用（以及此浏览器）都必须重新登录。',
       send_test: '发送测试', notify_intro: '新设备或被移除的设备会在每个已配置的渠道上发出通知：Unraid 通知（NOTIFY_UNRAID——若你的密钥是 VIEWER，请将 NOTIFY_UNRAID_API_KEY 设为 ADMIN 密钥）、电子邮件（SMTP_HOST、SMTP_PORT、SMTP_USER、SMTP_PASSWORD、SMTP_FROM、SMTP_TO、SMTP_TLS）和 Telegram（TELEGRAM_BOT_TOKEN、TELEGRAM_CHAT_ID）。在容器设置中配置。',
@@ -278,6 +284,7 @@
       remove_all: 'إزالة الكل', devices_intro: 'يسجّل كل تثبيت لـ Unraid Drive نفسه عند إضافة الخادم. إزالة جهاز تُغلق جلساته ويطلب التطبيق تسجيل الدخول مجددًا (فيسجّل من جديد ويُرسل إشعار). التطبيق المعاد تثبيته يحلّ محل إدخاله السابق الذي يظهر رماديًا بعلامة "old".',
       col_key: 'المفتاح', col_registered: 'تاريخ التسجيل', col_logins: 'مرات الدخول', no_devices: 'لا يوجد جهاز مسجّل بعد (إصدارات التطبيق القديمة لا تسجّل؛ حدّث إلى 1.3 build 29 أو أحدث).',
       this_browser: '(هذا المتصفح)', old: 'قديم', last_seen_prefix: 'آخر ظهور', replaced_title: 'استُبدل بتثبيت جديد في {date}. يمكن إزالته بأمان.', registration_off: 'التسجيل متوقف (DEVICE_REGISTRATION=off)', devices_unavailable: 'الأجهزة غير متاحة: {err}',
+      users_title: 'المستخدمون', users_intro: 'صف لكل مستخدم Unraid (أو مفتاح API) لديه أجهزة مسجلة: عدد الأجهزة والمزامنات، آخر ظهور، البيانات المنقولة اليوم. افتح مستخدمًا لعرض أجهزته ومزامنات المجلدات والنسخ الاحتياطية لكل جهاز (إيقافها مؤقتًا أو استئنافها) والملفات المنقولة ونشاطه عبر الزمن.', col_user: 'المستخدم', col_devices: 'الأجهزة', col_syncs: 'المزامنات', col_today: 'اليوم', no_users: 'لا مستخدمين بعد: يظهرون عند تسجيل أجهزتهم.', users_unavailable: 'المستخدمون غير متاحين: {err}', open: 'فتح', n_paused: '{n} متوقفة مؤقتًا', n_warnings: '{n} تحذير', all_fine: 'كل شيء على ما يرام', user_devices: 'الأجهزة', user_syncs: 'مزامنات المجلدات والنسخ الاحتياطية', user_syncs_intro: 'تحددها التطبيقات على كل جهاز. إيقاف مزامنة مؤقتًا هنا يوقفها على الجهاز عند التشغيل التالي (يعرضها التطبيق متوقفة) حتى تستأنفها.', no_syncs: 'لا مزامنات على أجهزة هذا المستخدم.', no_syncs_device: 'لا مزامنات على هذا الجهاز.', user_log_intro: 'كل أجهزة هذا المستخدم، الأحدث أولًا', kind_folder: 'مزامنة مجلد', kind_photos: 'نسخ الصور احتياطيًا', kind_downloads: 'التنزيلات', mode_up: 'الجهاز ← Unraid', mode_down: 'Unraid ← الجهاز', mode_both: 'ثنائية الاتجاه', sync_paused: 'متوقفة مؤقتًا', sync_paused_by: 'أوقفها {who} مؤقتًا', sync_never: 'لم تُشغّل بعد', sync_failed: 'فشل آخر تشغيل', sync_partial: 'آخر تشغيل مع {c} تعارضات و{e} أخطاء', sync_ok: 'آخر تشغيل سليم', sync_last: 'آخر تشغيل {when}: {n} ملفات، {bytes}', sync_files_btn: 'الملفات ({n})', sync_no_files: 'لم يُنقل أي ملف بعد.', col_file: 'الملف', col_direction: 'الاتجاه', col_outcome: 'النتيجة', dir_up: 'مرفوع', dir_down: 'منزّل', dir_delete: 'محذوف', dir_conflict: 'تعارض', out_ok: 'تم', out_conflict: 'تعارض', out_failed: 'فشل', out_skipped: 'تم تخطيه', syncs_unavailable: 'المزامنات غير متاحة: {err}', ev_sync: 'مزامنة',
       active_today: 'نشط اليوم', stale: 'لم يُر منذ {n} يومًا', last_sync: 'آخر مزامنة', prune_label: 'إزالة الأجهزة التي لم تُر منذ', prune_days: 'يومًا', prune_run: 'إزالة الأجهزة الخاملة', confirm_prune: 'إزالة كل الأجهزة التي لم تُر منذ {n} يومًا؟ ستطلب تطبيقاتها تسجيل الدخول مجددًا عند عودتها.', pruned: 'تمت إزالة {n} جهاز:\n{list}', pruned_none: 'لا يوجد جهاز بهذا القِدم.', back: 'رجوع', charts_title: 'البيانات المنقولة', range_24h: 'آخر 24 ساعة', range_7d: 'آخر 7 أيام', range_30d: 'آخر 30 يومًا', range_90d: 'آخر 90 يومًا', chart_empty: 'لم يُنقل شيء في هذه الفترة.', log_title: 'السجل', log_intro: 'تسجيلات الدخول والتسجيلات والإزالات والنقل المتوقف', col_when: 'متى', col_event: 'الحدث', col_detail: 'التفاصيل', log_empty: 'لا أحداث بعد.', state: 'الحالة', tot_today: 'اليوم', tot_week: 'آخر 7 أيام', tot_month: 'آخر 30 يومًا', tot_detail: '{req} طلبات · {dl} تنزيلات/بث · {ul} رفع', metrics_unavailable: 'المقاييس غير متاحة: {err}', legend_down: 'تم تنزيله / بثه', legend_up: 'تم رفعه', ev_login: 'تسجيل دخول', ev_register: 'تسجيل', ev_revoked: 'مُلغى', ev_transfer: 'نقل', ev_admin: 'إدارة', log_unavailable: 'السجل غير متاح: {err}',
       remove: 'إزالة', confirm_remove_device: 'إزالة "{name}"؟\nستُغلق جلساته وسيطلب التطبيق تسجيل الدخول مجددًا.', confirm_remove_this: '\n\nهذا هو المتصفح الذي تستخدمه: سيتم تسجيل خروجك.', confirm_remove_all: 'إزالة كل الأجهزة؟ سيتعين على كل تطبيق (وهذا المتصفح) تسجيل الدخول مجددًا.',
       send_test: 'إرسال اختبار', notify_intro: 'يُطلق الجهاز الجديد أو المُزال إشعارًا على كل قناة مضبوطة: إشعارات Unraid (NOTIFY_UNRAID — اضبط NOTIFY_UNRAID_API_KEY على مفتاح ADMIN إذا كان مفتاحك VIEWER)، البريد الإلكتروني (SMTP_HOST وSMTP_PORT وSMTP_USER وSMTP_PASSWORD وSMTP_FROM وSMTP_TO وSMTP_TLS) وTelegram (TELEGRAM_BOT_TOKEN وTELEGRAM_CHAT_ID). تُضبط في إعدادات الحاوية.',
@@ -322,7 +329,7 @@
   }
   $('lang').addEventListener('change', () => {
     localStorage.setItem('ugw.lang', $('lang').value); lang = pickLang(); applyLang();
-    loadStatus(); if (token && !$('app').hidden) { list(cwd); loadActivity(); loadDevices(); loadNotifyChannels(); loadHealth(); loadSystem(); }
+    loadStatus(); if (token && !$('app').hidden) { list(cwd); loadActivity(); loadDevices(); loadUsers(); loadNotifyChannels(); loadHealth(); loadSystem(); }
   });
 
   // ---- theme ----------------------------------------------------------------
@@ -373,7 +380,7 @@
     document.querySelectorAll('.tab').forEach((c) => { c.hidden = c.id !== 'tab-' + name; });
     localStorage.setItem('ugw.tab', name);
     if (name === 'status') { loadHealth(); loadSystem(); }
-    if (name === 'settings') { loadDevices(); loadNotifyChannels(); if (!$('keys').hidden) loadKeys(); }
+    if (name === 'settings') { loadDevices(); loadUsers(); loadNotifyChannels(); if (!$('keys').hidden) loadKeys(); }
   }
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
 
@@ -765,7 +772,7 @@
 
   // ---- device detail: facts, charts, log ------------------------------------
   let currentDevice = '';
-  function closeDevice() { currentDevice = ''; $('device-detail').hidden = true; $('devices-card').hidden = false; }
+  function closeDevice() { currentDevice = ''; $('device-detail').hidden = true; $('devices-card').hidden = false; $('users-card').hidden = false; }
   $('device-back').addEventListener('click', closeDevice);
   $('device-range').addEventListener('change', () => { if (currentDevice) loadDeviceMetrics(currentDevice); });
   $('device-remove').addEventListener('click', async () => {
@@ -787,8 +794,8 @@
       [t('col_registered'), fmtDate(x.firstSeen)], [t('last_sync'), ago(x.lastSeen, now)], [t('col_from'), x.lastIp || '—'], [t('col_logins'), String(x.logins)], [t('state'), state], ['ID', x.id]];
     const dl = $('device-facts'); dl.innerHTML = '';
     for (const [k, v] of facts) { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); }
-    $('devices-card').hidden = true; $('device-detail').hidden = false;
-    await Promise.all([loadDeviceMetrics(id), loadDeviceLog(id)]);
+    $('devices-card').hidden = true; $('users-card').hidden = true; $('device-detail').hidden = false;
+    await Promise.all([loadDeviceMetrics(id), loadDeviceLog(id), loadSyncs('device-syncs', 'device-syncs-empty', { device: id })]);
   }
   async function loadDeviceMetrics(id) {
     try {
@@ -805,9 +812,10 @@
       drawChart($('device-chart'), m.series || [], m.step);
     } catch (err) { $('device-chart-empty').hidden = false; $('device-chart-empty').textContent = t('metrics_unavailable', { err: err.message }); }
   }
-  function drawChart(canvas, series, step) {
+  function drawChart(canvas, series, step, emptyEl) {
+    emptyEl = emptyEl || $('device-chart-empty');
     const empty = !series.some((p) => p.up || p.down);
-    $('device-chart-empty').hidden = !empty; if (!empty) $('device-chart-empty').textContent = t('chart_empty');
+    emptyEl.hidden = !empty; if (!empty) emptyEl.textContent = t('chart_empty');
     canvas.hidden = empty; if (empty) return;
     const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth || 600, H = 200;
     canvas.width = W * dpr; canvas.height = H * dpr;
@@ -848,6 +856,144 @@
         tb.appendChild(tr);
       }
     } catch (err) { $('device-log-empty').hidden = false; $('device-log-empty').textContent = t('log_unavailable', { err: err.message }); }
+  }
+
+  // ---- syncs (0.14): the folder syncs / backups the apps run ------------------
+  const SYNC_ICONS = { folder: '⇄', photos: '▣', downloads: '⤓' };
+  const syncKind = (k) => t('kind_' + k) || k;
+  const syncMode = (m) => t('mode_' + m) || m;
+  const syncState = (x) => {
+    if (!x.enabled) return ['warning', x.disabledBy ? t('sync_paused_by', { who: x.disabledBy }) : t('sync_paused')];
+    if (!x.lastRun) return ['', t('sync_never')];
+    if (x.lastRun.status === 'failed') return ['error', t('sync_failed')];
+    if (x.lastRun.errors || x.lastRun.conflicts || x.lastRun.status === 'partial') return ['warning', t('sync_partial', { c: x.lastRun.conflicts, e: x.lastRun.errors })];
+    return ['ok', t('sync_ok')];
+  };
+  async function loadSyncs(containerId, emptyId, filter) {
+    const wrap = $(containerId); wrap.innerHTML = '';
+    try {
+      const q = Object.entries(filter).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+      const r = await api('/syncs?' + q); const list = r.syncs || [];
+      $(emptyId).hidden = list.length > 0;
+      const now = new Date();
+      for (const x of list) {
+        const [cls, state] = syncState(x);
+        const row = document.createElement('div'); row.className = 'sync-row' + (x.enabled ? '' : ' paused');
+        row.innerHTML = `<span class="sync-icon">${SYNC_ICONS[x.kind] || '⇄'}</span>
+          <span class="sync-main"><span class="sync-title"></span><span class="sync-sub muted small"></span><span class="sync-last muted small"></span></span>
+          <span class="dot ${cls}"></span>
+          <label class="switch"><input type="checkbox" ${x.enabled ? 'checked' : ''}><span></span></label>
+          <button class="ghost small-btn sync-files"></button>`;
+        row.querySelector('.sync-title').textContent = `${x.localLabel} ${x.mode === 'down' ? '←' : x.mode === 'both' ? '⇄' : '→'} ${x.remotePath}`;
+        const dev = devicesCache.devices.find((d) => d.id === x.deviceId);
+        row.querySelector('.sync-sub').textContent = [syncKind(x.kind), syncMode(x.mode), dev ? splitName(dev.name)[0] : x.deviceId, x.user].filter(Boolean).join(' · ');
+        row.querySelector('.sync-last').textContent = x.lastRun ? t('sync_last', { when: ago(x.lastRun.at, now), n: x.lastRun.files, bytes: fmtSize(x.lastRun.bytes) }) + ' · ' + state : state;
+        row.querySelector('.dot').title = state;
+        const sw = row.querySelector('input');
+        sw.onchange = async () => {
+          try { await api('/syncs/' + encodeURIComponent(x.id), { method: 'PATCH', body: JSON.stringify({ enabled: sw.checked }) }); loadSyncs(containerId, emptyId, filter); }
+          catch (err) { alert(err.message); sw.checked = !sw.checked; }
+        };
+        const fb = row.querySelector('.sync-files'); fb.textContent = t('sync_files_btn', { n: (x.files || []).length });
+        const files = document.createElement('div'); files.className = 'sync-files-list'; files.hidden = true;
+        if ((x.files || []).length) {
+          const tb = document.createElement('table'); tb.innerHTML = `<thead><tr><th>${t('col_when')}</th><th>${t('col_file')}</th><th>${t('col_direction')}</th><th class="num">${t('col_bytes')}</th><th>${t('col_outcome')}</th></tr></thead><tbody></tbody>`;
+          for (const f of x.files) {
+            const tr = document.createElement('tr'); if (f.outcome !== 'ok') tr.className = f.outcome === 'failed' ? 'error' : 'warning';
+            [fmtDate(f.time), f.path, t('dir_' + f.direction) || f.direction, fmtSize(f.bytes || 0), (t('out_' + f.outcome) || f.outcome) + (f.detail ? ' · ' + f.detail : '')].forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 1) td.className = 'wrap'; if (i === 3) td.className = 'num'; tr.appendChild(td); });
+            tb.querySelector('tbody').appendChild(tr);
+          }
+          const tw = document.createElement('div'); tw.className = 'table-wrap'; tw.appendChild(tb); files.appendChild(tw);
+        } else { files.innerHTML = `<p class="muted small">${t('sync_no_files')}</p>`; }
+        fb.onclick = () => { files.hidden = !files.hidden; };
+        wrap.appendChild(row); wrap.appendChild(files);
+      }
+    } catch (err) { $(emptyId).hidden = false; $(emptyId).textContent = t('syncs_unavailable', { err: err.message }); }
+  }
+
+  // ---- users (0.14): per-user view ---------------------------------------------
+  let currentUser = '';
+  async function loadUsers() {
+    try {
+      const r = await api('/users'); const users = r.users || [];
+      const tb = $('users').querySelector('tbody'); tb.innerHTML = '';
+      $('users-empty').hidden = users.length > 0; $('users').hidden = users.length === 0;
+      const now = new Date();
+      for (const u of users) {
+        const tr = document.createElement('tr');
+        [u.user, String(u.devices), u.syncs ? `${u.syncs}${u.pausedSyncs ? ' (' + t('n_paused', { n: u.pausedSyncs }) + ')' : ''}` : '0', u.lastSeen ? ago(u.lastSeen, now) : '—', '↓ ' + fmtSize(u.today.down) + '  ↑ ' + fmtSize(u.today.up)].forEach((v, i) => {
+          const td = document.createElement('td'); td.textContent = v; if (i === 1 || i === 2) td.className = 'num'; tr.appendChild(td);
+        });
+        const act = document.createElement('td'); act.className = 'actions';
+        const dot = document.createElement('span'); dot.className = 'dot ' + (u.warnings ? 'warning' : 'ok'); dot.title = u.warnings ? t('n_warnings', { n: u.warnings }) : t('all_fine'); dot.style.marginRight = '8px';
+        const b = document.createElement('button'); b.className = 'ghost'; b.textContent = t('open'); b.onclick = () => openUser(u.user);
+        act.appendChild(dot); act.appendChild(b); tr.appendChild(act); tb.appendChild(tr);
+      }
+    } catch (err) { $('users-scope').textContent = t('users_unavailable', { err: err.message }); }
+  }
+  $('users-refresh').addEventListener('click', loadUsers);
+  function closeUser() { currentUser = ''; $('user-detail').hidden = true; $('devices-card').hidden = false; $('users-card').hidden = false; }
+  $('user-back').addEventListener('click', closeUser);
+  $('user-range').addEventListener('change', () => { if (currentUser) loadUserMetrics(currentUser); });
+  async function openUser(name) {
+    currentUser = name;
+    $('user-title').textContent = name;
+    $('users-card').hidden = true; $('devices-card').hidden = true; $('device-detail').hidden = true; $('user-detail').hidden = false;
+    try {
+      const u = await api('/users/' + encodeURIComponent(name));
+      const now = new Date();
+      const wrap = $('user-devices'); wrap.innerHTML = '';
+      let warn = 0;
+      for (const x of u.devices || []) {
+        const [title, sub, app] = splitName(x.name);
+        const [cls, state] = deviceState(x, now); if (cls === 'warning') warn++;
+        const card = document.createElement('div'); card.className = 'dev-card' + (x.supersededBy ? ' old' : '');
+        card.innerHTML = `<span class="dev-icon">${DEV_ICONS[deviceKind(x.name)]}</span>
+          <span class="dev-main"><span class="dev-title"></span><span class="dev-sub muted small"></span><span class="dev-meta muted small"></span></span>
+          <span class="dot ${cls}"></span><button class="ghost small-btn"></button>`;
+        card.querySelector('.dev-title').textContent = title;
+        card.querySelector('.dev-sub').textContent = [sub, app].filter(Boolean).join(' · ');
+        card.querySelector('.dev-meta').textContent = t('last_sync') + ': ' + ago(x.lastSeen, now) + ' · ' + state;
+        const rb = card.querySelector('button'); rb.textContent = t('remove');
+        rb.onclick = async () => {
+          if (!confirm(t('confirm_remove_device', { name: x.name }) + (x.id === devicesCache.thisDevice ? t('confirm_remove_this') : ''))) return;
+          try { await api('/devices/' + encodeURIComponent(x.id), { method: 'DELETE' }); if (x.id === devicesCache.thisDevice) logout(); else { await loadDevices(); openUser(name); } } catch (err) { alert(err.message); }
+        };
+        card.querySelector('.dev-main').onclick = () => { closeUser(); openDevice(x.id); };
+        wrap.appendChild(card);
+      }
+      const bad = (u.syncs || []).filter((x) => !x.enabled || (x.lastRun && (x.lastRun.status === 'failed' || x.lastRun.errors || x.lastRun.conflicts))).length;
+      $('user-dot').className = 'dot ' + (warn + bad ? 'warning' : 'ok'); $('user-dot').title = warn + bad ? t('n_warnings', { n: warn + bad }) : t('all_fine');
+      const tot = $('user-totals'); tot.innerHTML = '';
+      for (const [k, v] of [['today', u.today], ['week', u.week], ['month', u.month]]) {
+        const s = document.createElement('div'); s.className = 'stat';
+        s.innerHTML = `<span class="k"></span><span class="v"></span><span class="muted small"></span>`;
+        s.querySelector('.k').textContent = t('tot_' + k);
+        s.querySelector('.v').textContent = '↓ ' + fmtSize(v.down) + '  ↑ ' + fmtSize(v.up);
+        s.querySelector('.muted').textContent = t('tot_detail', { req: v.requests, dl: v.downloads + v.streams, ul: v.uploads });
+        tot.appendChild(s);
+      }
+      await Promise.all([loadSyncs('user-syncs', 'user-syncs-empty', { user: name, all: 1 }), loadUserMetrics(name), loadUserLog(name)]);
+    } catch (err) { alert(err.message); closeUser(); }
+  }
+  async function loadUserMetrics(name) {
+    try {
+      const m = await api('/users/' + encodeURIComponent(name) + '/metrics?range=' + $('user-range').value);
+      drawChart($('user-chart'), m.series || [], m.step, $('user-chart-empty'));
+    } catch (err) { $('user-chart-empty').hidden = false; $('user-chart-empty').textContent = t('metrics_unavailable', { err: err.message }); }
+  }
+  async function loadUserLog(name) {
+    try {
+      const r = await api('/users/' + encodeURIComponent(name) + '/log?limit=200');
+      const tb = $('user-log').querySelector('tbody'); tb.innerHTML = '';
+      const ev = r.events || [];
+      $('user-log-empty').hidden = ev.length > 0; $('user-log').hidden = ev.length === 0;
+      for (const e of ev) {
+        const tr = document.createElement('tr'); if (e.level !== 'info') tr.className = e.level;
+        [fmtDate(e.time), splitName(e.deviceName)[0], t('ev_' + e.kind) || e.kind, e.detail].forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 3) td.className = 'wrap'; tr.appendChild(td); });
+        tb.appendChild(tr);
+      }
+    } catch (err) { $('user-log-empty').hidden = false; $('user-log-empty').textContent = t('log_unavailable', { err: err.message }); }
   }
 
   // ---- notifications --------------------------------------------------------
