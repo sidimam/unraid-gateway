@@ -47,6 +47,7 @@
       session_expired: 'session expired', device_revoked: 'this browser was removed from the gateway: sign in again to register it', remember_failed: 'Could not remember the key: {err}', confirm_forget: 'Delete the API key stored on the gateway? You will paste it again next time.',
       key_label: 'api key', user_scope_note: 'per-user permissions',
       health_open: 'Open Settings › Health', pm_account_ph: 'e.g. unraid-gateway at home', filter_ph: 'filter…', search_ph: 'search in the log…', col_unraid_path: 'Unraid path', unraid_path_title: 'Where the file lives on the Unraid server (user share path)', all_devices: 'All devices', all_events: 'All events', show_more: 'Show more ({n} left)', n_events: '{n} events', no_user_group: 'no user (API key only)',
+      conflict_newest: 'conflicts: newest wins', conflict_keepBoth: 'conflicts: keep both', conflict_keepExisting: 'conflicts: keep existing', conflict_overwrite: 'conflicts: device wins', conflict_ask: 'conflicts: ask', hash_check: 'identical files skipped',
     },
     it: {
       tab_status: 'Stato', tab_settings: 'Impostazioni', health_title: 'Stato di salute', health_checks: 'Tutti i controlli', health_ok: 'Tutto regolare', health_warning: 'Avvisi', health_error: 'Problemi', health_unknown: 'Controllo…', health_unavailable: 'stato non disponibile: {err}', checked_at: 'controllato {when}', sys_title: 'Informazioni di sistema', sys_unavailable: 'informazioni di sistema non disponibili: {err}', sys_host: 'Host', sys_os: 'Unraid', sys_kernel: 'Kernel', sys_uptime: 'Acceso dal', sys_cpu: 'Processore', sys_cores: 'Core / thread', sys_clock: 'Frequenza', sys_memory: 'Memoria', sys_memory_use: 'In uso', sys_board: 'Scheda madre', sys_versions: 'API Unraid', sys_gpu: 'Grafica', sys_network: 'Rete', appearance: 'Aspetto', language: 'Lingua', theme: 'Tema',
@@ -90,6 +91,7 @@
       session_expired: 'sessione scaduta', device_revoked: 'questo browser è stato rimosso dal gateway: accedi di nuovo per registrarlo', remember_failed: 'Impossibile ricordare la chiave: {err}', confirm_forget: 'Eliminare la chiave API salvata sul gateway? La incollerai di nuovo la prossima volta.',
       key_label: 'chiave api', user_scope_note: 'permessi per utente',
       health_open: 'Apri Impostazioni › Stato di salute', pm_account_ph: 'es. unraid-gateway di casa', filter_ph: 'filtra…', search_ph: 'cerca nel registro…', col_unraid_path: 'Percorso Unraid', unraid_path_title: 'Dove sta il file sul server Unraid (percorso della share utente)', all_devices: 'Tutti i dispositivi', all_events: 'Tutti gli eventi', show_more: 'Mostra altri ({n} rimasti)', n_events: '{n} eventi', no_user_group: 'senza utente (solo chiave API)',
+      conflict_newest: 'conflitti: vince il più recente', conflict_keepBoth: 'conflitti: tieni entrambi', conflict_keepExisting: 'conflitti: tieni l\'esistente', conflict_overwrite: 'conflitti: vince il dispositivo', conflict_ask: 'conflitti: chiedi', hash_check: 'file identici saltati',
       pm_account: 'Nome account (per il gestore password — modificabile)',
     },
     es: {
@@ -945,7 +947,7 @@
           <button class="ghost small-btn sync-files"></button>`;
         row.querySelector('.sync-title').textContent = `${x.localLabel} ${x.mode === 'down' ? '←' : x.mode === 'both' ? '⇄' : '→'} ${x.remotePath}`;
         const dev = devicesCache.devices.find((d) => d.id === x.deviceId);
-        row.querySelector('.sync-sub').textContent = [syncKind(x.kind), syncMode(x.mode), dev ? splitName(dev.name)[0] : x.deviceId, x.user].filter(Boolean).join(' · ');
+        row.querySelector('.sync-sub').textContent = [syncKind(x.kind), syncMode(x.mode), dev ? splitName(dev.name)[0] : x.deviceId, x.user, x.conflicts ? t('conflict_' + x.conflicts) : null, x.hashCheck ? t('hash_check') : null].filter(Boolean).join(' · ');
         row.querySelector('.sync-last').textContent = x.lastRun ? t('sync_last', { when: ago(x.lastRun.at, now), n: x.lastRun.files, bytes: fmtSize(x.lastRun.bytes) }) + ' · ' + state : state;
         row.querySelector('.dot').title = state;
         const sw = row.querySelector('input');

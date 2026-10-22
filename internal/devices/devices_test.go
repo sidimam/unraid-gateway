@@ -11,11 +11,11 @@ func TestRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	isNew, err := s.Register("d1", "Unraid Drive 1.3 (29) · iPhone · App", "simone", "Unraid Drive iPhone", "10.0.0.5")
+	isNew, err := s.Register("d1", "Unraid Drive 1.3 (29) · iPhone · App", "simone", "Unraid Drive iPhone", "10.0.0.5", true)
 	if err != nil || !isNew {
 		t.Fatalf("first register: new=%v err=%v", isNew, err)
 	}
-	if isNew, _ = s.Register("d1", "", "", "", "10.0.0.6"); isNew {
+	if isNew, _ = s.Register("d1", "", "", "", "10.0.0.6", true); isNew {
 		t.Fatal("second register must not be new")
 	}
 	if !s.Known("d1") || s.Known("nope") {
@@ -35,8 +35,8 @@ func TestRegistry(t *testing.T) {
 	if s2.Known("d1") {
 		t.Fatal("still known after remove")
 	}
-	s2.Register("a", "", "", "", "")
-	s2.Register("b", "", "", "", "")
+	s2.Register("a", "", "", "", "", true)
+	s2.Register("b", "", "", "", "", true)
 	if n, _ := s2.RemoveAll(); n != 2 || len(s2.List()) != 0 {
 		t.Fatal("remove all")
 	}
@@ -47,9 +47,9 @@ func TestRegistry(t *testing.T) {
 // that shows up again is not old any more.
 func TestSupersede(t *testing.T) {
 	s, _ := Open("")
-	s.Register("old", "Unraid Drive 1.3 (29) · iPhone · iOS 26 · App", "simone", "k", "")
-	s.Register("sofia", "Unraid Drive 1.3 (29) · iPhone · iOS 26 · App", "sofia", "k", "")
-	isNew, _ := s.Register("new", "Unraid Drive 1.3 (30) · iPhone · iOS 26 · App", "simone", "k", "")
+	s.Register("old", "Unraid Drive 1.3 (29) · iPhone · iOS 26 · App", "simone", "k", "", true)
+	s.Register("sofia", "Unraid Drive 1.3 (29) · iPhone · iOS 26 · App", "sofia", "k", "", true)
+	isNew, _ := s.Register("new", "Unraid Drive 1.3 (30) · iPhone · iOS 26 · App", "simone", "k", "", true)
 	if !isNew {
 		t.Fatal("new id must be new")
 	}

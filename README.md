@@ -143,6 +143,7 @@ Then send `Authorization: Bearer <token>` on every call. For scripts you may ins
 |---|---|---|
 | `GET` | `/fs/list?path=/Photos&hidden=1` | Entries sorted dirs-first. Returns the directory `etag` too. |
 | `GET` | `/fs/stat?path=` | Single entry. |
+| `GET` | `/fs/hash?path=…&quick=1` | **Content fingerprint** (0.16+): md5 (or sha256) of head + tail + size, or of the whole file with `quick=0`; lets two devices syncing the same folder recognise the same file without transferring it. |
 | `GET`/`HEAD` | `/fs/content?path=&download=1` | Streams the file. Supports `Range`, `If-None-Match`, `If-Range`. |
 | `PUT` | `/fs/content?path=&overwrite=false` | Whole-file upload, written to a temp sibling and renamed atomically. `If-Match: <etag>` for optimistic locking, `X-Mtime: RFC3339` to preserve the client mtime. |
 | `POST` | `/fs/mkdir` `{"path":"/a/b","parents":true}` | |

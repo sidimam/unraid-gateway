@@ -351,14 +351,15 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusForbidden, map[string]string{"error": "this device is not registered on the gateway: sign in again to register it", "code": "device_not_registered"})
 			return
 		}
-		isNew, err := s.devices.Register(req.DeviceID, name, sess.User, sess.Identity.Name, ip)
+		// One "signed in" event (and one Logins tick) per device every 10 minutes: the iOS File Provider
+		// extension signs in at almost every request and used to fill the log with identical lines (0.15/0.16).
+		count := s.logins.Allow(req.DeviceID, 10*time.Minute)
+		isNew, err := s.devices.Register(req.DeviceID, name, sess.User, sess.Identity.Name, ip, count)
 		if err != nil {
 			s.log.Warn("devices: cannot save the registry", "err", err, "file", s.cfg.DevicesFile)
 		}
 		sess.DeviceID = req.DeviceID
-		// One "signed in" event per device every 10 minutes: the iOS File Provider extension signs in
-		// at almost every request and used to fill the log with identical lines (0.15).
-		if isNew || s.logins.Allow(req.DeviceID, 10*time.Minute) {
+		if isNew || count {
 			s.metrics.Log(req.DeviceID, "login", "info", fmt.Sprintf("signed in as %s from %s", whoOf(sess.User, sess.Identity.Name), ip))
 		}
 		if isNew {

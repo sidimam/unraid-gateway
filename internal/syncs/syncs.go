@@ -55,16 +55,20 @@ type File struct {
 
 // Sync is one pair.
 type Sync struct {
-	ID         string    `json:"id"`
-	DeviceID   string    `json:"deviceId"`
-	User       string    `json:"user,omitempty"`
-	Kind       string    `json:"kind"`
-	LocalLabel string    `json:"localLabel"`
-	RemotePath string    `json:"remotePath"`
-	Mode       string    `json:"mode"`
-	Enabled    bool      `json:"enabled"`
-	CreatedAt  time.Time `json:"createdAt"`
-	UpdatedAt  time.Time `json:"updatedAt"`
+	ID         string `json:"id"`
+	DeviceID   string `json:"deviceId"`
+	User       string `json:"user,omitempty"`
+	Kind       string `json:"kind"`
+	LocalLabel string `json:"localLabel"`
+	RemotePath string `json:"remotePath"`
+	Mode       string `json:"mode"`
+	// Conflict policy chosen in the app (0.16): newest | keepBoth | keepExisting | overwrite | ask.
+	Conflicts string `json:"conflicts,omitempty"`
+	// The app compares a quick content fingerprint before deciding: identical files are skipped (0.16).
+	HashCheck bool      `json:"hashCheck"`
+	Enabled   bool      `json:"enabled"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// Set by the web UI when it pauses the pair; cleared when re-enabled. Shown to the user.
 	DisabledBy string `json:"disabledBy,omitempty"`
 	LastRun    *Run   `json:"lastRun,omitempty"`
@@ -179,6 +183,10 @@ func (s *Store) Upsert(in Sync) (Sync, bool, error) {
 	if in.Kind != "" {
 		cur.Kind = in.Kind
 	}
+	if in.Conflicts != "" {
+		cur.Conflicts = in.Conflicts
+	}
+	cur.HashCheck = in.HashCheck
 	if in.User != "" {
 		cur.User = in.User
 	}

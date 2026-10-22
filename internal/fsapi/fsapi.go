@@ -188,6 +188,7 @@ func (a *API) Register(mux *http.ServeMux, prefix string) {
 	p := strings.TrimRight(prefix, "/")
 	mux.HandleFunc("GET "+p+"/list", a.handleList)
 	mux.HandleFunc("GET "+p+"/stat", a.handleStat)
+	mux.HandleFunc("GET "+p+"/hash", a.handleHash)
 	mux.HandleFunc("GET "+p+"/content", a.handleDownload)
 	mux.HandleFunc("HEAD "+p+"/content", a.handleDownload)
 	mux.HandleFunc("PUT "+p+"/content", a.mutating(a.handlePut))

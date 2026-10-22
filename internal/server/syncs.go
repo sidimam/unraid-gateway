@@ -122,6 +122,12 @@ func (s *Server) handleSyncPut(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "kind must be folder, photos or downloads")
 		return
 	}
+	switch in.Conflicts {
+	case "", "newest", "keepBoth", "keepExisting", "overwrite", "ask":
+	default:
+		writeErr(w, http.StatusBadRequest, "conflicts must be newest, keepBoth, keepExisting, overwrite or ask")
+		return
+	}
 	if !strings.HasPrefix(in.RemotePath, "/") {
 		writeErr(w, http.StatusBadRequest, "remotePath must start with /")
 		return

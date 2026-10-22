@@ -93,7 +93,9 @@ func (s *Store) sorted() []*Device {
 }
 
 // Register adds or refreshes a device. Returns true when it is new.
-func (s *Store) Register(id, name, user, key, ip string) (isNew bool, err error) {
+// countLogin is false when the caller coalesces repeated sign-ins of the same device (0.16): the
+// Logins counter then means "distinct sessions", not "requests of an extension that re-authenticates".
+func (s *Store) Register(id, name, user, key, ip string, countLogin bool) (isNew bool, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	now := time.Now()
@@ -113,7 +115,9 @@ func (s *Store) Register(id, name, user, key, ip string) (isNew bool, err error)
 		d.Key = key
 	}
 	d.LastSeen, d.LastIP = now, ip
-	d.Logins++
+	if countLogin || isNew {
+		d.Logins++
+	}
 	// A device that signs in again is not old, whatever happened in between.
 	d.SupersededBy, d.SupersededAt = "", time.Time{}
 	if isNew {
