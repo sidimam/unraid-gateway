@@ -178,6 +178,7 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		}
 	}
 	s.handler = s.routes()
+	s.loadNotifySettings()
 	go s.runSystemSampler(stop, time.Minute)
 	return s, nil
 }
@@ -231,6 +232,9 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("GET /api/v1/users/{name}/log", s.handleUserLog)
 	private.HandleFunc("POST /api/v1/notify/test", s.handleNotifyTest)
 	private.HandleFunc("GET /api/v1/notify/channels", s.handleNotifyChannels)
+	private.HandleFunc("GET /api/v1/notify/settings", s.handleNotifySettingsGet)
+	private.HandleFunc("PUT /api/v1/notify/settings", s.handleNotifySettingsPut)
+	private.HandleFunc("DELETE /api/v1/notify/settings", s.handleNotifySettingsDelete)
 	private.HandleFunc("GET /api/v1/keys", s.handleKeysList)
 	private.HandleFunc("POST /api/v1/keys", s.handleKeyCreate)
 	private.HandleFunc("DELETE /api/v1/keys/{id}", s.handleKeyDelete)

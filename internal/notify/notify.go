@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -48,6 +49,7 @@ type Config struct {
 
 // Notifier sends events.
 type Notifier struct {
+	mu     sync.RWMutex
 	cfg    Config
 	unraid UnraidSender
 	log    *slog.Logger
@@ -59,20 +61,36 @@ func New(cfg Config, unraid UnraidSender, log *slog.Logger) *Notifier {
 	return &Notifier{cfg: cfg, unraid: unraid, log: log, http: &http.Client{Timeout: 15 * time.Second}}
 }
 
+// Config returns the current channel configuration (0.18: editable from the web UI at runtime).
+func (n *Notifier) Config() Config {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+	return n.cfg
+}
+
+// SetConfig replaces the channel configuration; UnraidDir is kept from the container start-up.
+func (n *Notifier) SetConfig(c Config) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	c.UnraidDir = n.cfg.UnraidDir
+	n.cfg = c
+}
+
 // Channels lists what is configured, for the console and the UI.
 func (n *Notifier) Channels() []string {
+	cfg := n.Config()
 	var out []string
-	if n.cfg.UnraidEnabled {
+	if cfg.UnraidEnabled {
 		if n.UnraidSpoolAvailable() {
 			out = append(out, "unraid")
 		} else {
 			out = append(out, "unraid (api)")
 		}
 	}
-	if n.cfg.SMTPHost != "" && n.cfg.SMTPTo != "" {
+	if cfg.SMTPHost != "" && cfg.SMTPTo != "" {
 		out = append(out, "smtp")
 	}
-	if n.cfg.TelegramToken != "" && n.cfg.TelegramChatID != "" {
+	if cfg.TelegramToken != "" && cfg.TelegramChatID != "" {
 		out = append(out, "telegram")
 	}
 	return out
@@ -81,18 +99,19 @@ func (n *Notifier) Channels() []string {
 // Send delivers to every channel. sessionKey is used for Unraid when no fixed key is configured.
 // It returns one error per failed channel (nil when everything went through).
 func (n *Notifier) Send(ctx context.Context, sessionKey, title, body string, imp Importance) []error {
+	cfg := n.Config()
 	var errs []error
-	if n.cfg.UnraidEnabled {
+	if cfg.UnraidEnabled {
 		if err := n.sendUnraidAny(ctx, sessionKey, title, body, imp); err != nil {
 			errs = append(errs, err)
 		}
 	}
-	if n.cfg.SMTPHost != "" && n.cfg.SMTPTo != "" {
+	if cfg.SMTPHost != "" && cfg.SMTPTo != "" {
 		if err := n.sendMail(title, body); err != nil {
 			errs = append(errs, fmt.Errorf("smtp: %w", err))
 		}
 	}
-	if n.cfg.TelegramToken != "" && n.cfg.TelegramChatID != "" {
+	if cfg.TelegramToken != "" && cfg.TelegramChatID != "" {
 		if err := n.sendTelegram(ctx, title, body); err != nil {
 			errs = append(errs, fmt.Errorf("telegram: %w", err))
 		}
@@ -106,10 +125,11 @@ func (n *Notifier) Send(ctx context.Context, sessionKey, title, body string, imp
 // UnraidSpoolAvailable reports whether Unraid's notification folder is mounted and writable:
 // the "works out of the box" path, independent of API keys and roles.
 func (n *Notifier) UnraidSpoolAvailable() bool {
-	if n.cfg.UnraidDir == "" {
+	cfg := n.Config()
+	if cfg.UnraidDir == "" {
 		return false
 	}
-	unread := filepath.Join(n.cfg.UnraidDir, "unread")
+	unread := filepath.Join(cfg.UnraidDir, "unread")
 	st, err := os.Stat(unread)
 	if err != nil || !st.IsDir() {
 		return false
@@ -127,9 +147,10 @@ func (n *Notifier) UnraidSpoolAvailable() bool {
 // sendUnraidAny prefers the notification spool (no key needed) and falls back to the GraphQL
 // mutation with the fixed or signing-in key; errors say which path failed and what to do.
 func (n *Notifier) sendUnraidAny(ctx context.Context, sessionKey, title, body string, imp Importance) error {
+	cfg := n.Config()
 	var spoolErr error
-	if n.cfg.UnraidDir != "" {
-		if _, err := os.Stat(n.cfg.UnraidDir); err == nil {
+	if cfg.UnraidDir != "" {
+		if _, err := os.Stat(cfg.UnraidDir); err == nil {
 			if spoolErr = n.writeUnraidSpool(title, body, imp); spoolErr == nil {
 				return nil
 			}
@@ -141,7 +162,7 @@ func (n *Notifier) sendUnraidAny(ctx context.Context, sessionKey, title, body st
 		}
 		return errors.New("unraid: neither the notification folder (/tmp/notifications → /unraid-notifications) nor the API are available")
 	}
-	key := n.cfg.UnraidAPIKey
+	key := cfg.UnraidAPIKey
 	if key == "" {
 		key = sessionKey
 	}
@@ -155,7 +176,7 @@ func (n *Notifier) sendUnraidAny(ctx context.Context, sessionKey, title, body st
 	// Unraid answers "Forbidden resource" when the key lacks the notification permission (a VIEWER key).
 	if strings.Contains(strings.ToLower(err.Error()), "forbidden") {
 		which := "the signing-in key"
-		if n.cfg.UnraidAPIKey != "" {
+		if cfg.UnraidAPIKey != "" {
 			which = "NOTIFY_UNRAID_API_KEY"
 		}
 		err = fmt.Errorf("%s is not allowed to create notifications (VIEWER role). Map the host folder /tmp/notifications to /unraid-notifications in the container settings (no key needed), or set NOTIFY_UNRAID_API_KEY to an ADMIN key", which)
@@ -170,7 +191,8 @@ func (n *Notifier) sendUnraidAny(ctx context.Context, sessionKey, title, body st
 // (/tmp/notifications/unread/*.notify, ini-style); the webGui shows it at once. Agents (e-mail,
 // Pushover…) are not triggered by a plain file: use the gateway's SMTP/Telegram channels for that.
 func (n *Notifier) writeUnraidSpool(title, body string, imp Importance) error {
-	unread := filepath.Join(n.cfg.UnraidDir, "unread")
+	cfg := n.Config()
+	unread := filepath.Join(cfg.UnraidDir, "unread")
 	if err := os.MkdirAll(unread, 0o777); err != nil {
 		return err
 	}
@@ -208,32 +230,33 @@ func (n *Notifier) sendUnraid(ctx context.Context, key, title, body string, imp 
 }
 
 func (n *Notifier) sendMail(title, body string) error {
-	port := n.cfg.SMTPPort
+	cfg := n.Config()
+	port := cfg.SMTPPort
 	if port == "" {
 		port = "587"
 	}
-	addr := net.JoinHostPort(n.cfg.SMTPHost, port)
-	from := n.cfg.SMTPFrom
+	addr := net.JoinHostPort(cfg.SMTPHost, port)
+	from := cfg.SMTPFrom
 	if from == "" {
-		from = n.cfg.SMTPUser
+		from = cfg.SMTPUser
 	}
-	to := strings.Split(n.cfg.SMTPTo, ",")
+	to := strings.Split(cfg.SMTPTo, ",")
 	for i := range to {
 		to[i] = strings.TrimSpace(to[i])
 	}
 	msg := fmt.Sprintf("From: unraid-gateway <%s>\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s\r\n", from, strings.Join(to, ", "), title, body)
 	var auth smtp.Auth
-	if n.cfg.SMTPUser != "" {
-		auth = smtp.PlainAuth("", n.cfg.SMTPUser, n.cfg.SMTPPassword, n.cfg.SMTPHost)
+	if cfg.SMTPUser != "" {
+		auth = smtp.PlainAuth("", cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPHost)
 	}
-	switch strings.ToLower(n.cfg.SMTPTLS) {
+	switch strings.ToLower(cfg.SMTPTLS) {
 	case "tls", "ssl", "implicit":
-		conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 15 * time.Second}, "tcp", addr, &tls.Config{ServerName: n.cfg.SMTPHost, MinVersion: tls.VersionTLS12})
+		conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 15 * time.Second}, "tcp", addr, &tls.Config{ServerName: cfg.SMTPHost, MinVersion: tls.VersionTLS12})
 		if err != nil {
 			return err
 		}
 		defer conn.Close()
-		c, err := smtp.NewClient(conn, n.cfg.SMTPHost)
+		c, err := smtp.NewClient(conn, cfg.SMTPHost)
 		if err != nil {
 			return err
 		}
@@ -253,7 +276,7 @@ func (n *Notifier) sendMail(title, body string) error {
 		}
 		defer c.Quit()
 		if ok, _ := c.Extension("STARTTLS"); ok {
-			if err := c.StartTLS(&tls.Config{ServerName: n.cfg.SMTPHost, MinVersion: tls.VersionTLS12}); err != nil {
+			if err := c.StartTLS(&tls.Config{ServerName: cfg.SMTPHost, MinVersion: tls.VersionTLS12}); err != nil {
 				return err
 			}
 		}
@@ -286,8 +309,9 @@ func sendWith(c *smtp.Client, auth smtp.Auth, from string, to []string, msg stri
 }
 
 func (n *Notifier) sendTelegram(ctx context.Context, title, body string) error {
-	payload, _ := json.Marshal(map[string]any{"chat_id": n.cfg.TelegramChatID, "text": "🟠 " + title + "\n" + body})
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.telegram.org/bot"+n.cfg.TelegramToken+"/sendMessage", bytes.NewReader(payload))
+	cfg := n.Config()
+	payload, _ := json.Marshal(map[string]any{"chat_id": cfg.TelegramChatID, "text": "🟠 " + title + "\n" + body})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.telegram.org/bot"+cfg.TelegramToken+"/sendMessage", bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}

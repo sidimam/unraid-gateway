@@ -169,9 +169,38 @@
           <div id="key-new" class="out" hidden></div>
           </div>
         </details>
-        <div class="card flat">
-          <div class="toolbar"><h2 data-i18n="tab_notify">Notifications</h2><span id="notify-channels" class="muted small"></span><button class="info" type="button" data-tip="notify_intro" aria-label="info">i</button></div>
-        </div>
+        <details class="card" id="notify-card">
+          <summary><h2 data-i18n="tab_notify">Notifications</h2><span id="notify-channels" class="muted small"></span><button class="info" type="button" data-tip="notify_intro" aria-label="info">i</button><div class="spacer"></div><button id="notify-test" class="ghost small-btn" data-i18n="send_test">Send a test</button></summary>
+          <div class="body">
+          <p id="notify-result" class="muted small" hidden></p>
+          <p class="muted small" id="notify-source"></p>
+          <form id="notify-form" class="notify-form" autocomplete="off">
+            <h3 data-i18n="notify_unraid">Unraid notifications</h3>
+            <label class="muted small check"><input type="checkbox" id="nf-unraid"> <span data-i18n="notify_unraid_on">Send to Unraid's notification system</span></label>
+            <label class="field"><span data-i18n="notify_unraid_key">ADMIN API key (only if the web UI key is VIEWER; empty when the spool is mounted)</span><input id="nf-unraid-key" type="password" autocomplete="new-password"></label>
+            <h3 data-i18n="notify_mail">E-mail (SMTP)</h3>
+            <div class="row">
+              <label class="field"><span data-i18n="notify_smtp_host">Server</span><input id="nf-smtp-host" type="text" placeholder="smtp.example.com"></label>
+              <label class="field short"><span data-i18n="notify_smtp_port">Port</span><input id="nf-smtp-port" type="text" placeholder="587"></label>
+              <label class="field short"><span data-i18n="notify_smtp_tls">Encryption</span><select id="nf-smtp-tls"><option value="starttls">STARTTLS</option><option value="tls">TLS</option><option value="none" data-i18n="none">none</option></select></label>
+            </div>
+            <div class="row">
+              <label class="field"><span data-i18n="notify_smtp_user">User</span><input id="nf-smtp-user" type="text"></label>
+              <label class="field"><span data-i18n="notify_smtp_password">Password</span><input id="nf-smtp-password" type="password" autocomplete="new-password"></label>
+            </div>
+            <div class="row">
+              <label class="field"><span data-i18n="notify_smtp_from">From</span><input id="nf-smtp-from" type="text" placeholder="gateway@example.com"></label>
+              <label class="field"><span data-i18n="notify_smtp_to">To (comma separated)</span><input id="nf-smtp-to" type="text"></label>
+            </div>
+            <h3>Telegram</h3>
+            <div class="row">
+              <label class="field"><span data-i18n="notify_tg_token">Bot token</span><input id="nf-tg-token" type="password" autocomplete="new-password"></label>
+              <label class="field"><span data-i18n="notify_tg_chat">Chat id</span><input id="nf-tg-chat" type="text" placeholder="-100…"></label>
+            </div>
+            <div class="row"><button type="submit" id="notify-save" data-i18n="save">Save</button><button type="button" class="ghost" id="notify-reset" data-i18n="notify_reset">Back to the container variables</button><span id="notify-saved" class="muted small"></span></div>
+          </form>
+          </div>
+        </details>
         <details class="card">
           <summary><h2 data-i18n="for_the_app">For the apps</h2><code id="origin" class="small"></code></summary>
           <div class="body">

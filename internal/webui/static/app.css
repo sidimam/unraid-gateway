@@ -175,3 +175,10 @@ dialog#user-dialog{border:1px solid var(--line);border-radius:14px;padding:16px;
 dialog#user-dialog::backdrop{background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
 dialog#user-dialog .devices-cards{margin-top:10px}
 .user-link{background:none;border:0;padding:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline dotted}
+
+/* 0.18: notification settings form */
+.notify-form h3{margin:14px 0 6px;font-size:14px}
+.notify-form .field.short{flex:0 0 140px}
+.notify-form .row{align-items:flex-end}
+.notify-form input,.notify-form select{width:100%}
+#notify-card[open]{grid-column:1/-1}

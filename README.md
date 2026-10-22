@@ -157,6 +157,7 @@ Then send `Authorization: Bearer <token>` on every call. For scripts you may ins
 | `GET` | `/system` | **System information** (0.12+): Unraid's OS, CPU, memory modules, mainboard, versions, GPU and network interfaces, as the Unraid API reports them. |
 | `GET` | `/system/history?range=24h\|7d` | **Unraid load over time** (0.17+): CPU and memory samples the gateway takes every minute with the remembered web UI key. |
 | `GET` | `/metrics?range=24h\|7d\|30d\|90d` | **Traffic** (0.17+): requests and bytes of every device the caller may see, summed, with today/week/month totals. |
+| `GET`/`PUT`/`DELETE` | `/notify/settings` | **Notification channels** (0.18+, admin): read (secrets masked), change (saved in `/config/notify.json`, applied at once) or reset to the container variables. |
 | `POST` | `/fs/ticket` | **Media ticket** (0.6+): signed, expiring URL `/media/<ticket>` for one file, for players that cannot send headers (mpv on Apple TV, VLC, browsers); Range supported. |
 | `GET` | `/fs/changes?path=/&since=<unix ns>&after=&cursor=` | Legacy change feed (mtime walk), paginated, see below. |
 

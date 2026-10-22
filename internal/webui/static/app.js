@@ -46,7 +46,7 @@
       graphql: 'GraphQL proxy', run: 'Run', docs: 'Documentation',
       session_expired: 'session expired', device_revoked: 'this browser was removed from the gateway: sign in again to register it', remember_failed: 'Could not remember the key: {err}', confirm_forget: 'Delete the API key stored on the gateway? You will paste it again next time.',
       key_label: 'api key', user_scope_note: 'per-user permissions',
-      health_open: 'Open the Health page', tab_health: 'Health', donut_checks: 'Checks', donut_devices: 'Devices', donut_memory: 'Memory', donut_shares: 'Shares', load_title: 'Unraid load', load_nokey: 'no key remembered on the gateway: sampling is off (WEBUI_API_KEY or Remember this key)', load_empty: 'No samples yet: the gateway reads the load every minute while it runs.', traffic_title: 'Traffic through the gateway', legend_cpu: 'CPU %', legend_mem: 'memory %', legend_requests: 'requests', read_write: 'read/write', mounted: 'mounted', n_devices_seen: '{n} device(s)', users_devices_title: 'Devices of {name}', logins_note: 'since gateway 0.16 one sign-in per device every 10 minutes is counted (the File Provider used to sign in at every request)', pm_account_ph: 'e.g. unraid-gateway at home', filter_ph: 'filter…', search_ph: 'search in the log…', col_unraid_path: 'Unraid path', unraid_path_title: 'Where the file lives on the Unraid server (user share path)', all_devices: 'All devices', all_events: 'All events', show_more: 'Show more ({n} left)', n_events: '{n} events', no_user_group: 'no user (API key only)',
+      health_open: 'Open the Health page', notify_unraid: 'Unraid notifications', notify_unraid_on: "Send to Unraid's notification system", notify_unraid_key: 'ADMIN API key (only if the web UI key is VIEWER; leave empty when /tmp/notifications is mounted)', notify_mail: 'E-mail (SMTP)', notify_smtp_host: 'Server', notify_smtp_port: 'Port', notify_smtp_tls: 'Encryption', none: 'none', notify_smtp_user: 'User', notify_smtp_password: 'Password', notify_smtp_from: 'From', notify_smtp_to: 'To (comma separated)', notify_tg_token: 'Bot token', notify_tg_chat: 'Chat id', save: 'Save', notify_reset: 'Back to the container variables', notify_source_file: 'Channels set from this page (/config/notify.json); the container variables are ignored.', notify_source_env: 'Channels from the container variables; saving here overrides them (kept in /config/notify.json).', notify_saved: 'Saved.', notify_admin_only: 'Only an ADMIN key or an administrator can change the channels.', secret_set: 'set — leave empty to keep', confirm_notify_reset: 'Forget the channels saved here and go back to the container variables?', tab_health: 'Health', donut_checks: 'Checks', donut_devices: 'Devices', donut_memory: 'Memory', donut_shares: 'Shares', load_title: 'Unraid load', load_nokey: 'no key remembered on the gateway: sampling is off (WEBUI_API_KEY or Remember this key)', load_empty: 'No samples yet: the gateway reads the load every minute while it runs.', traffic_title: 'Traffic through the gateway', legend_cpu: 'CPU %', legend_mem: 'memory %', legend_requests: 'requests', read_write: 'read/write', mounted: 'mounted', n_devices_seen: '{n} device(s)', users_devices_title: 'Devices of {name}', logins_note: 'since gateway 0.16 one sign-in per device every 10 minutes is counted (the File Provider used to sign in at every request)', pm_account_ph: 'e.g. unraid-gateway at home', filter_ph: 'filter…', search_ph: 'search in the log…', col_unraid_path: 'Unraid path', unraid_path_title: 'Where the file lives on the Unraid server (user share path)', all_devices: 'All devices', all_events: 'All events', show_more: 'Show more ({n} left)', n_events: '{n} events', no_user_group: 'no user (API key only)',
       conflict_newest: 'conflicts: newest wins', conflict_keepBoth: 'conflicts: keep both', conflict_keepExisting: 'conflicts: keep existing', conflict_overwrite: 'conflicts: device wins', conflict_ask: 'conflicts: ask', hash_check: 'identical files skipped',
     },
     it: {
@@ -90,7 +90,7 @@
       graphql: 'Proxy GraphQL', run: 'Esegui', docs: 'Documentazione',
       session_expired: 'sessione scaduta', device_revoked: 'questo browser è stato rimosso dal gateway: accedi di nuovo per registrarlo', remember_failed: 'Impossibile ricordare la chiave: {err}', confirm_forget: 'Eliminare la chiave API salvata sul gateway? La incollerai di nuovo la prossima volta.',
       key_label: 'chiave api', user_scope_note: 'permessi per utente',
-      health_open: 'Apri la pagina Stato di salute', tab_health: 'Salute', donut_checks: 'Controlli', donut_devices: 'Dispositivi', donut_memory: 'Memoria', donut_shares: 'Share', load_title: 'Carico di Unraid', load_nokey: 'nessuna chiave ricordata sul gateway: campionamento spento (WEBUI_API_KEY o «Ricorda questa chiave»)', load_empty: 'Ancora nessun campione: il gateway legge il carico ogni minuto mentre è in esecuzione.', traffic_title: 'Traffico attraverso il gateway', legend_cpu: 'CPU %', legend_mem: 'memoria %', legend_requests: 'richieste', read_write: 'lettura/scrittura', mounted: 'montate', n_devices_seen: '{n} dispositivi', users_devices_title: 'Dispositivi di {name}', logins_note: 'dal gateway 0.16 si conta un accesso per dispositivo ogni 10 minuti (il File Provider accedeva a ogni richiesta)', pm_account_ph: 'es. unraid-gateway di casa', filter_ph: 'filtra…', search_ph: 'cerca nel registro…', col_unraid_path: 'Percorso Unraid', unraid_path_title: 'Dove sta il file sul server Unraid (percorso della share utente)', all_devices: 'Tutti i dispositivi', all_events: 'Tutti gli eventi', show_more: 'Mostra altri ({n} rimasti)', n_events: '{n} eventi', no_user_group: 'senza utente (solo chiave API)',
+      health_open: 'Apri la pagina Stato di salute', notify_unraid: 'Notifiche di Unraid', notify_unraid_on: 'Invia al sistema di notifiche di Unraid', notify_unraid_key: 'Chiave API ADMIN (solo se la chiave della web UI è VIEWER; vuota se /tmp/notifications è montato)', notify_mail: 'E-mail (SMTP)', notify_smtp_host: 'Server', notify_smtp_port: 'Porta', notify_smtp_tls: 'Cifratura', none: 'nessuna', notify_smtp_user: 'Utente', notify_smtp_password: 'Password', notify_smtp_from: 'Mittente', notify_smtp_to: 'Destinatari (separati da virgola)', notify_tg_token: 'Token del bot', notify_tg_chat: 'Chat id', save: 'Salva', notify_reset: 'Torna alle variabili del container', notify_source_file: 'Canali impostati da questa pagina (/config/notify.json); le variabili del container sono ignorate.', notify_source_env: 'Canali dalle variabili del container; salvando qui le sostituisci (restano in /config/notify.json).', notify_saved: 'Salvato.', notify_admin_only: 'Solo una chiave ADMIN o un amministratore può cambiare i canali.', secret_set: 'impostata — lascia vuoto per mantenerla', confirm_notify_reset: 'Dimenticare i canali salvati qui e tornare alle variabili del container?', tab_health: 'Salute', donut_checks: 'Controlli', donut_devices: 'Dispositivi', donut_memory: 'Memoria', donut_shares: 'Share', load_title: 'Carico di Unraid', load_nokey: 'nessuna chiave ricordata sul gateway: campionamento spento (WEBUI_API_KEY o «Ricorda questa chiave»)', load_empty: 'Ancora nessun campione: il gateway legge il carico ogni minuto mentre è in esecuzione.', traffic_title: 'Traffico attraverso il gateway', legend_cpu: 'CPU %', legend_mem: 'memoria %', legend_requests: 'richieste', read_write: 'lettura/scrittura', mounted: 'montate', n_devices_seen: '{n} dispositivi', users_devices_title: 'Dispositivi di {name}', logins_note: 'dal gateway 0.16 si conta un accesso per dispositivo ogni 10 minuti (il File Provider accedeva a ogni richiesta)', pm_account_ph: 'es. unraid-gateway di casa', filter_ph: 'filtra…', search_ph: 'cerca nel registro…', col_unraid_path: 'Percorso Unraid', unraid_path_title: 'Dove sta il file sul server Unraid (percorso della share utente)', all_devices: 'Tutti i dispositivi', all_events: 'Tutti gli eventi', show_more: 'Mostra altri ({n} rimasti)', n_events: '{n} eventi', no_user_group: 'senza utente (solo chiave API)',
       conflict_newest: 'conflitti: vince il più recente', conflict_keepBoth: 'conflitti: tieni entrambi', conflict_keepExisting: 'conflitti: tieni l\'esistente', conflict_overwrite: 'conflitti: vince il dispositivo', conflict_ask: 'conflitti: chiedi', hash_check: 'file identici saltati',
       pm_account: 'Nome account (per il gestore password — modificabile)',
     },
@@ -488,7 +488,7 @@
     document.querySelectorAll('.tab').forEach((c) => { c.hidden = c.id !== 'tab-' + name; });
     localStorage.setItem('ugw.tab', name);
     if (name === 'health') { loadHealth(); loadSystem(); loadDevices(); loadLoad(); loadTraffic(); }
-    if (name === 'settings') { loadDevices(); loadUsers(); loadNotifyChannels(); if (!$('keys').hidden) loadKeys(); }
+    if (name === 'settings') { loadDevices(); loadUsers(); loadNotifyChannels(); loadNotifySettings(); if (!$('keys').hidden) loadKeys(); }
   }
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
   // The header dot opens Settings › Health (0.15).
@@ -1226,6 +1226,36 @@
   async function loadNotifyChannels() {
     try { const c = await api('/notify/channels'); $('notify-channels').textContent = c.channels.length ? t('channels', { list: c.channels.join(', ') }) : t('no_channel'); } catch {}
   }
+
+  // Notification channels editable from the web UI (0.18): secrets never come back, only "set".
+  async function loadNotifySettings() {
+    try {
+      const x = await api('/notify/settings');
+      $('notify-form').hidden = false; $('notify-source').textContent = t(x.source === 'file' ? 'notify_source_file' : 'notify_source_env');
+      $('nf-unraid').checked = !!x.unraidEnabled; $('nf-unraid-key').value = ''; $('nf-unraid-key').placeholder = x.hasUnraidApiKey ? t('secret_set') : '';
+      $('nf-smtp-host').value = x.smtpHost || ''; $('nf-smtp-port').value = x.smtpPort || ''; $('nf-smtp-tls').value = x.smtpTls || 'starttls'; $('nf-smtp-user').value = x.smtpUser || '';
+      $('nf-smtp-password').value = ''; $('nf-smtp-password').placeholder = x.hasSmtpPassword ? t('secret_set') : ''; $('nf-smtp-from').value = x.smtpFrom || ''; $('nf-smtp-to').value = x.smtpTo || '';
+      $('nf-tg-token').value = ''; $('nf-tg-token').placeholder = x.hasTelegramToken ? t('secret_set') : ''; $('nf-tg-chat').value = x.telegramChatId || '';
+      $('notify-channels').textContent = x.channels.length ? t('channels', { list: x.channels.join(', ') }) : t('no_channel');
+    } catch (err) { $('notify-form').hidden = true; $('notify-source').textContent = err.message.includes('admin') ? t('notify_admin_only') : t('error', { err: err.message }); }
+  }
+  $('notify-form').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('notify-saved').textContent = t('sending');
+    const body = { unraidEnabled: $('nf-unraid').checked, unraidApiKey: $('nf-unraid-key').value, smtpHost: $('nf-smtp-host').value, smtpPort: $('nf-smtp-port').value, smtpTls: $('nf-smtp-tls').value, smtpUser: $('nf-smtp-user').value, smtpPassword: $('nf-smtp-password').value, smtpFrom: $('nf-smtp-from').value, smtpTo: $('nf-smtp-to').value, telegramToken: $('nf-tg-token').value, telegramChatId: $('nf-tg-chat').value };
+    try { await api('/notify/settings', { method: 'PUT', body: JSON.stringify(body) }); $('notify-saved').textContent = t('notify_saved'); await loadNotifySettings(); } catch (err) { $('notify-saved').textContent = t('error', { err: err.message }); }
+  });
+  $('notify-reset').addEventListener('click', async () => {
+    if (!confirm(t('confirm_notify_reset'))) return;
+    try { await api('/notify/settings', { method: 'DELETE' }); $('notify-saved').textContent = t('notify_saved'); await loadNotifySettings(); } catch (err) { $('notify-saved').textContent = t('error', { err: err.message }); }
+  });
+  $('notify-test').addEventListener('click', async (e) => {
+    e.preventDefault(); e.stopPropagation(); $('notify-card').open = true;
+    $('notify-result').hidden = false; $('notify-result').textContent = t('sending');
+    try {
+      const r = await api('/notify/test', { method: 'POST' });
+      $('notify-result').textContent = r.channels.length === 0 ? t('no_channel_long') : (r.errors.length ? t('errors', { list: r.errors.join(' · ') }) : t('sent_to', { list: r.channels.join(', ') }));
+    } catch (err) { $('notify-result').textContent = t('error', { err: err.message }); }
+  });
 
   // ---- api keys -------------------------------------------------------------
   async function loadKeys() {
