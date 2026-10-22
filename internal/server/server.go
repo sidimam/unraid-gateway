@@ -54,6 +54,7 @@ type Server struct {
 	metrics  *metrics.Store
 	syncs    *syncs.Store
 	logins   loginCoalescer
+	sys      sysHistory
 	stop     chan struct{}
 }
 
@@ -177,6 +178,7 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		}
 	}
 	s.handler = s.routes()
+	go s.runSystemSampler(stop, time.Minute)
 	return s, nil
 }
 
@@ -208,6 +210,8 @@ func (s *Server) routes() http.Handler {
 	private.HandleFunc("GET /api/v1/info", s.handleInfo)
 	private.HandleFunc("GET /api/v1/health", s.handleHealth)
 	private.HandleFunc("GET /api/v1/system", s.handleSystem)
+	private.HandleFunc("GET /api/v1/system/history", s.handleSystemHistory)
+	private.HandleFunc("GET /api/v1/metrics", s.handleMetrics)
 	private.HandleFunc("GET /api/v1/activity", s.handleActivity)
 	private.HandleFunc("GET /api/v1/devices", s.handleDevicesList)
 	private.HandleFunc("DELETE /api/v1/devices/{id}", s.handleDeviceRemove)

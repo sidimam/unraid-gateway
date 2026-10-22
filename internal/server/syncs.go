@@ -474,8 +474,20 @@ func (s *Server) handleUserMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	since, step := rangeOf(r.URL.Query().Get("range"))
-	var series []metrics.Point
 	devs := s.userDevices(name)
+	series := s.seriesFor(devs, since, step)
+	now := time.Now()
+	y, m, dd := now.Date()
+	today := time.Date(y, m, dd, 0, 0, 0, 0, now.Location())
+	writeJSON(w, http.StatusOK, map[string]any{
+		"series": series, "step": step.String(),
+		"today": s.sumMany(devs, today), "week": s.sumMany(devs, now.Add(-7*24*time.Hour)), "month": s.sumMany(devs, now.Add(-30*24*time.Hour)),
+	})
+}
+
+// seriesFor sums the per-device series of devs into one.
+func (s *Server) seriesFor(devs []devices.Device, since time.Time, step time.Duration) []metrics.Point {
+	var series []metrics.Point
 	for _, d := range devs {
 		pts := s.metrics.Series(d.ID, since, step)
 		if series == nil {
@@ -498,11 +510,25 @@ func (s *Server) handleUserMetrics(w http.ResponseWriter, r *http.Request) {
 	if series == nil {
 		series = []metrics.Point{}
 	}
+	return series
+}
+
+// GET /api/v1/metrics?range=24h|7d|30d|90d — requests and bytes of every device the caller may see,
+// summed (0.17): the Health section's traffic charts.
+func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	p := principal(r)
+	var devs []devices.Device
+	for _, d := range s.devices.List() {
+		if isAdmin(p) || d.User == p.User || d.ID == p.DeviceID {
+			devs = append(devs, d)
+		}
+	}
+	since, step := rangeOf(r.URL.Query().Get("range"))
 	now := time.Now()
 	y, m, dd := now.Date()
 	today := time.Date(y, m, dd, 0, 0, 0, 0, now.Location())
 	writeJSON(w, http.StatusOK, map[string]any{
-		"series": series, "step": step.String(),
+		"series": s.seriesFor(devs, since, step), "step": step.String(), "devices": len(devs),
 		"today": s.sumMany(devs, today), "week": s.sumMany(devs, now.Add(-7*24*time.Hour)), "month": s.sumMany(devs, now.Add(-30*24*time.Hour)),
 	})
 }

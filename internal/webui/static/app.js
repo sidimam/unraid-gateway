@@ -30,7 +30,7 @@
       k_download: '⬇︎ download', k_stream: '▶︎ stream', k_upload: '⬆︎ upload', now: 'now', s_ago: '{n} s ago', min_ago: '{n} min ago', h_ago: '{n} h ago',
       dev_older: 'Unraid Drive (older build)', dev_browser: 'Browser', dev_mpv: 'mpv player', unknown: 'unknown',
       remove_all: 'Remove all', devices_intro: 'Every Unraid Drive installation registers itself when you add the server. Removing a device closes its sessions and the app asks to sign in again (which registers it anew and sends a notification). A reinstalled app supersedes its previous entry, shown greyed as "old".',
-      col_key: 'Key', col_registered: 'Registered', col_logins: 'Logins', no_devices: 'No device registered yet (older app builds do not register; update to 1.3 build 29 or later).',
+      col_key: 'Key', col_registered: 'Registered', col_logins: 'Sign-ins', no_devices: 'No device registered yet (older app builds do not register; update to 1.3 build 29 or later).',
       this_browser: '(this browser)', old: 'old', last_seen_prefix: 'last seen', replaced_title: 'Replaced by a new installation on {date}. Safe to remove.', registration_off: 'registration is off (DEVICE_REGISTRATION=off)', devices_unavailable: 'devices unavailable: {err}',
       users_title: 'Users', users_intro: 'One row per Unraid user (or API key) with registered devices: how many devices and syncs, when last seen, what moved today. Open a user for its devices, the folder syncs and backups each device runs (pause or resume them), the files they moved and the user\'s activity over time.', col_user: 'User', col_devices: 'Devices', col_syncs: 'Syncs', col_today: 'Today', no_users: 'No user yet: users appear when their devices register.', users_unavailable: 'users unavailable: {err}', open: 'Open', n_paused: '{n} paused', n_warnings: '{n} warning(s)', all_fine: 'All fine', user_devices: 'Devices', user_syncs: 'Folder syncs and backups', user_syncs_intro: 'Defined by the apps on each device. Pausing a sync here stops it on the device at its next run (the app shows it as paused) until you resume it.', no_syncs: 'No sync defined on this user\'s devices.', no_syncs_device: 'No sync defined on this device.', user_log_intro: 'every device of this user, newest first', kind_folder: 'Folder sync', kind_photos: 'Photos backup', kind_downloads: 'Downloads', mode_up: 'device → Unraid', mode_down: 'Unraid → device', mode_both: 'two-way', sync_paused: 'paused', sync_paused_by: 'paused by {who}', sync_never: 'never run yet', sync_failed: 'last run failed', sync_partial: 'last run with {c} conflicts, {e} errors', sync_ok: 'last run fine', sync_last: 'last run {when}: {n} files, {bytes}', sync_files_btn: 'Files ({n})', sync_no_files: 'No file moved yet.', col_file: 'File', col_direction: 'Direction', col_outcome: 'Outcome', dir_up: 'uploaded', dir_down: 'downloaded', dir_delete: 'deleted', dir_conflict: 'conflict', out_ok: 'ok', out_conflict: 'conflict', out_failed: 'failed', out_skipped: 'skipped', syncs_unavailable: 'syncs unavailable: {err}', ev_sync: 'Sync',
       active_today: 'active today', stale: 'not seen for {n} days', last_sync: 'Last sync', prune_label: 'Remove the devices not seen for', prune_days: 'days', prune_run: 'Remove stale devices', confirm_prune: 'Remove every device not seen for {n} days? Their apps will ask to sign in again if they come back.', pruned: '{n} device(s) removed:\n{list}', pruned_none: 'No device was that old.', back: 'Back', charts_title: 'Data moved', range_24h: 'Last 24 hours', range_7d: 'Last 7 days', range_30d: 'Last 30 days', range_90d: 'Last 90 days', chart_empty: 'Nothing moved in this period.', log_title: 'Log', log_intro: 'sign-ins, registrations, removals and interrupted transfers', col_when: 'When', col_event: 'Event', col_detail: 'Detail', log_empty: 'No events recorded yet.', state: 'State', tot_today: 'Today', tot_week: 'Last 7 days', tot_month: 'Last 30 days', tot_detail: '{req} requests · {dl} downloads/streams · {ul} uploads', metrics_unavailable: 'metrics unavailable: {err}', legend_down: 'downloaded / streamed', legend_up: 'uploaded', ev_login: 'Sign-in', ev_register: 'Registration', ev_revoked: 'Revoked', ev_transfer: 'Transfer', ev_admin: 'Administration', log_unavailable: 'log unavailable: {err}',
@@ -46,7 +46,7 @@
       graphql: 'GraphQL proxy', run: 'Run', docs: 'Documentation',
       session_expired: 'session expired', device_revoked: 'this browser was removed from the gateway: sign in again to register it', remember_failed: 'Could not remember the key: {err}', confirm_forget: 'Delete the API key stored on the gateway? You will paste it again next time.',
       key_label: 'api key', user_scope_note: 'per-user permissions',
-      health_open: 'Open Settings › Health', pm_account_ph: 'e.g. unraid-gateway at home', filter_ph: 'filter…', search_ph: 'search in the log…', col_unraid_path: 'Unraid path', unraid_path_title: 'Where the file lives on the Unraid server (user share path)', all_devices: 'All devices', all_events: 'All events', show_more: 'Show more ({n} left)', n_events: '{n} events', no_user_group: 'no user (API key only)',
+      health_open: 'Open the Health page', tab_health: 'Health', donut_checks: 'Checks', donut_devices: 'Devices', donut_memory: 'Memory', donut_shares: 'Shares', load_title: 'Unraid load', load_nokey: 'no key remembered on the gateway: sampling is off (WEBUI_API_KEY or Remember this key)', load_empty: 'No samples yet: the gateway reads the load every minute while it runs.', traffic_title: 'Traffic through the gateway', legend_cpu: 'CPU %', legend_mem: 'memory %', legend_requests: 'requests', read_write: 'read/write', mounted: 'mounted', n_devices_seen: '{n} device(s)', users_devices_title: 'Devices of {name}', logins_note: 'since gateway 0.16 one sign-in per device every 10 minutes is counted (the File Provider used to sign in at every request)', pm_account_ph: 'e.g. unraid-gateway at home', filter_ph: 'filter…', search_ph: 'search in the log…', col_unraid_path: 'Unraid path', unraid_path_title: 'Where the file lives on the Unraid server (user share path)', all_devices: 'All devices', all_events: 'All events', show_more: 'Show more ({n} left)', n_events: '{n} events', no_user_group: 'no user (API key only)',
       conflict_newest: 'conflicts: newest wins', conflict_keepBoth: 'conflicts: keep both', conflict_keepExisting: 'conflicts: keep existing', conflict_overwrite: 'conflicts: device wins', conflict_ask: 'conflicts: ask', hash_check: 'identical files skipped',
     },
     it: {
@@ -74,7 +74,7 @@
       k_download: '⬇︎ download', k_stream: '▶︎ stream', k_upload: '⬆︎ upload', now: 'adesso', s_ago: '{n} s fa', min_ago: '{n} min fa', h_ago: '{n} h fa',
       dev_older: 'Unraid Drive (build precedente)', dev_browser: 'Browser', dev_mpv: 'lettore mpv', unknown: 'sconosciuto',
       remove_all: 'Rimuovi tutti', devices_intro: 'Ogni installazione di Unraid Drive si registra quando aggiungi il server. Rimuovere un dispositivo chiude le sue sessioni e l\'app chiede di accedere di nuovo (si registra da capo e parte una notifica). Un\'app reinstallata sostituisce la voce precedente, mostrata in grigio come "old".',
-      col_key: 'Chiave', col_registered: 'Registrato', col_logins: 'Accessi', no_devices: 'Nessun dispositivo registrato (le build vecchie dell\'app non si registrano: aggiorna alla 1.3 build 29 o successiva).',
+      col_key: 'Chiave', col_registered: 'Registrato', col_logins: 'Accessi (uno ogni 10 min)', no_devices: 'Nessun dispositivo registrato (le build vecchie dell\'app non si registrano: aggiorna alla 1.3 build 29 o successiva).',
       this_browser: '(questo browser)', old: 'vecchio', last_seen_prefix: 'ultimo accesso', replaced_title: 'Sostituito da una nuova installazione il {date}. Si può rimuovere.', registration_off: 'registrazione disattivata (DEVICE_REGISTRATION=off)', devices_unavailable: 'dispositivi non disponibili: {err}',
       users_title: 'Utenti', users_intro: 'Una riga per utente Unraid (o chiave API) con dispositivi registrati: quanti dispositivi e sincronizzazioni, ultimo accesso, dati movimentati oggi. Apri un utente per i suoi dispositivi, le sincronizzazioni di cartelle e i backup di ogni dispositivo (da mettere in pausa o riprendere), i file movimentati e l\'attività nel tempo.', col_user: 'Utente', col_devices: 'Dispositivi', col_syncs: 'Sync', col_today: 'Oggi', no_users: 'Nessun utente: compaiono quando i loro dispositivi si registrano.', users_unavailable: 'utenti non disponibili: {err}', open: 'Apri', n_paused: '{n} in pausa', n_warnings: '{n} avvisi', all_fine: 'Tutto regolare', user_devices: 'Dispositivi', user_syncs: 'Sincronizzazioni di cartelle e backup', user_syncs_intro: 'Definite dalle app su ogni dispositivo. Mettere in pausa una sincronizzazione qui la ferma sul dispositivo alla prossima esecuzione (l\'app la mostra in pausa) finché non la riprendi.', no_syncs: 'Nessuna sincronizzazione sui dispositivi di questo utente.', no_syncs_device: 'Nessuna sincronizzazione su questo dispositivo.', user_log_intro: 'tutti i dispositivi di questo utente, dal più recente', kind_folder: 'Sync cartella', kind_photos: 'Backup Foto', kind_downloads: 'Download', mode_up: 'dispositivo → Unraid', mode_down: 'Unraid → dispositivo', mode_both: 'bidirezionale', sync_paused: 'in pausa', sync_paused_by: 'in pausa da {who}', sync_never: 'mai eseguita', sync_failed: 'ultima esecuzione fallita', sync_partial: 'ultima esecuzione con {c} conflitti, {e} errori', sync_ok: 'ultima esecuzione regolare', sync_last: 'ultima esecuzione {when}: {n} file, {bytes}', sync_files_btn: 'File ({n})', sync_no_files: 'Nessun file movimentato.', col_file: 'File', col_direction: 'Direzione', col_outcome: 'Esito', dir_up: 'caricato', dir_down: 'scaricato', dir_delete: 'eliminato', dir_conflict: 'conflitto', out_ok: 'ok', out_conflict: 'conflitto', out_failed: 'fallito', out_skipped: 'saltato', syncs_unavailable: 'sincronizzazioni non disponibili: {err}', ev_sync: 'Sincronizzazione',
       active_today: 'attivo oggi', stale: 'non visto da {n} giorni', last_sync: 'Ultima sincronizzazione', prune_label: 'Rimuovi i dispositivi non visti da', prune_days: 'giorni', prune_run: 'Rimuovi i dispositivi inattivi', confirm_prune: 'Rimuovere tutti i dispositivi non visti da {n} giorni? Le loro app chiederanno di accedere di nuovo se tornano.', pruned: '{n} dispositivo/i rimosso/i:\n{list}', pruned_none: 'Nessun dispositivo così vecchio.', back: 'Indietro', charts_title: 'Dati movimentati', range_24h: 'Ultime 24 ore', range_7d: 'Ultimi 7 giorni', range_30d: 'Ultimi 30 giorni', range_90d: 'Ultimi 90 giorni', chart_empty: 'Nessun dato movimentato nel periodo.', log_title: 'Registro', log_intro: 'accessi, registrazioni, rimozioni e trasferimenti interrotti', col_when: 'Quando', col_event: 'Evento', col_detail: 'Dettaglio', log_empty: 'Nessun evento registrato.', state: 'Stato', tot_today: 'Oggi', tot_week: 'Ultimi 7 giorni', tot_month: 'Ultimi 30 giorni', tot_detail: '{req} richieste · {dl} download/stream · {ul} upload', metrics_unavailable: 'metriche non disponibili: {err}', legend_down: 'scaricato / in streaming', legend_up: 'caricato', ev_login: 'Accesso', ev_register: 'Registrazione', ev_revoked: 'Revocato', ev_transfer: 'Trasferimento', ev_admin: 'Amministrazione', log_unavailable: 'registro non disponibile: {err}',
@@ -90,7 +90,7 @@
       graphql: 'Proxy GraphQL', run: 'Esegui', docs: 'Documentazione',
       session_expired: 'sessione scaduta', device_revoked: 'questo browser è stato rimosso dal gateway: accedi di nuovo per registrarlo', remember_failed: 'Impossibile ricordare la chiave: {err}', confirm_forget: 'Eliminare la chiave API salvata sul gateway? La incollerai di nuovo la prossima volta.',
       key_label: 'chiave api', user_scope_note: 'permessi per utente',
-      health_open: 'Apri Impostazioni › Stato di salute', pm_account_ph: 'es. unraid-gateway di casa', filter_ph: 'filtra…', search_ph: 'cerca nel registro…', col_unraid_path: 'Percorso Unraid', unraid_path_title: 'Dove sta il file sul server Unraid (percorso della share utente)', all_devices: 'Tutti i dispositivi', all_events: 'Tutti gli eventi', show_more: 'Mostra altri ({n} rimasti)', n_events: '{n} eventi', no_user_group: 'senza utente (solo chiave API)',
+      health_open: 'Apri la pagina Stato di salute', tab_health: 'Salute', donut_checks: 'Controlli', donut_devices: 'Dispositivi', donut_memory: 'Memoria', donut_shares: 'Share', load_title: 'Carico di Unraid', load_nokey: 'nessuna chiave ricordata sul gateway: campionamento spento (WEBUI_API_KEY o «Ricorda questa chiave»)', load_empty: 'Ancora nessun campione: il gateway legge il carico ogni minuto mentre è in esecuzione.', traffic_title: 'Traffico attraverso il gateway', legend_cpu: 'CPU %', legend_mem: 'memoria %', legend_requests: 'richieste', read_write: 'lettura/scrittura', mounted: 'montate', n_devices_seen: '{n} dispositivi', users_devices_title: 'Dispositivi di {name}', logins_note: 'dal gateway 0.16 si conta un accesso per dispositivo ogni 10 minuti (il File Provider accedeva a ogni richiesta)', pm_account_ph: 'es. unraid-gateway di casa', filter_ph: 'filtra…', search_ph: 'cerca nel registro…', col_unraid_path: 'Percorso Unraid', unraid_path_title: 'Dove sta il file sul server Unraid (percorso della share utente)', all_devices: 'Tutti i dispositivi', all_events: 'Tutti gli eventi', show_more: 'Mostra altri ({n} rimasti)', n_events: '{n} eventi', no_user_group: 'senza utente (solo chiave API)',
       conflict_newest: 'conflitti: vince il più recente', conflict_keepBoth: 'conflitti: tieni entrambi', conflict_keepExisting: 'conflitti: tieni l\'esistente', conflict_overwrite: 'conflitti: vince il dispositivo', conflict_ask: 'conflitti: chiedi', hash_check: 'file identici saltati',
       pm_account: 'Nome account (per il gestore password — modificabile)',
     },
@@ -387,22 +387,98 @@
     for (const id of tableIds) for (const tr of $(id).querySelectorAll('tbody tr')) tr.classList.toggle('hidden-row', q !== '' && !norm(tr.textContent).includes(q));
   }
   const bindFilter = (inputId, tableIds) => $(inputId).addEventListener('input', () => filterRows(tableIds, $(inputId).value));
-  // Drag handles on the header cells: the first drag freezes the current widths (table-layout: fixed).
+  // Column resizing (0.17): pointer events (mouse, touch, pencil), wide visible handles, widths remembered
+  // per table in this browser, double-tap on a divider resets that column. The table switches to
+  // table-layout: fixed only once a width is set, so the default layout is never clipped.
   function makeResizable(table) {
     const ths = [...table.querySelectorAll('thead th')];
+    const key = 'ugw.cols.' + table.id;
+    const saved = (() => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } })();
+    const persist = () => { try { localStorage.setItem(key, JSON.stringify(ths.map((x) => x.style.width || ''))); } catch {} };
+    const freeze = () => { if (!table.dataset.sized) { ths.forEach((x) => { if (!x.style.width) x.style.width = x.offsetWidth + 'px'; }); table.dataset.sized = '1'; table.classList.add('resizable'); } };
+    if (saved && saved.some(Boolean) && !table.dataset.sized) { ths.forEach((x, i) => { if (saved[i]) x.style.width = saved[i]; }); freeze(); }
     ths.forEach((th, i) => {
       if (i === ths.length - 1 || th.querySelector('.rz')) return;
       const h = document.createElement('span'); h.className = 'rz'; th.appendChild(h);
-      h.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        if (!table.dataset.sized) { ths.forEach((x) => { x.style.width = x.offsetWidth + 'px'; }); table.dataset.sized = '1'; }
-        const x0 = e.clientX, w0 = th.offsetWidth;
-        const move = (ev) => { th.style.width = Math.max(60, w0 + (ev.clientX - x0) * (document.documentElement.dir === 'rtl' ? -1 : 1)) + 'px'; };
-        const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
-        document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+      let lastTap = 0;
+      h.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const now = Date.now();
+        if (now - lastTap < 350) { th.style.width = ''; persist(); lastTap = 0; return; }   // double tap/click: auto width
+        lastTap = now;
+        freeze();
+        h.setPointerCapture(e.pointerId); h.classList.add('active');
+        const x0 = e.clientX, w0 = th.offsetWidth, rtl = document.documentElement.dir === 'rtl';
+        const move = (ev) => { th.style.width = Math.max(60, w0 + (ev.clientX - x0) * (rtl ? -1 : 1)) + 'px'; };
+        const up = () => { h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); h.classList.remove('active'); persist(); };
+        h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
       });
+      h.addEventListener('click', (e) => e.stopPropagation());
     });
   }
+  // ⓘ popovers (0.17): the long explanations live behind an info button, shown on click / hover.
+  const tipEl = $('tip');
+  function showTip(anchor, text) {
+    tipEl.textContent = text; tipEl.hidden = false;
+    const r = anchor.getBoundingClientRect(), tw = tipEl.offsetWidth, th = tipEl.offsetHeight;
+    let x = Math.min(window.innerWidth - tw - 12, Math.max(12, r.left - 8)), y = r.bottom + 8;
+    if (y + th > window.innerHeight - 8) y = Math.max(8, r.top - th - 8);
+    tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px'; tipEl.dataset.for = anchor.id || anchor.dataset.tip || '';
+  }
+  function hideTip() { tipEl.hidden = true; tipEl.dataset.for = ''; }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.info');
+    if (!b) { if (!e.target.closest('#tip')) hideTip(); return; }
+    e.preventDefault(); e.stopPropagation();
+    const text = b.id === 'tls-info' ? $('tls-note').textContent : t(b.dataset.tip);
+    if (!tipEl.hidden && tipEl.dataset.for === (b.id || b.dataset.tip)) hideTip(); else showTip(b, text);
+  }, true);
+  document.querySelectorAll('.info').forEach((b) => { b.addEventListener('mouseenter', () => { if (tipEl.hidden) showTip(b, b.id === 'tls-info' ? $('tls-note').textContent : t(b.dataset.tip)); }); b.addEventListener('mouseleave', () => { if (tipEl.dataset.for === (b.id || b.dataset.tip)) hideTip(); }); });
+  window.addEventListener('scroll', hideTip, { passive: true });
+  // Donut chart: segments [{v, color, label}], text in the middle.
+  function drawDonut(canvas, segs, center, legendEl) {
+    const dpr = window.devicePixelRatio || 1, S = 140;
+    canvas.width = S * dpr; canvas.height = S * dpr;
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, S, S);
+    const css = getComputedStyle(document.documentElement), line = css.getPropertyValue('--line').trim(), fg = css.getPropertyValue('--fg').trim() || '#222';
+    const total = segs.reduce((a, x) => a + x.v, 0), cx = S / 2, cy = S / 2, R = 60, r = 42;
+    let a0 = -Math.PI / 2;
+    if (total <= 0) { ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.arc(cx, cy, r, 2 * Math.PI, 0, true); ctx.fillStyle = line; ctx.fill(); }
+    for (const x of segs) {
+      if (x.v <= 0) continue;
+      const a1 = a0 + (2 * Math.PI * x.v) / total;
+      ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.arc(cx, cy, r, a1, a0, true); ctx.closePath(); ctx.fillStyle = x.color; ctx.fill();
+      a0 = a1;
+    }
+    ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '600 15px -apple-system, sans-serif'; ctx.fillText(center, cx, cy);
+    if (legendEl) { legendEl.innerHTML = ''; for (const x of segs) { if (x.v <= 0) continue; const d = document.createElement('div'); const i = document.createElement('i'); i.style.background = x.color; d.appendChild(i); d.appendChild(document.createTextNode(`${x.label}: ${x.text ?? x.v}`)); legendEl.appendChild(d); } }
+  }
+  // Line chart over time: samples [{t, ...}], lines [{key, color, label}], ymax fixed or auto.
+  function drawLines(canvas, samples, lines, opts, emptyEl, emptyText) {
+    const empty = !samples.length;
+    if (emptyEl) { emptyEl.hidden = !empty; if (empty) emptyEl.textContent = emptyText || t('chart_empty'); }
+    canvas.hidden = empty; if (empty) return;
+    const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth || 600, H = Number(canvas.getAttribute('height')) || 200;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, W, H);
+    const css = getComputedStyle(document.documentElement), fg = css.getPropertyValue('--muted').trim(), grid = css.getPropertyValue('--line').trim();
+    const padL = 48, padR = 8, padT = 8, padB = 40, iw = W - padL - padR, ih = H - padT - padB;
+    const max = opts.max || Math.max(1, ...samples.flatMap((p) => lines.map((l) => p[l.key] || 0)));
+    const t0 = new Date(samples[0].t).getTime(), t1 = Math.max(t0 + 1, new Date(samples[samples.length - 1].t).getTime());
+    ctx.strokeStyle = grid; ctx.fillStyle = fg; ctx.font = '11px -apple-system, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) { const y = padT + ih - (ih * i) / 4; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke(); ctx.fillText(opts.fmt ? opts.fmt((max * i) / 4) : String(Math.round((max * i) / 4)), padL - 6, y); }
+    for (const l of lines) {
+      ctx.beginPath(); ctx.strokeStyle = l.color; ctx.lineWidth = 2;
+      samples.forEach((p, i) => { const x = padL + (iw * (new Date(p.t).getTime() - t0)) / (t1 - t0), y = padT + ih - (ih * Math.min(max, p[l.key] || 0)) / max; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke();
+    }
+    ctx.lineWidth = 1; ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const n = Math.max(2, Math.floor(iw / 90)), span = t1 - t0;
+    for (let i = 0; i <= n; i++) { const tt = new Date(t0 + (span * i) / n); ctx.fillText(span > 36e5 * 36 ? tt.toLocaleDateString(locale(), { day: 'numeric', month: 'short' }) : tt.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }), padL + (iw * i) / n, padT + ih + 6); }
+    ctx.textAlign = 'left'; let lx = padL;
+    for (const l of lines) { ctx.fillStyle = l.color; ctx.fillRect(lx, H - 12, 10, 10); ctx.fillStyle = fg; ctx.fillText(l.label, lx + 14, H - 12); lx += 14 + ctx.measureText(l.label).width + 18; }
+  }
+
   // Inputs, selects, buttons and labels inside a card header must not toggle the card.
   document.querySelectorAll('details.card > summary').forEach((sm) => sm.querySelectorAll('input, select, button, label, code').forEach((el) => el.addEventListener('click', (e) => e.stopPropagation())));
 
@@ -411,11 +487,12 @@
     document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.tab').forEach((c) => { c.hidden = c.id !== 'tab-' + name; });
     localStorage.setItem('ugw.tab', name);
-    if (name === 'settings') { loadHealth(); loadSystem(); loadDevices(); loadUsers(); loadNotifyChannels(); if (!$('keys').hidden) loadKeys(); }
+    if (name === 'health') { loadHealth(); loadSystem(); loadDevices(); loadLoad(); loadTraffic(); }
+    if (name === 'settings') { loadDevices(); loadUsers(); loadNotifyChannels(); if (!$('keys').hidden) loadKeys(); }
   }
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
   // The header dot opens Settings › Health (0.15).
-  $('health-pill').addEventListener('click', () => { if ($('app').hidden) return; showTab('settings'); closeUser(); closeDevice(); $('health-card').open = true; $('health-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('health-pill').addEventListener('click', () => { if ($('app').hidden) return; showTab('health'); window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
   // ---- status ---------------------------------------------------------------
   async function loadStatus() {
@@ -435,7 +512,7 @@
     const key = identity ? `${identity.name || t('key_label')} · ${(identity.roles || []).join(', ')}` : '';
     $('who-name').textContent = user ? `${user} · ${key}` : key;
     window.ugwShares = shares || null; // share → 'rw' | 'ro' when a user is logged in
-    showTab(['status', 'files', 'settings'].includes(localStorage.getItem('ugw.tab')) ? localStorage.getItem('ugw.tab') : 'status');
+    showTab(['status', 'files', 'health', 'settings'].includes(localStorage.getItem('ugw.tab')) ? localStorage.getItem('ugw.tab') : 'status');
     list(cwd);
     startActivity();
     loadDevices();
@@ -616,6 +693,9 @@
     $('health-pill').title = (h && h.reasons.length ? h.reasons.join(' · ') + ' — ' : '') + t('health_open');
     const ul = $('health-reasons'); ul.innerHTML = '';
     (h ? h.reasons : []).forEach((r) => { const li = document.createElement('li'); li.textContent = r; ul.appendChild(li); });
+    const checks = h ? h.checks : [];
+    const cnt = (lv) => checks.filter((c) => c.level === lv).length;
+    drawDonut($('donut-checks'), [{ v: cnt('ok'), color: '#34c759', label: t('health_ok') }, { v: cnt('warning'), color: '#ff9f0a', label: t('health_warning') }, { v: cnt('error'), color: '#ff3b30', label: t('health_error') }], String(checks.length), $('donut-checks-legend'));
     const tb = $('health-checks').querySelector('tbody'); tb.innerHTML = '';
     (h ? h.checks : []).forEach((c) => {
       const tr = document.createElement('tr');
@@ -651,14 +731,53 @@
       // unraid-api reports module sizes in KiB (33554432 = 32 GiB).
       const installed = mem.reduce((s, m) => s + (m.size || 0), 0) * 1024;
       if (installed) put('sys_memory', fmtSize(installed) + (mem.length ? ' · ' + mem.map((m) => [m.size ? fmtSize(m.size * 1024) : null, m.type, m.clockSpeed ? m.clockSpeed + ' MHz' : null].filter(Boolean).join(' ')).join(', ') : ''));
-      if (mt.used && mt.total) put('sys_memory_use', fmtSize(mt.used) + ' / ' + fmtSize(mt.total));
+      if (mt.used && mt.total) { put('sys_memory_use', fmtSize(mt.used) + ' / ' + fmtSize(mt.total)); drawDonut($('donut-memory'), [{ v: mt.used, color: '#3b8bd9', label: t('sys_memory_use'), text: fmtSize(mt.used) }, { v: Math.max(0, mt.total - mt.used), color: getComputedStyle(document.documentElement).getPropertyValue('--line').trim(), label: t('sys_memory'), text: fmtSize(mt.total) }], Math.round(mt.used * 100 / mt.total) + '%', $('donut-memory-legend')); }
       if (i.baseboard) put('sys_board', [i.baseboard.manufacturer, i.baseboard.model, i.baseboard.version].filter(Boolean).join(' '));
       if (i.versions && i.versions.core) put('sys_versions', i.versions.core.api);
       const gpus = (i.devices && i.devices.gpu) || []; if (gpus.length) put('sys_gpu', gpus.map((g) => [g.vendorname, g.productid].filter(Boolean).join(' ')).join(', '));
       const nics = (i.networkInterfaces || []).filter((n) => n.ipAddress && n.name !== 'lo' && !/^(veth|docker|virbr)/.test(n.name));
       if (nics.length) put('sys_network', nics.map((n) => `${n.name} ${n.ipAddress}${n.speed ? ' · ' + n.speed + ' Mb/s' : ''}`).join(', '));
     } catch (err) { $('sys-note').textContent = t('sys_unavailable', { err: err.message }); }
+    loadSharesDonut();
   }
+  async function loadSharesDonut() {
+    try {
+      const r = await api('/fs/list?path=/'); const shares = (r.entries || []).filter((e) => e.type === 'dir');
+      const perms = window.ugwShares;
+      const segs = perms ? [{ v: shares.filter((e) => perms[e.name] !== 'ro').length, color: '#34c759', label: t('read_write') }, { v: shares.filter((e) => perms[e.name] === 'ro').length, color: '#ff9f0a', label: t('read_only') }] : [{ v: shares.length, color: '#34c759', label: t('mounted') }];
+      drawDonut($('donut-shares'), segs, String(shares.length), $('donut-shares-legend'));
+    } catch {}
+  }
+  // Unraid load over time (0.17): CPU and memory sampled by the gateway every minute.
+  async function loadLoad() {
+    if (!token || $('app').hidden) return;
+    try {
+      const r = await api('/system/history?range=' + $('load-range').value);
+      $('load-note').textContent = r.sampling ? '' : t('load_nokey');
+      drawLines($('load-chart'), r.samples || [], [{ key: 'cpu', color: '#ff9f0a', label: t('legend_cpu') }, { key: 'mem', color: '#3b8bd9', label: t('legend_mem') }], { max: 100, fmt: (v) => Math.round(v) + '%' }, $('load-empty'), t('load_empty'));
+    } catch (err) { $('load-note').textContent = t('metrics_unavailable', { err: err.message }); }
+  }
+  $('load-range').addEventListener('change', loadLoad);
+  // Traffic through the gateway (0.17): every device summed.
+  async function loadTraffic() {
+    if (!token || $('app').hidden) return;
+    try {
+      const m = await api('/metrics?range=' + $('traffic-range').value);
+      $('traffic-note').textContent = t('n_devices_seen', { n: m.devices });
+      const tot = $('traffic-totals'); tot.innerHTML = '';
+      for (const [k, v] of [['today', m.today], ['week', m.week], ['month', m.month]]) {
+        const d = document.createElement('div'); d.className = 'stat';
+        d.innerHTML = `<span class="k"></span><span class="v"></span><span class="muted small"></span>`;
+        d.querySelector('.k').textContent = t('tot_' + k);
+        d.querySelector('.v').textContent = '↓ ' + fmtSize(v.down) + '  ↑ ' + fmtSize(v.up);
+        d.querySelector('.muted').textContent = t('tot_detail', { req: v.requests, dl: v.downloads + v.streams, ul: v.uploads });
+        tot.appendChild(d);
+      }
+      drawChart($('traffic-chart'), m.series || [], m.step, $('traffic-empty'));
+      drawLines($('requests-chart'), m.series || [], [{ key: 'requests', color: '#8e8e93', label: t('legend_requests') }], {}, null);
+    } catch (err) { $('traffic-note').textContent = t('metrics_unavailable', { err: err.message }); }
+  }
+  $('traffic-range').addEventListener('change', loadTraffic);
 
   // ---- activity -------------------------------------------------------------
   const ago = (iso, now) => {
@@ -806,6 +925,9 @@
         grid.appendChild(card);
       }
       applyDevicesFilter();
+      const states = { ok: 0, '': 0, warning: 0, old: 0 };
+      for (const x of d.devices) { if (x.supersededBy) states.old++; else states[deviceState(x, now)[0]]++; }
+      drawDonut($('donut-devices'), [{ v: states.ok, color: '#34c759', label: t('active_today') }, { v: states[''], color: '#8e8e93', label: t('last_seen_prefix') + ' > 1 d' }, { v: states.warning, color: '#ff9f0a', label: t('stale', { n: 30 }) }, { v: states.old, color: getComputedStyle(document.documentElement).getPropertyValue('--line').trim(), label: t('old') }], String(d.devices.filter((x) => !x.supersededBy).length), $('donut-devices-legend'));
       if (!$('device-detail').hidden && !d.devices.some((x) => x.id === currentDevice)) closeDevice();
     } catch (err) { $('devices-scope').textContent = t('devices_unavailable', { err: err.message }); }
   }
@@ -852,9 +974,9 @@
     $('device-title').textContent = title;
     $('device-dot').className = 'dot ' + cls; $('device-dot').title = state;
     const facts = [[t('col_device'), [sub, app].filter(Boolean).join(' · ')], [t('col_user'), x.user || '—'], [t('col_key'), x.key || '—'],
-      [t('col_registered'), fmtDate(x.firstSeen)], [t('last_sync'), ago(x.lastSeen, now)], [t('col_from'), x.lastIp || '—'], [t('col_logins'), String(x.logins)], [t('state'), state], ['ID', x.id]];
+      [t('col_registered'), fmtDate(x.firstSeen)], [t('last_sync'), ago(x.lastSeen, now)], [t('col_from'), x.lastIp || '—'], [t('col_logins'), String(x.logins) + ' ⓘ'], [t('state'), state], ['ID', x.id]];
     const dl = $('device-facts'); dl.innerHTML = '';
-    for (const [k, v] of facts) { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); }
+    for (const [k, v] of facts) { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; if (k === t('col_logins')) { dd.title = t('logins_note'); dd.style.cursor = 'help'; } dl.append(dt, dd); }
     showGlobals(false); $('user-detail').hidden = true; $('device-detail').hidden = false;
     await Promise.all([loadDeviceMetrics(id), loadDeviceLog(id), loadSyncs('device-syncs', 'device-syncs-empty', { device: id })]);
   }
@@ -983,7 +1105,9 @@
       for (const u of users) {
         const tr = document.createElement('tr');
         [u.user, String(u.devices), u.syncs ? `${u.syncs}${u.pausedSyncs ? ' (' + t('n_paused', { n: u.pausedSyncs }) + ')' : ''}` : '0', u.lastSeen ? ago(u.lastSeen, now) : '—', '↓ ' + fmtSize(u.today.down) + '  ↑ ' + fmtSize(u.today.up)].forEach((v, i) => {
-          const td = document.createElement('td'); td.textContent = v; if (i === 1 || i === 2) td.className = 'num'; tr.appendChild(td);
+          const td = document.createElement('td');
+          if (i === 0) { const b = document.createElement('button'); b.className = 'user-link'; b.textContent = v; b.title = t('users_devices_title', { name: v }); b.onclick = () => showUserDialog(v); td.appendChild(b); } else td.textContent = v;
+          if (i === 1 || i === 2) td.className = 'num'; tr.appendChild(td);
         });
         const act = document.createElement('td'); act.className = 'actions';
         const dot = document.createElement('span'); dot.className = 'dot ' + (u.warnings ? 'warning' : 'ok'); dot.title = u.warnings ? t('n_warnings', { n: u.warnings }) : t('all_fine'); dot.style.marginRight = '8px';
@@ -995,6 +1119,27 @@
   }
   bindFilter('users-filter', ['users']);
   $('users-refresh').addEventListener('click', loadUsers);
+  // Popup with a user's devices (0.17): the same cards as the Devices group, without leaving the page.
+  async function showUserDialog(name) {
+    const dlg = $('user-dialog'); $('user-dialog-title').textContent = t('users_devices_title', { name }); const wrap = $('user-dialog-devices'); wrap.innerHTML = '';
+    $('user-dialog-open').onclick = () => { dlg.close(); openUser(name); };
+    dlg.showModal();
+    try {
+      const u = await api('/users/' + encodeURIComponent(name)); const now = new Date();
+      for (const x of u.devices || []) {
+        const [title, sub, app] = splitName(x.name); const [cls, state] = deviceState(x, now);
+        const card = document.createElement('button'); card.type = 'button'; card.className = 'dev-card' + (x.supersededBy ? ' old' : '');
+        card.innerHTML = `<span class="dev-icon">${DEV_ICONS[deviceKind(x.name)]}</span><span class="dev-main"><span class="dev-title"></span><span class="dev-sub muted small"></span><span class="dev-meta muted small"></span></span><span class="dot ${cls}"></span>`;
+        card.querySelector('.dev-title').textContent = title; card.querySelector('.dev-sub').textContent = [sub, app].filter(Boolean).join(' · ');
+        card.querySelector('.dev-meta').textContent = t('last_sync') + ': ' + ago(x.lastSeen, now) + ' · ' + state;
+        card.onclick = () => { dlg.close(); if (!devicesCache.devices.some((d) => d.id === x.id)) devicesCache.devices.push(x); openDevice(x.id); };
+        wrap.appendChild(card);
+      }
+      if (!(u.devices || []).length) wrap.innerHTML = `<p class="muted small">${t('no_devices')}</p>`;
+    } catch (err) { wrap.innerHTML = `<p class="error">${err.message}</p>`; }
+  }
+  $('user-dialog-close').addEventListener('click', () => $('user-dialog').close());
+  $('user-dialog').addEventListener('click', (e) => { if (e.target === $('user-dialog')) $('user-dialog').close(); });
   function closeUser() { currentUser = ''; $('user-detail').hidden = true; if ($('device-detail').hidden) showGlobals(true); }
   $('user-back').addEventListener('click', closeUser);
   $('user-range').addEventListener('change', () => { if (currentUser) loadUserMetrics(currentUser); });
@@ -1081,13 +1226,6 @@
   async function loadNotifyChannels() {
     try { const c = await api('/notify/channels'); $('notify-channels').textContent = c.channels.length ? t('channels', { list: c.channels.join(', ') }) : t('no_channel'); } catch {}
   }
-  $('notify-test').addEventListener('click', async () => {
-    $('notify-result').hidden = false; $('notify-result').textContent = t('sending');
-    try {
-      const r = await api('/notify/test', { method: 'POST' });
-      $('notify-result').textContent = r.channels.length === 0 ? t('no_channel_long') : (r.errors.length ? t('errors', { list: r.errors.join(' · ') }) : t('sent_to', { list: r.channels.join(', ') }));
-    } catch (err) { $('notify-result').textContent = t('error', { err: err.message }); }
-  });
 
   // ---- api keys -------------------------------------------------------------
   async function loadKeys() {

@@ -148,3 +148,30 @@ table.resizable td{overflow:hidden;text-overflow:ellipsis}
 .log-tools select,.log-tools input{padding:6px 10px;font-size:13px;min-width:140px}
 .more{display:flex;justify-content:center;margin:10px 0 0}
 .hidden-row{display:none!important}
+
+
+/* 0.17: health tab, donuts, info popovers, flat cards, touch resize handles, user dialog */
+header{flex-wrap:nowrap}
+header .who{min-width:0;display:flex;align-items:center;gap:8px}
+#who-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:28vw}
+header .who button,.health.btn{white-space:nowrap;flex:0 0 auto}
+.compact{align-items:start}
+.card.flat{margin:0}
+.card.flat .toolbar{margin:0}
+.info{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 12px/1 -apple-system,sans-serif;cursor:pointer;padding:0;vertical-align:middle}
+.info:hover{border-color:var(--accent);color:var(--accent)}
+.tip{position:fixed;z-index:50;max-width:min(420px,calc(100vw - 32px));background:var(--card,#fff);color:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+.donuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:12px 0}
+.donut{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.donut canvas{width:140px;height:140px}
+.donut-label{font-weight:600;font-size:13px}
+.donut-legend{line-height:1.4}
+.donut-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+th .rz{width:14px;right:-7px;touch-action:none;background:linear-gradient(to right,transparent 6px,var(--line) 6px,var(--line) 8px,transparent 8px)}
+th .rz:hover,th .rz.active{background:linear-gradient(to right,transparent 5px,var(--accent) 5px,var(--accent) 9px,transparent 9px);opacity:1}
+table.resizable{table-layout:fixed}
+table.resizable td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+dialog#user-dialog{border:1px solid var(--line);border-radius:14px;padding:16px;max-width:min(720px,calc(100vw - 32px));width:100%}
+dialog#user-dialog::backdrop{background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
+dialog#user-dialog .devices-cards{margin-top:10px}
+.user-link{background:none;border:0;padding:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline dotted}
