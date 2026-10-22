@@ -262,6 +262,7 @@ Images for `linux/amd64` and `linux/arm64` are published to `ghcr.io/sidimam/unr
 - [ ] Optional per-share permissions bound to Unraid roles
 - [ ] Thumbnails endpoint for images/videos
 - [ ] Community Apps listing
+- [ ] Web UI (requested 22 Oct 2026): move **System information** from *Status* to *Settings*; make the **Activity** panel collapsible with its filters (user, device, origin) in the header; fix the `·` separators of device names rendered as `�` (encoding)
 
 ## License
 
