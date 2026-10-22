@@ -262,7 +262,7 @@ Images for `linux/amd64` and `linux/arm64` are published to `ghcr.io/sidimam/unr
 - [ ] Optional per-share permissions bound to Unraid roles
 - [ ] Thumbnails endpoint for images/videos
 - [ ] Community Apps listing
-- [ ] Web UI (requested 22 Oct 2026): move **System information** from *Status* to *Settings*; make the **Activity** panel collapsible with its filters (user, device, origin) in the header; fix the `·` separators of device names rendered as `�` (encoding); on the Connect screen the **Account name (for your password manager)** field is greyed out and not editable (should be a normal editable input, prefilled with `unraid-gateway`)
+- [ ] Web UI (requested 22 Oct 2026): move **System information** and the **Health** panel from *Status* to *Settings*, keeping on *Status* only a small **green/yellow/red dot** in the top-right of the header (click → Health details); make the **Activity** panel collapsible with its filters (user, device, origin) in the header; fix the `·` separators of device names rendered as `�` (encoding); on the Connect screen the **Account name (for your password manager)** field is greyed out and not editable (should be a normal editable input, prefilled with `unraid-gateway`)
 
 ## License
 
