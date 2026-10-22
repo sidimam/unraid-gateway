@@ -1245,6 +1245,10 @@ func (a *API) permissionDetail(err error) string {
 	if statErr != nil {
 		return "permission denied: the gateway account " + gatewayIdentity() + " may not write here. On Unraid run Tools › New Permissions on the share."
 	}
+	// The root is stored with symlinks resolved (/var → /private/var on macOS): compare like with like.
+	if real, err := filepath.EvalSymlinks(target); err == nil {
+		target = real
+	}
 	shown := a.root.Rel(target)
 	if !a.root.within(target) {
 		shown = target

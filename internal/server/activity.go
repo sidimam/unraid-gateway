@@ -26,7 +26,7 @@ func shortHash(s string) string {
 // The apps send "X-Unraid-Drive-Client: Unraid Drive 1.3 (28) · iPhone · iOS 26 · File Provider";
 // other clients are shown by their User-Agent.
 func whoFor(r *http.Request, p auth.Principal, ip string) activity.Who {
-	agent := strings.TrimSpace(r.Header.Get("X-Unraid-Drive-Client"))
+	agent := utf8Header(strings.TrimSpace(r.Header.Get("X-Unraid-Drive-Client")))
 	if agent == "" {
 		agent = r.UserAgent()
 	}

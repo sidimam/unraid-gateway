@@ -122,3 +122,29 @@ table.checks td{white-space:normal}
 #user-log tr.warning td{color:#f0b429}#user-log tr.error td{color:var(--err)}
 .sync-files-list tr.warning td{color:#f0b429}.sync-files-list tr.error td{color:var(--err)}
 .dev-card .dev-main{cursor:pointer}
+
+/* 0.15: header status dot (right), collapsible cards, filters, resizable columns, grouped devices */
+.health.btn{cursor:pointer;background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 10px;color:var(--muted);font:inherit;font-size:13px}
+.health.btn:hover{border-color:var(--accent)}
+details.card>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;margin:-4px 0}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::before{content:"›";display:inline-block;color:var(--muted);transition:transform .15s;width:12px}
+details.card[open]>summary::before{transform:rotate(90deg)}
+details.card>summary h2{margin:0;font-size:17px}
+details.card>summary .toolbar{flex:1;margin:0}
+details.card>.body{margin-top:12px}
+.filter{min-width:160px;max-width:260px;padding:6px 10px!important;font-size:13px;flex:0 1 220px}
+.toolbar .filter{margin-left:auto}
+.compact{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+.compact details.card{margin:0}
+th{position:relative}
+th .rz{position:absolute;top:0;right:0;width:6px;height:100%;cursor:col-resize;user-select:none}
+th .rz:hover{background:var(--accent);opacity:.5}
+table.resizable{table-layout:fixed}
+table.resizable td{overflow:hidden;text-overflow:ellipsis}
+.group-title{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.group-title .pill{text-transform:none;letter-spacing:0}
+.log-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 8px}
+.log-tools select,.log-tools input{padding:6px 10px;font-size:13px;min-width:140px}
+.more{display:flex;justify-content:center;margin:10px 0 0}
+.hidden-row{display:none!important}

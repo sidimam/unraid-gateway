@@ -53,6 +53,7 @@ type Server struct {
 	notifier *notify.Notifier
 	metrics  *metrics.Store
 	syncs    *syncs.Store
+	logins   loginCoalescer
 	stop     chan struct{}
 }
 
@@ -338,7 +339,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.DeviceRegistration != "off" && req.DeviceID != "" {
 		name := strings.TrimSpace(req.DeviceName)
 		if name == "" {
-			name = strings.TrimSpace(r.Header.Get("X-Unraid-Drive-Client"))
+			name = utf8Header(strings.TrimSpace(r.Header.Get("X-Unraid-Drive-Client")))
 		}
 		if name == "" {
 			name = r.UserAgent()
@@ -355,7 +356,11 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			s.log.Warn("devices: cannot save the registry", "err", err, "file", s.cfg.DevicesFile)
 		}
 		sess.DeviceID = req.DeviceID
-		s.metrics.Log(req.DeviceID, "login", "info", fmt.Sprintf("signed in as %s from %s", whoOf(sess.User, sess.Identity.Name), ip))
+		// One "signed in" event per device every 10 minutes: the iOS File Provider extension signs in
+		// at almost every request and used to fill the log with identical lines (0.15).
+		if isNew || s.logins.Allow(req.DeviceID, 10*time.Minute) {
+			s.metrics.Log(req.DeviceID, "login", "info", fmt.Sprintf("signed in as %s from %s", whoOf(sess.User, sess.Identity.Name), ip))
+		}
 		if isNew {
 			s.log.Info("device registered", "device", req.DeviceID, "name", name, "user", sess.User, "key", sess.Identity.Name, "ip", ip)
 			s.metrics.Log(req.DeviceID, "register", "info", fmt.Sprintf("registered as %q by %s from %s", name, whoOf(sess.User, sess.Identity.Name), ip))

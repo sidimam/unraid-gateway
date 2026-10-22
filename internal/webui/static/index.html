@@ -13,7 +13,6 @@
   <img src="/ui/icon.png" alt="" width="40" height="40" class="logo">
   <div>
     <h1>unraid-gateway</h1>
-    <div class="sub health" id="health-pill" title=""><span class="dot" id="health-dot"></span><span id="status" data-i18n="connecting">connecting…</span></div>
   </div>
   <div class="spacer"></div>
   <div id="who" class="who" hidden>
@@ -21,6 +20,8 @@
     <button id="forget" class="ghost" hidden data-i18n="forget_key" data-i18n-title="forget_key_title">Forget stored key</button>
     <button id="logout" class="ghost" data-i18n="disconnect">Disconnect</button>
   </div>
+  <!-- 0.15: one dot top-right for gateway and server; click → Settings › Health. -->
+  <button id="health-pill" class="health btn" type="button" title="" data-i18n-title="health_open"><span class="dot" id="health-dot"></span><span id="status" data-i18n="connecting">connecting…</span></button>
 </header>
 
 <main>
@@ -32,8 +33,8 @@
       <span class="muted small" id="stored-note"></span>
     </div>
     <form id="login-form" autocomplete="on">
-      <label class="field"><span data-i18n="pm_account">Account name (for your password manager)</span>
-        <input id="account" name="username" type="text" autocomplete="username" value="unraid-gateway"></label>
+      <label class="field"><span data-i18n="pm_account">Account name (for your password manager — edit it freely)</span>
+        <input id="account" name="username" type="text" autocomplete="username" value="unraid-gateway" data-i18n-placeholder="pm_account_ph" placeholder="e.g. unraid-gateway at home"></label>
       <label class="field"><span data-i18n="api_key">Unraid API key</span>
         <input id="apikey" name="password" type="password" autocomplete="current-password" data-i18n-placeholder="api_key_ph" placeholder="paste your Unraid API key"></label>
       <label class="muted small check" id="remember-label"><input type="checkbox" id="remember"> <span data-i18n="remember_key">Remember this key on the gateway (/config/webui.key): anyone who can open this page could then use it — keep the gateway on the LAN or behind Cloudflare Access</span></label>
@@ -58,30 +59,23 @@
       <button data-tab="settings" data-i18n="tab_settings">Settings</button>
     </nav>
 
-    <!-- Status: the health of gateway and server, counters, the machine, who is connected. -->
+    <!-- Status (0.15): counters and the live activity. Health and the machine moved to Settings. -->
     <div class="tab" id="tab-status" hidden>
-      <div class="card">
-        <div class="toolbar"><h2 data-i18n="health_title">Health</h2><span class="muted small" id="health-when"></span><div class="spacer"></div><button id="health-refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button></div>
-        <div class="health-main"><span class="dot big" id="health-dot-big"></span><div><div class="health-level" id="health-level">…</div><ul class="reasons" id="health-reasons"></ul></div></div>
-        <details><summary class="muted" data-i18n="health_checks">All checks</summary><div class="table-wrap"><table id="health-checks" class="checks"><tbody></tbody></table></div></details>
-      </div>
       <div class="stats">
         <div class="stat"><span class="k" data-i18n="stat_connected">Connected now</span><span class="v" id="st-clients">–</span></div>
         <div class="stat"><span class="k" data-i18n="stat_streams">Streams / transfers</span><span class="v" id="st-active">–</span></div>
         <div class="stat"><span class="k" data-i18n="stat_devices">Registered devices</span><span class="v" id="st-devices">–</span></div>
         <div class="stat"><span class="k" data-i18n="stat_gateway">Gateway</span><span class="v small" id="st-gateway">–</span></div>
       </div>
-      <div class="card">
-        <div class="toolbar"><h2 data-i18n="sys_title">System information</h2><span class="muted small" id="sys-note"></span></div>
-        <div class="kv" id="sys-kv"></div>
-      </div>
-      <div class="card">
-        <div class="toolbar">
+      <details class="card" id="activity-card" open>
+        <summary>
           <h2 data-i18n="tab_activity">Activity</h2>
           <span id="activity-scope" class="muted small"></span>
           <div class="spacer"></div>
+          <input id="activity-filter" class="filter" type="search" data-i18n-placeholder="filter_ph" placeholder="filter…">
           <label class="muted small check"><input type="checkbox" id="activity-live" checked> <span data-i18n="live">live</span></label>
-        </div>
+        </summary>
+        <div class="body">
         <h3 data-i18n="connected_devices">Connected devices</h3>
         <div class="table-wrap"><table id="act-clients">
           <thead><tr><th data-i18n="col_device">Device</th><th data-i18n="col_user">User</th><th data-i18n="col_from">From</th><th data-i18n="col_since">Since</th><th data-i18n="col_last_seen">Last seen</th><th class="num" data-i18n="col_requests">Requests</th><th data-i18n="col_last_file">Last file</th></tr></thead>
@@ -101,29 +95,85 @@
             <tbody></tbody>
           </table></div>
         </details>
-      </div>
+        </div>
+      </details>
     </div>
 
     <div class="card tab" id="tab-files" hidden>
       <div class="toolbar">
         <nav id="crumbs" class="crumbs"></nav>
         <div class="spacer"></div>
+        <input id="files-filter" class="filter" type="search" data-i18n-placeholder="filter_ph" placeholder="filter…">
         <button id="refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button>
         <button id="mkdir" class="ghost" data-i18n="new_folder">New folder</button>
         <label id="upload-label" class="button"><span data-i18n="upload">Upload</span><input id="upload" type="file" multiple hidden></label>
       </div>
       <p id="root-hint" class="muted small" hidden data-i18n="root_hint">These are the shares mounted into the container. Open one to upload files or create folders. File access is decided by the volume mounts (read/write or read-only) and, with an Unraid user, by that user's share permissions.</p>
       <div id="progress" class="progress" hidden><div></div><span></span></div>
-      <div class="table-wrap"><table id="files">
-        <thead><tr><th data-i18n="col_name">Name</th><th class="num" data-i18n="col_size">Size</th><th data-i18n="col_modified">Modified</th><th></th></tr></thead>
+      <div class="table-wrap"><table id="files" class="resizable">
+        <thead><tr><th data-i18n="col_name">Name</th><th class="num" data-i18n="col_size">Size</th><th data-i18n="col_modified">Modified</th><th data-i18n="col_unraid_path" data-i18n-title="unraid_path_title" title="Where the file lives on the Unraid server (user share path)">Unraid path</th><th></th></tr></thead>
         <tbody></tbody>
       </table></div>
       <p id="empty" class="muted" hidden data-i18n="empty_folder">Empty folder.</p>
     </div>
 
-    <!-- Settings: everything configurable, in one place (0.12). -->
+    <!-- Settings (0.15): compact admin cards on top, then health, the machine, appearance, users and devices. -->
     <div class="tab" id="tab-settings" hidden>
-      <div class="card">
+      <div class="compact settings-global">
+        <details class="card">
+          <summary><h2 data-i18n="tab_keys">Unraid API keys</h2><span class="muted small" data-i18n="needs_admin">(needs an ADMIN key)</span></summary>
+          <div class="body">
+          <p class="muted small" data-i18n="keys_intro">List, create, delete and rotate the API keys of your Unraid server. A new key is shown once: copy it into the apps (Edit server or credentials). Rotate = create a replacement, optionally remember it for this web UI and delete the old one.</p>
+          <div class="row">
+            <button id="keys-refresh" class="ghost" data-i18n="list_keys">List keys</button>
+            <input id="key-name" type="text" data-i18n-placeholder="key_name_ph" placeholder="new key name (letters, digits, spaces)">
+            <select id="key-role"><option value="VIEWER">VIEWER</option><option value="ADMIN">ADMIN</option></select>
+            <button id="key-create" class="ghost" data-i18n="create">Create</button>
+          </div>
+          <div class="table-wrap"><table id="keys" hidden>
+            <thead><tr><th data-i18n="col_name">Name</th><th data-i18n="col_roles">Roles</th><th data-i18n="col_created">Created</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+          <p id="keys-error" class="error" hidden></p>
+          <div id="key-new" class="out" hidden></div>
+          </div>
+        </details>
+        <details class="card">
+          <summary><h2 data-i18n="tab_notify">Notifications</h2><span id="notify-channels" class="muted small"></span></summary>
+          <div class="body">
+          <p class="muted small" data-i18n="notify_intro">A new or removed device raises a notification on every configured channel: Unraid's notifications (NOTIFY_UNRAID — set NOTIFY_UNRAID_API_KEY to an ADMIN key if yours is VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) and Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Set them in the container settings.</p>
+          <div class="row"><button id="notify-test" class="ghost" data-i18n="send_test">Send a test</button><span id="notify-result" class="muted small" hidden></span></div>
+          </div>
+        </details>
+        <details class="card">
+          <summary><h2 data-i18n="for_the_app">For the apps</h2><code id="origin" class="small"></code></summary>
+          <div class="body">
+          <p><span data-i18n="server_url">Server URL to enter in Unraid Drive:</span> <code id="origin2"></code></p>
+          <p class="muted small" id="tls-note"></p>
+          <details>
+            <summary class="muted" data-i18n="graphql">GraphQL proxy</summary>
+            <textarea id="gql" rows="4" spellcheck="false">{ array { state } info { os { hostname } } }</textarea>
+            <div class="row"><button id="gql-run" data-i18n="run">Run</button></div>
+            <pre id="gql-out" class="out"></pre>
+          </details>
+          </div>
+        </details>
+      </div>
+
+      <details class="card settings-global" id="health-card">
+        <summary><h2 data-i18n="health_title">Health</h2><span class="dot" id="health-dot-big"></span><span class="health-level small" id="health-level">…</span><span class="muted small" id="health-when"></span><div class="spacer"></div><button id="health-refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button></summary>
+        <div class="body">
+        <ul class="reasons" id="health-reasons"></ul>
+        <details><summary class="muted" data-i18n="health_checks">All checks</summary><div class="table-wrap"><table id="health-checks" class="checks"><tbody></tbody></table></div></details>
+        </div>
+      </details>
+
+      <details class="card settings-global" id="sys-card">
+        <summary><h2 data-i18n="sys_title">System information</h2><span class="muted small" id="sys-note"></span></summary>
+        <div class="body"><div class="kv" id="sys-kv"></div></div>
+      </details>
+
+      <div class="card settings-global">
         <h2 data-i18n="appearance">Appearance</h2>
         <div class="row">
           <label class="field"><span data-i18n="language">Language</span>
@@ -141,11 +191,12 @@
         </div>
       </div>
 
-      <div class="card" id="users-card">
+      <div class="card settings-global" id="users-card">
         <div class="toolbar">
           <h2 data-i18n="users_title">Users</h2>
           <span id="users-scope" class="muted small"></span>
           <div class="spacer"></div>
+          <input id="users-filter" class="filter" type="search" data-i18n-placeholder="filter_ph" placeholder="filter…">
           <button id="users-refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button>
         </div>
         <p class="muted small" data-i18n="users_intro">One row per Unraid user (or API key) with registered devices: how many devices and syncs, when last seen, what moved today. Open a user for its devices, the folder syncs and backups each device runs (pause or resume them), the files they moved and the user's activity over time.</p>
@@ -177,23 +228,32 @@
         </div>
         <canvas id="user-chart" height="200"></canvas>
         <p id="user-chart-empty" class="muted small" hidden data-i18n="chart_empty">Nothing moved in this period.</p>
-        <div class="toolbar"><h3 data-i18n="log_title">Log</h3><span class="muted small" data-i18n="user_log_intro">every device of this user, newest first</span></div>
-        <div class="table-wrap"><table id="user-log">
-          <thead><tr><th data-i18n="col_when">When</th><th data-i18n="col_device">Device</th><th data-i18n="col_event">Event</th><th data-i18n="col_detail">Detail</th></tr></thead>
-          <tbody></tbody>
-        </table></div>
-        <p id="user-log-empty" class="muted small" hidden data-i18n="log_empty">No events recorded yet.</p>
+        <details id="user-log-card">
+          <summary class="muted"><span data-i18n="log_title">Log</span> · <span class="small" data-i18n="user_log_intro">every device of this user, newest first</span> <span class="small" id="user-log-count"></span></summary>
+          <div class="log-tools">
+            <select id="ulog-device"><option value="" data-i18n="all_devices">All devices</option></select>
+            <select id="ulog-event"><option value="" data-i18n="all_events">All events</option></select>
+            <input id="ulog-search" class="filter" type="search" data-i18n-placeholder="search_ph" placeholder="search in the log…">
+          </div>
+          <div class="table-wrap"><table id="user-log">
+            <thead><tr><th data-i18n="col_when">When</th><th data-i18n="col_device">Device</th><th data-i18n="col_event">Event</th><th data-i18n="col_detail">Detail</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+          <p id="user-log-empty" class="muted small" hidden data-i18n="log_empty">No events recorded yet.</p>
+          <div class="more"><button id="ulog-more" class="ghost" hidden></button></div>
+        </details>
       </div>
 
-      <div class="card" id="devices-card">
+      <div class="card settings-global" id="devices-card">
         <div class="toolbar">
           <h2 data-i18n="tab_devices">Devices</h2>
           <span id="devices-scope" class="muted small"></span>
           <div class="spacer"></div>
+          <input id="devices-filter" class="filter" type="search" data-i18n-placeholder="filter_ph" placeholder="filter…">
           <button id="devices-refresh" class="ghost" data-i18n-title="refresh" title="Refresh">↻</button>
         </div>
         <p class="muted small" data-i18n="devices_intro">Every Unraid Drive installation registers itself when you add the server. Removing a device closes its sessions and the app asks to sign in again (which registers it anew and sends a notification). A reinstalled app supersedes its previous entry, shown greyed as "old".</p>
-        <div id="devices-cards" class="devices-cards"></div>
+        <div id="devices-cards"></div>
         <p id="devices-empty" class="muted" hidden data-i18n="no_devices">No device registered yet (older app builds do not register; update to 1.3 build 29 or later).</p>
         <div id="devices-prune" class="row small" hidden>
           <span class="muted" data-i18n="prune_label">Remove the devices not seen for</span>
@@ -232,46 +292,6 @@
           <tbody></tbody>
         </table></div>
         <p id="device-log-empty" class="muted small" hidden data-i18n="log_empty">No events recorded yet.</p>
-      </div>
-
-      <div class="card">
-        <div class="toolbar"><h2 data-i18n="tab_keys">Unraid API keys</h2><span class="muted small" data-i18n="needs_admin">(needs an ADMIN key)</span></div>
-        <p class="muted small" data-i18n="keys_intro">List, create, delete and rotate the API keys of your Unraid server. A new key is shown once: copy it into the apps (Edit server or credentials). Rotate = create a replacement, optionally remember it for this web UI and delete the old one.</p>
-        <div class="row">
-          <button id="keys-refresh" class="ghost" data-i18n="list_keys">List keys</button>
-          <input id="key-name" type="text" data-i18n-placeholder="key_name_ph" placeholder="new key name (letters, digits, spaces)">
-          <select id="key-role"><option value="VIEWER">VIEWER</option><option value="ADMIN">ADMIN</option></select>
-          <button id="key-create" class="ghost" data-i18n="create">Create</button>
-        </div>
-        <div class="table-wrap"><table id="keys" hidden>
-          <thead><tr><th data-i18n="col_name">Name</th><th data-i18n="col_roles">Roles</th><th data-i18n="col_created">Created</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table></div>
-        <p id="keys-error" class="error" hidden></p>
-        <div id="key-new" class="out" hidden></div>
-      </div>
-
-      <div class="card">
-        <div class="toolbar">
-          <h2 data-i18n="tab_notify">Notifications</h2>
-          <span id="notify-channels" class="muted small"></span>
-          <div class="spacer"></div>
-          <button id="notify-test" class="ghost" data-i18n="send_test">Send a test</button>
-        </div>
-        <p class="muted small" data-i18n="notify_intro">A new or removed device raises a notification on every configured channel: Unraid's notifications (NOTIFY_UNRAID — set NOTIFY_UNRAID_API_KEY to an ADMIN key if yours is VIEWER), e-mail (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_TO, SMTP_TLS) and Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Set them in the container settings.</p>
-        <p id="notify-result" class="muted small" hidden></p>
-      </div>
-
-      <div class="card">
-        <h2 data-i18n="for_the_app">For the apps</h2>
-        <p><span data-i18n="server_url">Server URL to enter in Unraid Drive:</span> <code id="origin"></code></p>
-        <p class="muted small" id="tls-note"></p>
-        <details>
-          <summary class="muted" data-i18n="graphql">GraphQL proxy</summary>
-          <textarea id="gql" rows="4" spellcheck="false">{ array { state } info { os { hostname } } }</textarea>
-          <div class="row"><button id="gql-run" data-i18n="run">Run</button></div>
-          <pre id="gql-out" class="out"></pre>
-        </details>
       </div>
     </div>
   </section>

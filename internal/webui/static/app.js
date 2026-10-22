@@ -12,7 +12,7 @@
       forget_key: 'Forget stored key', forget_key_title: 'Delete the key stored on the gateway', disconnect: 'Disconnect',
       login_title: 'Connect', login_intro: 'Use an Unraid API key (Settings → Management Access → API Keys). VIEWER is enough for files; ADMIN also manages the server and its keys. The key is validated by Unraid and exchanged for a session token.',
       stored_connect: 'Connect with the key stored on this gateway', stored_env: 'from the WEBUI_API_KEY variable', stored_file: 'remembered on this gateway',
-      pm_account: 'Account name (for your password manager)', api_key: 'Unraid API key', api_key_ph: 'paste your Unraid API key',
+      pm_account: 'Account name (for your password manager — edit it freely)', api_key: 'Unraid API key', api_key_ph: 'paste your Unraid API key',
       remember_key: 'Remember this key on the gateway (/config/webui.key): anyone who can open this page could then use it — keep the gateway on the LAN or behind Cloudflare Access',
       connect: 'Connect', as_user: 'Sign in as an Unraid user…', user_intro: 'With an Unraid user and password the gateway applies that user\'s share permissions (public / secure / private, read or write), exactly as over SMB. The API key above is still required.',
       unraid_user: 'Unraid user', unraid_password: 'Unraid password', connect_as_user: 'Connect as this user', need_key: 'Paste the API key first (or use the key stored on the gateway).',
@@ -46,6 +46,7 @@
       graphql: 'GraphQL proxy', run: 'Run', docs: 'Documentation',
       session_expired: 'session expired', device_revoked: 'this browser was removed from the gateway: sign in again to register it', remember_failed: 'Could not remember the key: {err}', confirm_forget: 'Delete the API key stored on the gateway? You will paste it again next time.',
       key_label: 'api key', user_scope_note: 'per-user permissions',
+      health_open: 'Open Settings › Health', pm_account_ph: 'e.g. unraid-gateway at home', filter_ph: 'filter…', search_ph: 'search in the log…', col_unraid_path: 'Unraid path', unraid_path_title: 'Where the file lives on the Unraid server (user share path)', all_devices: 'All devices', all_events: 'All events', show_more: 'Show more ({n} left)', n_events: '{n} events', no_user_group: 'no user (API key only)',
     },
     it: {
       tab_status: 'Stato', tab_settings: 'Impostazioni', health_title: 'Stato di salute', health_checks: 'Tutti i controlli', health_ok: 'Tutto regolare', health_warning: 'Avvisi', health_error: 'Problemi', health_unknown: 'Controllo…', health_unavailable: 'stato non disponibile: {err}', checked_at: 'controllato {when}', sys_title: 'Informazioni di sistema', sys_unavailable: 'informazioni di sistema non disponibili: {err}', sys_host: 'Host', sys_os: 'Unraid', sys_kernel: 'Kernel', sys_uptime: 'Acceso dal', sys_cpu: 'Processore', sys_cores: 'Core / thread', sys_clock: 'Frequenza', sys_memory: 'Memoria', sys_memory_use: 'In uso', sys_board: 'Scheda madre', sys_versions: 'API Unraid', sys_gpu: 'Grafica', sys_network: 'Rete', appearance: 'Aspetto', language: 'Lingua', theme: 'Tema',
@@ -88,6 +89,8 @@
       graphql: 'Proxy GraphQL', run: 'Esegui', docs: 'Documentazione',
       session_expired: 'sessione scaduta', device_revoked: 'questo browser è stato rimosso dal gateway: accedi di nuovo per registrarlo', remember_failed: 'Impossibile ricordare la chiave: {err}', confirm_forget: 'Eliminare la chiave API salvata sul gateway? La incollerai di nuovo la prossima volta.',
       key_label: 'chiave api', user_scope_note: 'permessi per utente',
+      health_open: 'Apri Impostazioni › Stato di salute', pm_account_ph: 'es. unraid-gateway di casa', filter_ph: 'filtra…', search_ph: 'cerca nel registro…', col_unraid_path: 'Percorso Unraid', unraid_path_title: 'Dove sta il file sul server Unraid (percorso della share utente)', all_devices: 'Tutti i dispositivi', all_events: 'Tutti gli eventi', show_more: 'Mostra altri ({n} rimasti)', n_events: '{n} eventi', no_user_group: 'senza utente (solo chiave API)',
+      pm_account: 'Nome account (per il gestore password — modificabile)',
     },
     es: {
       tab_status: 'Estado', tab_settings: 'Ajustes', health_title: 'Salud', health_checks: 'Todas las comprobaciones', health_ok: 'Todo correcto', health_warning: 'Avisos', health_error: 'Problemas', health_unknown: 'Comprobando…', health_unavailable: 'estado no disponible: {err}', checked_at: 'comprobado {when}', sys_title: 'Información del sistema', sys_unavailable: 'información del sistema no disponible: {err}', sys_host: 'Host', sys_os: 'Unraid', sys_kernel: 'Kernel', sys_uptime: 'Encendido desde', sys_cpu: 'Procesador', sys_cores: 'Núcleos / hilos', sys_clock: 'Frecuencia', sys_memory: 'Memoria', sys_memory_use: 'En uso', sys_board: 'Placa base', sys_versions: 'API de Unraid', sys_gpu: 'Gráficos', sys_network: 'Red', appearance: 'Apariencia', language: 'Idioma', theme: 'Tema',
@@ -374,15 +377,43 @@
     return body;
   }
 
+  // ---- 0.15 helpers: text filters on tables, resizable columns, controls inside <summary> ------
+  const norm = (v) => String(v || '').toLowerCase();
+  // Hide the rows of the given tables whose text does not contain the filter.
+  function filterRows(tableIds, text) {
+    const q = norm(text).trim();
+    for (const id of tableIds) for (const tr of $(id).querySelectorAll('tbody tr')) tr.classList.toggle('hidden-row', q !== '' && !norm(tr.textContent).includes(q));
+  }
+  const bindFilter = (inputId, tableIds) => $(inputId).addEventListener('input', () => filterRows(tableIds, $(inputId).value));
+  // Drag handles on the header cells: the first drag freezes the current widths (table-layout: fixed).
+  function makeResizable(table) {
+    const ths = [...table.querySelectorAll('thead th')];
+    ths.forEach((th, i) => {
+      if (i === ths.length - 1 || th.querySelector('.rz')) return;
+      const h = document.createElement('span'); h.className = 'rz'; th.appendChild(h);
+      h.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        if (!table.dataset.sized) { ths.forEach((x) => { x.style.width = x.offsetWidth + 'px'; }); table.dataset.sized = '1'; }
+        const x0 = e.clientX, w0 = th.offsetWidth;
+        const move = (ev) => { th.style.width = Math.max(60, w0 + (ev.clientX - x0) * (document.documentElement.dir === 'rtl' ? -1 : 1)) + 'px'; };
+        const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+        document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+      });
+    });
+  }
+  // Inputs, selects, buttons and labels inside a card header must not toggle the card.
+  document.querySelectorAll('details.card > summary').forEach((sm) => sm.querySelectorAll('input, select, button, label, code').forEach((el) => el.addEventListener('click', (e) => e.stopPropagation())));
+
   // ---- tabs -----------------------------------------------------------------
   function showTab(name) {
     document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.tab').forEach((c) => { c.hidden = c.id !== 'tab-' + name; });
     localStorage.setItem('ugw.tab', name);
-    if (name === 'status') { loadHealth(); loadSystem(); }
-    if (name === 'settings') { loadDevices(); loadUsers(); loadNotifyChannels(); if (!$('keys').hidden) loadKeys(); }
+    if (name === 'settings') { loadHealth(); loadSystem(); loadDevices(); loadUsers(); loadNotifyChannels(); if (!$('keys').hidden) loadKeys(); }
   }
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
+  // The header dot opens Settings › Health (0.15).
+  $('health-pill').addEventListener('click', () => { if ($('app').hidden) return; showTab('settings'); closeUser(); closeDevice(); $('health-card').open = true; $('health-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 
   // ---- status ---------------------------------------------------------------
   async function loadStatus() {
@@ -392,7 +423,7 @@
       if (!token) { $('status').textContent = t('online'); $('health-dot').className = 'dot'; }
       $('st-gateway').textContent = (s.version || '') + ' · ' + location.host;
     } catch { $('status').textContent = t('unreachable'); $('health-dot').className = 'dot error'; }
-    $('origin').textContent = location.origin;
+    $('origin').textContent = location.origin; $('origin2').textContent = location.origin;
     $('tls-note').textContent = location.protocol === 'https:' ? t('tls_ok') : t('tls_no');
   }
 
@@ -501,13 +532,17 @@
         const ro = cwd === '/' && window.ugwShares && window.ugwShares[e.name] === 'ro';
         size.textContent = e.type === 'dir' ? (ro ? t('read_only') : '') : fmtSize(e.size);
         const mt = document.createElement('td'); mt.textContent = fmtDate(e.mtime);
+        // The container sees /data/<share>/…; on Unraid that is the user share /mnt/user/<share>/… (0.15).
+        const up = document.createElement('td'); up.className = 'wrap small muted'; up.textContent = '/mnt/user' + e.path;
         const act = document.createElement('td'); act.className = 'actions';
         const btn = (label, fn) => { const b = document.createElement('button'); b.className = 'ghost'; b.textContent = label; b.onclick = fn; act.appendChild(b); };
         if (cwd !== '/') { btn(t('rename'), () => rename(e)); btn(t('delete'), () => remove(e)); }
-        tr.append(name, size, mt, act); tb.appendChild(tr);
+        tr.append(name, size, mt, up, act); tb.appendChild(tr);
       }
+      filterRows(['files'], $('files-filter').value); makeResizable($('files'));
     } catch (err) { alert(err.message); }
   }
+  bindFilter('files-filter', ['files']);
 
   async function download(e) {
     try {
@@ -573,10 +608,10 @@
   function setHealth(h) {
     const lvl = h ? h.level : '';
     const cls = 'dot' + (lvl ? ' ' + lvl : '');
-    $('health-dot').className = cls; $('health-dot-big').className = cls + ' big';
+    $('health-dot').className = cls; $('health-dot-big').className = cls;
     const label = h ? t(lvl === 'ok' ? 'health_ok' : lvl === 'warning' ? 'health_warning' : 'health_error') : t('health_unknown');
     $('status').textContent = label; $('health-level').textContent = label;
-    $('health-pill').title = h && h.reasons.length ? h.reasons.join(' · ') : '';
+    $('health-pill').title = (h && h.reasons.length ? h.reasons.join(' · ') + ' — ' : '') + t('health_open');
     const ul = $('health-reasons'); ul.innerHTML = '';
     (h ? h.reasons : []).forEach((r) => { const li = document.createElement('li'); li.textContent = r; ul.appendChild(li); });
     const tb = $('health-checks').querySelector('tbody'); tb.innerHTML = '';
@@ -683,8 +718,10 @@
         [kindLabel(x.kind), x.path, `${who(x)} · ${device(x)}`, fmtSize(x.bytes), ago(x.ended, now)].forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 3) td.className = 'num'; if (i === 1 || i === 2) td.className = 'wrap'; tr.appendChild(td); });
         trc.appendChild(tr);
       }
+      filterRows(['act-clients', 'act-active', 'act-recent'], $('activity-filter').value);
     } catch (err) { $('activity-scope').textContent = t('activity_unavailable', { err: err.message }); }
   }
+  bindFilter('activity-filter', ['act-clients', 'act-active', 'act-recent']);
   function startActivity() {
     clearInterval(activityTimer); loadActivity();
     activityTimer = setInterval(() => { if ($('activity-live').checked && !document.hidden) loadActivity(); }, 3000);
@@ -737,7 +774,20 @@
       $('devices-empty').hidden = d.devices.length > 0;
       $('devices-prune').hidden = d.devices.length === 0;
       $('devices-remove-all').hidden = d.devices.length === 0;
+      // Grouped per Unraid user (0.15); devices registered with a bare API key go last.
+      const groups = new Map();
+      const groupOf = (x) => x.user || (x.key ? t('key_label') + ' ' + x.key : '');
+      for (const x of d.devices) { const g = groupOf(x); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(x); }
+      const order = [...groups.keys()].sort((a, b) => (a === '') - (b === '') || a.localeCompare(b));
+      for (const g of order) {
+        const head = document.createElement('div'); head.className = 'group-title';
+        head.innerHTML = '<span class="gname"></span><span class="pill"></span>';
+        head.querySelector('.gname').textContent = g || t('no_user_group'); head.querySelector('.pill').textContent = String(groups.get(g).filter((x) => !x.supersededBy).length);
+        const grid = document.createElement('div'); grid.className = 'devices-cards'; grid.dataset.group = g;
+        wrap.append(head, grid);
+      }
       for (const x of d.devices) {
+        const grid = wrap.querySelector(`.devices-cards[data-group="${CSS.escape(groupOf(x))}"]`);
         const mine = x.id === d.thisDevice;
         const [title, sub, app] = splitName(x.name);
         const [cls, state] = deviceState(x, now);
@@ -750,11 +800,19 @@
         card.querySelector('.dev-meta').textContent = [x.user ? t('col_user') + ': ' + x.user : null, t('last_sync') + ': ' + ago(x.lastSeen, now), state].filter(Boolean).join(' · ');
         if (x.supersededBy) card.title = t('replaced_title', { date: new Date(x.supersededAt).toLocaleString(locale()) });
         card.onclick = () => openDevice(x.id);
-        wrap.appendChild(card);
+        card.dataset.text = norm([x.name, x.user, x.key, x.lastIp, state].join(' '));
+        grid.appendChild(card);
       }
+      applyDevicesFilter();
       if (!$('device-detail').hidden && !d.devices.some((x) => x.id === currentDevice)) closeDevice();
     } catch (err) { $('devices-scope').textContent = t('devices_unavailable', { err: err.message }); }
   }
+  function applyDevicesFilter() {
+    const q = norm($('devices-filter').value).trim();
+    for (const card of $('devices-cards').querySelectorAll('.dev-card')) card.classList.toggle('hidden-row', q !== '' && !card.dataset.text.includes(q));
+    for (const grid of $('devices-cards').querySelectorAll('.devices-cards')) { const any = [...grid.children].some((c) => !c.classList.contains('hidden-row')); grid.classList.toggle('hidden-row', !any); grid.previousElementSibling.classList.toggle('hidden-row', !any); }
+  }
+  $('devices-filter').addEventListener('input', applyDevicesFilter);
   $('devices-refresh').addEventListener('click', loadDevices);
   $('devices-remove-all').addEventListener('click', async () => {
     if (!confirm(t('confirm_remove_all'))) return;
@@ -772,7 +830,8 @@
 
   // ---- device detail: facts, charts, log ------------------------------------
   let currentDevice = '';
-  function closeDevice() { currentDevice = ''; $('device-detail').hidden = true; $('devices-card').hidden = false; $('users-card').hidden = false; }
+  const showGlobals = (on) => document.querySelectorAll('#tab-settings .settings-global').forEach((c) => { c.hidden = !on; });
+  function closeDevice() { currentDevice = ''; $('device-detail').hidden = true; if ($('user-detail').hidden) showGlobals(true); }
   $('device-back').addEventListener('click', closeDevice);
   $('device-range').addEventListener('change', () => { if (currentDevice) loadDeviceMetrics(currentDevice); });
   $('device-remove').addEventListener('click', async () => {
@@ -794,7 +853,7 @@
       [t('col_registered'), fmtDate(x.firstSeen)], [t('last_sync'), ago(x.lastSeen, now)], [t('col_from'), x.lastIp || '—'], [t('col_logins'), String(x.logins)], [t('state'), state], ['ID', x.id]];
     const dl = $('device-facts'); dl.innerHTML = '';
     for (const [k, v] of facts) { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); }
-    $('devices-card').hidden = true; $('users-card').hidden = true; $('device-detail').hidden = false;
+    showGlobals(false); $('user-detail').hidden = true; $('device-detail').hidden = false;
     await Promise.all([loadDeviceMetrics(id), loadDeviceLog(id), loadSyncs('device-syncs', 'device-syncs-empty', { device: id })]);
   }
   async function loadDeviceMetrics(id) {
@@ -929,16 +988,18 @@
         const b = document.createElement('button'); b.className = 'ghost'; b.textContent = t('open'); b.onclick = () => openUser(u.user);
         act.appendChild(dot); act.appendChild(b); tr.appendChild(act); tb.appendChild(tr);
       }
+      filterRows(['users'], $('users-filter').value);
     } catch (err) { $('users-scope').textContent = t('users_unavailable', { err: err.message }); }
   }
+  bindFilter('users-filter', ['users']);
   $('users-refresh').addEventListener('click', loadUsers);
-  function closeUser() { currentUser = ''; $('user-detail').hidden = true; $('devices-card').hidden = false; $('users-card').hidden = false; }
+  function closeUser() { currentUser = ''; $('user-detail').hidden = true; if ($('device-detail').hidden) showGlobals(true); }
   $('user-back').addEventListener('click', closeUser);
   $('user-range').addEventListener('change', () => { if (currentUser) loadUserMetrics(currentUser); });
   async function openUser(name) {
     currentUser = name;
     $('user-title').textContent = name;
-    $('users-card').hidden = true; $('devices-card').hidden = true; $('device-detail').hidden = true; $('user-detail').hidden = false;
+    showGlobals(false); $('device-detail').hidden = true; $('user-detail').hidden = false;
     try {
       const u = await api('/users/' + encodeURIComponent(name));
       const now = new Date();
@@ -982,19 +1043,37 @@
       drawChart($('user-chart'), m.series || [], m.step, $('user-chart-empty'));
     } catch (err) { $('user-chart-empty').hidden = false; $('user-chart-empty').textContent = t('metrics_unavailable', { err: err.message }); }
   }
+  // The user log is fetched once (up to 500 events) and filtered/paginated in the browser (0.15).
+  let userLog = { events: [], shown: 0 };
+  const ULOG_PAGE = 50;
+  function renderUserLog(more) {
+    const dev = $('ulog-device').value, kind = $('ulog-event').value, q = norm($('ulog-search').value).trim();
+    const rows = userLog.events.filter((e) => (!dev || e.deviceName === dev) && (!kind || e.kind === kind) && (!q || norm([fmtDate(e.time), splitName(e.deviceName)[0], t('ev_' + e.kind), e.detail].join(' ')).includes(q)));
+    userLog.shown = more ? userLog.shown + ULOG_PAGE : ULOG_PAGE;
+    const tb = $('user-log').querySelector('tbody'); tb.innerHTML = '';
+    for (const e of rows.slice(0, userLog.shown)) {
+      const tr = document.createElement('tr'); if (e.level !== 'info') tr.className = e.level;
+      [fmtDate(e.time), splitName(e.deviceName)[0], t('ev_' + e.kind) || e.kind, e.detail].forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 3) td.className = 'wrap'; tr.appendChild(td); });
+      tb.appendChild(tr);
+    }
+    $('user-log-empty').hidden = rows.length > 0; $('user-log').hidden = rows.length === 0;
+    $('user-log-count').textContent = t('n_events', { n: rows.length });
+    const left = rows.length - userLog.shown;
+    $('ulog-more').hidden = left <= 0; $('ulog-more').textContent = t('show_more', { n: Math.max(0, left) });
+  }
   async function loadUserLog(name) {
     try {
-      const r = await api('/users/' + encodeURIComponent(name) + '/log?limit=200');
-      const tb = $('user-log').querySelector('tbody'); tb.innerHTML = '';
-      const ev = r.events || [];
-      $('user-log-empty').hidden = ev.length > 0; $('user-log').hidden = ev.length === 0;
-      for (const e of ev) {
-        const tr = document.createElement('tr'); if (e.level !== 'info') tr.className = e.level;
-        [fmtDate(e.time), splitName(e.deviceName)[0], t('ev_' + e.kind) || e.kind, e.detail].forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 3) td.className = 'wrap'; tr.appendChild(td); });
-        tb.appendChild(tr);
-      }
+      const r = await api('/users/' + encodeURIComponent(name) + '/log?limit=500');
+      userLog.events = r.events || [];
+      const fill = (sel, values, label) => { const cur = sel.value; sel.length = 1; for (const v of values) { const o = document.createElement('option'); o.value = v; o.textContent = label(v); sel.appendChild(o); } sel.value = values.includes(cur) ? cur : ''; };
+      fill($('ulog-device'), [...new Set(userLog.events.map((e) => e.deviceName).filter(Boolean))].sort(), (v) => splitName(v)[0]);
+      fill($('ulog-event'), [...new Set(userLog.events.map((e) => e.kind))].sort(), (v) => t('ev_' + v) || v);
+      renderUserLog(false);
     } catch (err) { $('user-log-empty').hidden = false; $('user-log-empty').textContent = t('log_unavailable', { err: err.message }); }
   }
+  ['ulog-device', 'ulog-event'].forEach((id) => $(id).addEventListener('change', () => renderUserLog(false)));
+  $('ulog-search').addEventListener('input', () => renderUserLog(false));
+  $('ulog-more').addEventListener('click', () => renderUserLog(true));
 
   // ---- notifications --------------------------------------------------------
   async function loadNotifyChannels() {
