@@ -39,7 +39,7 @@ It is the server half of **[Unraid Drive](https://github.com/sidimam/unraid-driv
 
 - **Unraid — Community Applications**: search for *unraid-gateway* in the Apps tab (listing requested; until it appears, use the template URL below).
 - **Unraid — template URL**: Docker › Add Container › Template repositories, add `https://raw.githubusercontent.com/sidimam/unraid-gateway/main/templates/unraid-gateway.xml`.
-- **Homebrew (macOS/Linux)**: `brew install sidimam/tap/unraid-gateway` then `brew services start unraid-gateway` — for a Mac or Linux box that has the shares mounted.
+- **Homebrew (macOS/Linux)**: `brew install sidimam/tap/unraid-gateway`, write `UNRAID_URL=http://<unraid-ip>` in `$(brew --prefix)/etc/unraid-gateway/env`, then `brew services start unraid-gateway` — for a Mac or Linux box that has the shares mounted ([tap wiki](https://github.com/sidimam/homebrew-tap/wiki/unraid-gateway)).
 - **Docker anywhere**: `ghcr.io/sidimam/unraid-gateway:latest`, see below.
 
 ## Quick start (Unraid)
