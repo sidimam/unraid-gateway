@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -181,5 +182,105 @@ func TestDirScanPicksUpExternalChanges(t *testing.T) {
 	nw, _ := s.Index.ByPath("/docs/renamed.txt")
 	if nw == nil || nw.ID != old.ID {
 		t.Fatalf("renamed file must keep its id")
+	}
+}
+
+// Subtree operations must touch only the descendants (not siblings sharing a prefix
+// such as "dir-x" or "dir0", nor names with LIKE wildcards) and must keep working
+// with non-ASCII names (substr counts characters).
+func TestSubtreeRangeSiblingsAndUnicode(t *testing.T) {
+	root := t.TempDir()
+	for _, p := range []string{
+		"docs/Città/a.txt", "docs/Città/sub/b.txt",
+		"docs/Città-x/c.txt", "docs/Città0/d.txt", "docs/Citt%/e.txt", "docs/Citt_/f.txt",
+	} {
+		write(t, filepath.Join(root, filepath.FromSlash(p)), "x")
+	}
+	s := newScanner(t, root)
+	s.full(context.Background())
+	b, _ := s.Index.ByPath("/docs/Città/sub/b.txt")
+	if b == nil {
+		t.Fatal("b.txt not indexed")
+	}
+	if err := s.Index.Move("/docs/Città", "/docs/Perù"); err != nil {
+		t.Fatal(err)
+	}
+	b2, _ := s.Index.ByPath("/docs/Perù/sub/b.txt")
+	if b2 == nil || b2.ID != b.ID {
+		t.Fatalf("moved subtree path wrong: %+v", b2)
+	}
+	for _, p := range []string{"/docs/Città-x/c.txt", "/docs/Città0/d.txt", "/docs/Citt%/e.txt", "/docs/Citt_/f.txt"} {
+		if it, _ := s.Index.ByPath(p); it == nil {
+			t.Fatalf("sibling %s touched by the move", p)
+		}
+	}
+	if err := s.Index.Delete("/docs/Perù"); err != nil {
+		t.Fatal(err)
+	}
+	if it, _ := s.Index.ByPath("/docs/Perù/sub/b.txt"); it != nil {
+		t.Fatal("subtree not deleted")
+	}
+	for _, p := range []string{"/docs/Città-x/c.txt", "/docs/Città0/d.txt", "/docs/Citt%/e.txt", "/docs/Citt_/f.txt"} {
+		if it, _ := s.Index.ByPath(p); it == nil {
+			t.Fatalf("sibling %s deleted with the subtree", p)
+		}
+	}
+}
+
+// The subtree queries must be index searches, never a scan of the whole table.
+func TestSubtreeQueriesUseIndex(t *testing.T) {
+	ix, err := Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ix.Close()
+	lo, hi := subtreeRange("/docs/dir")
+	for _, q := range []string{
+		`EXPLAIN QUERY PLAN SELECT id, path FROM items WHERE path >= ? AND path < ? ORDER BY length(path) DESC`,
+		`EXPLAIN QUERY PLAN UPDATE items SET path = 'x' || substr(path, 3) WHERE path >= ? AND path < ?`,
+	} {
+		rows, err := ix.db.Query(q, lo, hi)
+		if err != nil {
+			t.Fatal(err)
+		}
+		plan := ""
+		for rows.Next() {
+			var id, parent, notused int
+			var detail string
+			rows.Scan(&id, &parent, &notused, &detail)
+			plan += detail + "; "
+		}
+		rows.Close()
+		if !strings.Contains(plan, "USING INDEX") || strings.Contains(plan, "SCAN items") {
+			t.Fatalf("full scan in %q: %s", q, plan)
+		}
+	}
+	if lo != "/docs/dir/" || hi != "/docs/dir0" {
+		t.Fatalf("range %q %q", lo, hi)
+	}
+}
+
+func TestPruneBatches(t *testing.T) {
+	ix, err := Open(filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ix.Close()
+	old := time.Now().Add(-40 * 24 * time.Hour).UnixNano()
+	tx, _ := ix.db.Begin()
+	for i := 0; i < 12001; i++ {
+		tx.Exec(`INSERT INTO changes(kind,id,path,ts) VALUES('upsert','x','/p',?)`, old)
+	}
+	tx.Exec(`INSERT INTO changes(kind,id,path,ts) VALUES('upsert','y','/q',?)`, time.Now().UnixNano())
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if err := ix.Prune(30 * 24 * time.Hour); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	ix.db.QueryRow(`SELECT COUNT(*) FROM changes`).Scan(&n)
+	if n != 1 {
+		t.Fatalf("after prune %d rows, want 1", n)
 	}
 }

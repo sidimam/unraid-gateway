@@ -29,7 +29,7 @@ All configuration is by environment variable. Booleans accept `true`/`false`; du
 
 | Container path | Host path | Purpose |
 |---|---|---|
-| `/config` | `/mnt/user/appdata/unraid-gateway` | Item index (SQLite). Optional but recommended: without it the index lives in a temporary file and is rebuilt at every restart. |
+| `/config` | `/mnt/cache/appdata/unraid-gateway` | Item index (SQLite). Optional but recommended: without it the index lives in a temporary file and is rebuilt at every restart. Point it at the pool (`/mnt/cache/…`, or your pool's name), not at `/mnt/user/…`: through Unraid's FUSE layer every database read is much slower (0.18.1 logs a warning). |
 | `/data/<share>` | `/mnt/user/<share>` | One mapping per share to expose (rw or ro). |
 | `/unraid-shares/smb-shares.conf` | `/etc/samba/smb-shares.conf` | Share security for per-user access (read-only). |
 | `/unraid-notifications` | `/tmp/notifications` | Unraid's notification spool (0.11+). With it, the gateway raises Unraid notifications (new/removed device) directly, with any API key role — nothing else to configure. Read/write. |
@@ -62,3 +62,7 @@ Whoever can open the web UI can use the stored key: keep the gateway on the LAN 
 | `NOTIFY_UNRAID_API_KEY` | empty | ADMIN key used only for the GraphQL fallback (no spool mounted). |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_TO`, `SMTP_TLS` | port 587, TLS `starttls` | E-mail channel; `SMTP_TLS` is `starttls`, `tls` (implicit, 465) or `none`; `SMTP_TO` may list several addresses. |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | empty | Telegram channel (bot from @BotFather; the chat id of you or a group). |
+
+## Notification channels from the web UI (0.18+)
+
+The `NOTIFY_UNRAID*`, `SMTP_*` and `TELEGRAM_*` variables are the **defaults**. An administrator can set the channels in *Settings › Notifications*; the gateway keeps them in `/config/notify.json` (mode 0600) and uses them instead of the variables until *Back to the container variables* deletes the file. Secrets are stored in that file in clear, like the variables in the container settings: keep `/config` in your backups and out of reach.

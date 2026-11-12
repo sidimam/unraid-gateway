@@ -134,6 +134,10 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 			files.UseIndex(ix, sc)
 			scanner = sc
 			log.Info("index: enabled", "db", dbPath, "dirScan", cfg.IndexDirScan, "fullScan", cfg.IndexFullScan)
+			if fs := fuseType(dbPath); fs != "" {
+				// On Unraid /mnt/user is shfs (FUSE): every SQLite page read crosses it.
+				log.Warn("index: database on a FUSE file system, map /config to the pool directly (e.g. /mnt/cache/appdata/unraid-gateway) for speed", "db", dbPath, "fs", fs)
+			}
 		}
 	}
 	devStore, err := devices.Open(cfg.DevicesFile)

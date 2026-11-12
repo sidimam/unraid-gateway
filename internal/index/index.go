@@ -22,6 +22,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf8"
 
 	_ "modernc.org/sqlite"
 )
@@ -96,6 +97,7 @@ func (ix *Index) migrate() error {
 			seq INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, id TEXT NOT NULL,
 			path TEXT NOT NULL, old_path TEXT NOT NULL DEFAULT '', ts INTEGER NOT NULL)`,
 		`CREATE INDEX IF NOT EXISTS changes_path ON changes(path)`,
+		`CREATE INDEX IF NOT EXISTS changes_ts ON changes(ts)`,
 		`CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
 	}
 	for _, s := range stmts {
@@ -456,21 +458,27 @@ func movePath(tx *sql.Tx, id, oldPath, newPath, newParent string, now int64) err
 	if _, err := tx.Exec(`UPDATE items SET path=?, name=?, parent=?, seq=(SELECT COALESCE(MAX(seq),0)+1 FROM changes) WHERE id=?`, newPath, path.Base(newPath), newParent, id); err != nil {
 		return err
 	}
-	// Re-path the subtree.
-	if _, err := tx.Exec(`UPDATE items SET path = ? || substr(path, ?) WHERE path LIKE ? ESCAPE '\'`, newPath, len(oldPath)+1, likePrefix(oldPath)+"/%"); err != nil {
+	// Re-path the subtree. A range on the path (not LIKE) so SQLite uses the unique
+	// index on items.path: LIKE scanned the whole table, 3-4 s per call on a catalogue
+	// of 1.5 M items (12/11/2026). substr() counts characters, not bytes.
+	lo, hi := subtreeRange(oldPath)
+	if _, err := tx.Exec(`UPDATE items SET path = ? || substr(path, ?) WHERE path >= ? AND path < ?`, newPath, utf8.RuneCountInString(oldPath)+1, lo, hi); err != nil {
 		return err
 	}
 	_, err := tx.Exec(`INSERT INTO changes(kind,id,path,old_path,ts) VALUES('move',?,?,?,?)`, id, newPath, oldPath, now)
 	return err
 }
 
-func likePrefix(p string) string {
-	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
-	return r.Replace(p)
+// subtreeRange returns the bounds [lo, hi) of the paths strictly below p in byte
+// order: every descendant starts with p+"/", and "0" is the byte right after "/".
+func subtreeRange(p string) (lo, hi string) {
+	lo = strings.TrimSuffix(p, "/") + "/"
+	return lo, lo[:len(lo)-1] + "0"
 }
 
 func deleteSubtree(tx *sql.Tx, id, p string, now int64) error {
-	rows, err := tx.Query(`SELECT id, path FROM items WHERE path LIKE ? ESCAPE '\' ORDER BY length(path) DESC`, likePrefix(p)+"/%")
+	lo, hi := subtreeRange(p)
+	rows, err := tx.Query(`SELECT id, path FROM items WHERE path >= ? AND path < ? ORDER BY length(path) DESC`, lo, hi)
 	if err != nil {
 		return err
 	}
@@ -605,10 +613,19 @@ func (ix *Index) MarkBootstrapped() error {
 	return err
 }
 
-// Prune drops journal entries older than keep.
+// Prune drops journal entries older than keep, in batches so that a large backlog
+// never holds the (single) connection for long.
 func (ix *Index) Prune(keep time.Duration) error {
-	_, err := ix.db.Exec(`DELETE FROM changes WHERE ts < ?`, time.Now().Add(-keep).UnixNano())
-	return err
+	cut := time.Now().Add(-keep).UnixNano()
+	for {
+		res, err := ix.db.Exec(`DELETE FROM changes WHERE seq IN (SELECT seq FROM changes WHERE ts < ? ORDER BY seq LIMIT 5000)`, cut)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n < 5000 {
+			return nil
+		}
+	}
 }
 
 // Meta get/set.

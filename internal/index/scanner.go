@@ -35,6 +35,9 @@ type Scanner struct {
 
 const metaLastFull = "last_full_scan"
 
+// journalKeep is how long change-journal rows are kept.
+const journalKeep = 30 * 24 * time.Hour
+
 // Run blocks until ctx is cancelled.
 func (s *Scanner) Run(ctx context.Context) {
 	if s.DirInterval <= 0 {
@@ -52,6 +55,7 @@ func (s *Scanner) Run(ctx context.Context) {
 	} else {
 		s.logger().Info("index: reusing catalogue", "items", s.count(), "lastFullScan", last.Format(time.RFC3339))
 	}
+	lastPrune := time.Time{}
 	dirT := time.NewTicker(s.DirInterval)
 	fullT := time.NewTicker(s.FullInterval)
 	defer dirT.Stop()
@@ -62,6 +66,13 @@ func (s *Scanner) Run(ctx context.Context) {
 			return
 		case <-dirT.C:
 			s.dirs(ctx)
+			// The journal is trimmed here too, not only after a full scan: a full scan
+			// that takes longer than its interval never reached the prune (12/11/2026:
+			// 4.8 M journal rows, 2 GB database).
+			if time.Since(lastPrune) > time.Hour {
+				_ = s.Index.Prune(journalKeep)
+				lastPrune = time.Now()
+			}
 		case <-fullT.C:
 			s.full(ctx)
 		}
@@ -178,7 +189,7 @@ func (s *Scanner) full(ctx context.Context) {
 	}
 	if ctx.Err() == nil {
 		_ = s.Index.SetMeta(metaLastFull, time.Now().UTC().Format(time.RFC3339))
-		_ = s.Index.Prune(30 * 24 * time.Hour)
+		_ = s.Index.Prune(journalKeep)
 		s.logger().Info("index: full scan done", "directories", n, "items", s.count(), "took", time.Since(start).Round(time.Millisecond))
 	}
 }

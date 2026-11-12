@@ -2,7 +2,7 @@
 
 ## Item index and journal (gateway 0.5+)
 
-Since 0.5.0 the gateway keeps a persistent **item index**: a SQLite file (`INDEX_DB`, default `/config/index.db`, mount `/mnt/user/appdata/unraid-gateway` there) with one row per file and directory, a stable random id for each, and a **journal** of changes numbered by a growing `seq`. This is the same idea as the file cache behind OneDrive, Google Drive or Nextcloud clients.
+Since 0.5.0 the gateway keeps a persistent **item index**: a SQLite file (`INDEX_DB`, default `/config/index.db`, mount `/mnt/cache/appdata/unraid-gateway` there — the pool directly, not `/mnt/user`) with one row per file and directory, a stable random id for each, and a **journal** of changes numbered by a growing `seq`. This is the same idea as the file cache behind OneDrive, Google Drive or Nextcloud clients.
 
 How it stays correct:
 

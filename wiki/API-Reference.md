@@ -62,6 +62,12 @@ Since 0.5 every entry also carries `id` (stable across renames, moves and restar
 | `412` | `If-Match` mismatch |
 | `507` | no space left on the share |
 
+## Content fingerprint (0.16+)
+
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/api/v1/fs/hash?path=…&algo=md5\|sha256&quick=1` | `{path, size, mtime, etag, algo, quick, hash}`. `quick=1` (default): hash of the first 1 MiB + last 1 MiB + decimal size, files ≤ 2 MiB whole; `quick=0`: whole file. Read access required. Used by the apps' sync engine to tell "same content, different dates" from a real conflict. |
+
 ## Resumable uploads
 
 For large files and unreliable links. The temp file lives next to the destination, so commit is an atomic rename.
@@ -140,7 +146,7 @@ Tickets are HMAC-SHA256 signed tokens (`base64url(payload).base64url(signature)`
 | Method | Path | Notes |
 |---|---|---|
 | `GET` | `/api/v1/syncs` | The pairs the caller may see: its own device's by default; `?all=1`, `?device=ID`, `?user=NAME`; `?format=text`. |
-| `PUT` | `/api/v1/syncs/{id}` | Creates/updates a pair of the calling device: `{kind: folder\|photos\|downloads, localLabel, remotePath, mode: up\|down\|both, enabled}`. |
+| `PUT` | `/api/v1/syncs/{id}` | Creates/updates a pair of the calling device: `{kind: folder\|photos\|downloads, localLabel, remotePath, mode: up\|down\|both, enabled, conflicts: newest\|keepBoth\|keepExisting\|overwrite\|ask, hashCheck: bool}` (the last two since 0.16, shown in the web UI). |
 | `PATCH` | `/api/v1/syncs/{id}` | `{"enabled": true\|false}` — pause/resume on the gateway (web UI / console / owning app). |
 | `DELETE` | `/api/v1/syncs/{id}` | Removes the pair. |
 | `POST` | `/api/v1/syncs/{id}/runs` | The owning device reports a run: `{run: {...}, files: [...]}` → stored pair; `409 sync_disabled` when the pair is paused on the gateway. |
@@ -160,3 +166,11 @@ See [Devices, notifications and API keys › Users and syncs](Devices-Notificati
 | `POST` | `/api/v1/devices/prune` | `{"days": N}` → `{"removed": [names]}`: removes the devices not seen for N days (never the caller's), closes their sessions, drops their metrics and sends a notification. API-key-only or ADMIN sessions. |
 
 The registry itself (`GET /api/v1/devices`, `DELETE /api/v1/devices/{id}`, `DELETE /api/v1/devices`) is described in [Devices, notifications and API keys](Devices-Notifications-and-API-Keys).
+
+## Notification settings (0.18+)
+
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/api/v1/notify/settings` | Admin. Current channels with secrets masked (`has*` flags), `source`: env or file. |
+| `PUT` | `/api/v1/notify/settings` | Admin. `{unraidEnabled, unraidApiKey, smtpHost, smtpPort, smtpTls, smtpUser, smtpPassword, smtpFrom, smtpTo, telegramToken, telegramChatId}` → saved in `/config/notify.json`, applied immediately; an empty or masked secret keeps the stored one. |
+| `DELETE` | `/api/v1/notify/settings` | Admin. Removes the file and returns to the container variables. |

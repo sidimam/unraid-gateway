@@ -57,6 +57,8 @@ The *Appdata Backup* plugin stops and restarts every container it does not skip,
 
 The catalogue lives in `/config/index.db` (SQLite, WAL mode). Observed on an Unraid 7.3 server with shares on shfs: the first scan of 418,000 entries in 67,000 directories took 13 minutes at about 40 % of one CPU core and 140 MB of RAM, and the gateway served requests normally meanwhile; the resulting database is about 200 MB for that tree (0.5.1; 0.5.0 also wrote a journal row per file and reached 330 MB, delete the file once after upgrading). A second full scan on the same server took under 10 minutes. Afterwards the directory scan every 5 minutes only stats directories and takes seconds; the full scan every 6 hours repeats the initial walk in the background. The log reports `index: full scan done` and `index: directory scan` with counts and timings. Deleting `index.db` (container stopped) is always safe: it is rebuilt at the next start and clients simply re-enumerate.
 
+Keep the database on the pool (`/mnt/cache/appdata/unraid-gateway` → `/config`), not on `/mnt/user`: there every SQLite page read goes through Unraid's FUSE layer (`shfs`), and the log says `index: database on a FUSE file system` at start (0.18.1). The journal is trimmed to 30 days every hour (0.18.1; before, only at the end of a full scan).
+
 ## Updating
 
 The template uses `latest`; Unraid's *Check for Updates* compares digests with GHCR and *Update* recreates the container from the template. *CA Auto Update Applications* can automate it. Sessions are lost on update; clients log in again transparently.
@@ -79,6 +81,7 @@ Nothing to back up: the gateway holds no state besides in-memory sessions and in
 | Writes fail with `share is mounted read-only` | the mount has `:ro`. |
 | `404 share not found` on write | the first path component is not a mounted share (typo, or share not mapped). |
 | Change feed always truncated | very large share: normal; clients page with `after`. Raise `CHANGES_DEADLINE` if you prefer fewer, longer pages. |
+| Listings and uploads take seconds each, in steps of ~3–4 s, while the server is idle | before 0.18.1: the index looked up subtrees with a full-table `LIKE` and every request queued behind the background scan. Update to 0.18.1+ and map `/config` to the pool (see *Item index*). |
 | Dates off by hours | display only: API times are UTC; set `TZ` for log timestamps. |
 
 ### "permission denied" although the share is read-write
